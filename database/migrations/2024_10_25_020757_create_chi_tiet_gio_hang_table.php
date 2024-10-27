@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\BienTheSanPham;
 use App\Models\ChiTietGioHang;
 use App\Models\GioHang;
 use App\Models\SanPham;
@@ -14,12 +15,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('chi_tiet_gio_hang', function (Blueprint $table) {
+        Schema::create('chi_tiet_gio_hangs', function (Blueprint $table) {
             $table->id();
             $table->foreignIdFor(GioHang::class)->constrained();
             $table->foreignIdFor(SanPham::class)->constrained();
+            $table->foreignIdFor(BienTheSanPham::class)->constrained();
 
-            $table->foreignId('ma_bien_the')->constrained('bien_the_san_pham')->onDelete('cascade');
             $table->integer('so_luong')->nullable(false);
             $table->decimal('gia', 10, 2)->nullable(false);
             $table->timestamps();

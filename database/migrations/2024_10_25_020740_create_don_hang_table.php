@@ -12,7 +12,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('don_hang', function (Blueprint $table) {
+        Schema::create('don_hangs', function (Blueprint $table) {
             $table->id();
             $table->foreignIdFor(KhachHang::class)->constrained();
 
