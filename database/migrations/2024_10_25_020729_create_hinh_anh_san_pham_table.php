@@ -12,7 +12,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('hinh_anh_san_pham', function (Blueprint $table) {
+        Schema::create('hinh_anh_san_phams', function (Blueprint $table) {
             $table->id();
             $table->foreignIdFor(SanPham::class)->constrained();
 

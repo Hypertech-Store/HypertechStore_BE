@@ -13,7 +13,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('binh_luan', function (Blueprint $table) {
+        Schema::create('binh_luans', function (Blueprint $table) {
             $table->id();
             $table->foreignIdFor(SanPham::class)->constrained();
             $table->foreignIdFor(KhachHang::class)->constrained();
