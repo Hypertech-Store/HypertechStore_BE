@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\DanhMucController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\SanPhamController;
@@ -21,4 +22,6 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 
 Route::get('/allProduct', [SanPhamController::class, 'getAllProduct']);
+
+Route::apiResource('danhmucs', DanhMucController::class);
 
