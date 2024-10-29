@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreDanhMucRequest;
 use App\Models\DanhMuc;
+use App\Models\DanhMucCon;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -17,7 +18,7 @@ class DanhMucController extends Controller
      */
     public function index()
     {
-        $data = DanhMuc::query()->get();
+        $data = DanhMucCon::query()->get();
 
         return response()->json($data);
     }
@@ -32,7 +33,7 @@ class DanhMucController extends Controller
 
         // Trả về phản hồi JSON khi tạo mới thành công
         return response()->json([
-            'message' => 'Danh mục được tạo thành công!',
+            'message' => 'Danh mục con được tạo thành công!',
             'data' => $data
         ], Response::HTTP_CREATED);
     }
@@ -46,7 +47,7 @@ class DanhMucController extends Controller
             $data = DanhMuc::query()->findOrFail($id);
 
             return response()->json([
-                'message' => 'Chi tiết danh mục id = '.$id,
+                'message' => 'Chi tiết danh mục con id = '.$id,
                 'data' => $data
             ]);
         } catch (\Throwable $th) {
@@ -69,7 +70,7 @@ class DanhMucController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(StoreDanhMucRequest $request, string $id)
     {
         try {
             $data = DanhMuc::query()->findOrFail($id);
