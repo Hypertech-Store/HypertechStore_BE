@@ -18,7 +18,7 @@ class DanhMucController extends Controller
      */
     public function index()
     {
-        $data = DanhMucCon::query()->get();
+        $data = DanhMuc::query()->get();
 
         return response()->json($data);
     }
@@ -33,7 +33,7 @@ class DanhMucController extends Controller
 
         // Trả về phản hồi JSON khi tạo mới thành công
         return response()->json([
-            'message' => 'Danh mục con được tạo thành công!',
+            'message' => 'Danh mục được tạo thành công!',
             'data' => $data
         ], Response::HTTP_CREATED);
     }
@@ -47,7 +47,7 @@ class DanhMucController extends Controller
             $data = DanhMuc::query()->findOrFail($id);
 
             return response()->json([
-                'message' => 'Chi tiết danh mục con id = '.$id,
+                'message' => 'Chi tiết danh mục id = '.$id,
                 'data' => $data
             ]);
         } catch (\Throwable $th) {
