@@ -70,7 +70,7 @@ class BienTheSanPhamController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(StoreBienTheSanPhamRequest$request, string $id)
+    public function update(StoreBienTheSanPhamRequest $request, string $id)
     {
         try {
             $data = BienTheSanPham::query()->findOrFail($id);
