@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\BienTheSanPhamController;
 use App\Http\Controllers\Api\DanhMucConController;
 use App\Http\Controllers\Api\DanhMucController;
 use Illuminate\Http\Request;
@@ -28,4 +29,5 @@ Route::apiResource('danhmucs', DanhMucController::class);
 
 Route::apiResource('danhmuccons', DanhMucConController::class);
 
-Route::apiResource('danhmuccons', DanhMucConController::class);
+Route::apiResource('bienthesanphams', BienTheSanPhamController::class);
+Route::get('/san-pham/{san_pham_id}/bien-the', [BienTheSanPhamController::class, 'getBienTheBySanPhamId']);
