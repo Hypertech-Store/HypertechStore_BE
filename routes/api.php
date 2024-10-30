@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\DanhMucConController;
 use App\Http\Controllers\Api\DanhMucController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -25,3 +26,6 @@ Route::get('/allProduct', [SanPhamController::class, 'getAllProduct']);
 
 Route::apiResource('danhmucs', DanhMucController::class);
 
+Route::apiResource('danhmuccons', DanhMucConController::class);
+
+Route::apiResource('danhmuccons', DanhMucConController::class);
