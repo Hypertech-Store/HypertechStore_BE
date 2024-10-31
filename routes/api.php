@@ -22,12 +22,11 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-
-Route::get('/allProduct', [SanPhamController::class, 'getAllProduct']);
-
 Route::apiResource('danhmucs', DanhMucController::class);
 
 Route::apiResource('danhmuccons', DanhMucConController::class);
 
 Route::apiResource('bienthesanphams', BienTheSanPhamController::class);
 Route::get('/san-pham/{san_pham_id}/bien-the', [BienTheSanPhamController::class, 'getBienTheBySanPhamId']);
+
+require __DIR__ . '/productRoutes.php';
