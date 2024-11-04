@@ -17,7 +17,7 @@ class SanPham extends Model
         'gia',
         'so_luong_ton_kho',
         'duong_dan_anh',
-        'luot_Xem'
+        'luot_xem'
     ];
 
     public function danhMuc()

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\BienTheSanPhamController;
 use App\Http\Controllers\Api\DanhMucConController;
 use App\Http\Controllers\Api\DanhMucController;
+use App\Http\Controllers\Api\HinhAnhSanPhamController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\SanPhamController;
@@ -30,3 +31,5 @@ Route::apiResource('bienthesanphams', BienTheSanPhamController::class);
 Route::get('/san-pham/{san_pham_id}/bien-the', [BienTheSanPhamController::class, 'getBienTheBySanPhamId']);
 
 require __DIR__ . '/productRoutes.php';
+
+Route::apiResource('hinhanhsanphams', HinhAnhSanPhamController::class);

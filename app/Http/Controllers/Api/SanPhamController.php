@@ -32,7 +32,7 @@ class SanPhamController extends Controller
             'gia' => 'required|numeric|min:0',
             'so_luong_ton_kho' => 'required|integer|min:0',
             'duong_dan_anh' => 'nullable|string',
-            'luot_Xem' => 'integer|min:0',
+            'luot_xem' => 'integer|min:0',
         ]);
 
         $sanPham = SanPham::create($request->all());
@@ -64,7 +64,7 @@ class SanPhamController extends Controller
             'gia' => 'required|numeric|min:0',
             'so_luong_ton_kho' => 'required|integer|min:0',
             'duong_dan_anh' => 'nullable|string',
-            'luot_Xem' => 'integer|min:0',
+            'luot_xem' => 'integer|min:0',
         ]);
 
         $sanPham->update($request->all());

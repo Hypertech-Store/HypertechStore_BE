@@ -11,7 +11,7 @@ class HinhAnhSanPham extends Model
 
     protected $fillable = [
         'san_pham_id',
-        'duong_dan_anh',
+        'duong_dan_hinh_anh',
     ];
 
     public function sanPham()
