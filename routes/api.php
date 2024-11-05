@@ -33,3 +33,5 @@ Route::get('/san-pham/{san_pham_id}/bien-the', [BienTheSanPhamController::class,
 require __DIR__ . '/productRoutes.php';
 
 Route::apiResource('hinhanhsanphams', HinhAnhSanPhamController::class);
+
+require __DIR__ . '/GioHangRoutes.php';

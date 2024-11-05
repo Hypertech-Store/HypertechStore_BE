@@ -9,6 +9,8 @@ class GioHang extends Model
 {
     use HasFactory;
 
+    public $timestamps = false;
+
     protected $fillable = [
         'khach_hang_id',
         'trang_thai',
