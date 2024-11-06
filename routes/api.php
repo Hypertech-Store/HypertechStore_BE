@@ -31,6 +31,8 @@ require __DIR__ . '/HinhAnhSanPhamRoutes.php';
 
 require __DIR__ . '/BienTheSanPhamRoutes.php';
 
+require __DIR__ . '/DanhSachYeuThichRoutes.php';
+
 require __DIR__ . '/productRoutes.php';
 
 require __DIR__ . '/GioHangRoutes.php';
