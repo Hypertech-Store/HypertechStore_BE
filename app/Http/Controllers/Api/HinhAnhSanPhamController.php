@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreHinhAnhSanPhamRequest;
 use App\Models\HinhAnhSanPham;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
@@ -28,33 +29,14 @@ class HinhAnhSanPhamController extends Controller
      */
     public function store(StoreHinhAnhSanPhamRequest $request)
     {
-        try {
-            $validated = $request->validated();
-            Log::info('Validated data:', $validated); // Ghi log dữ liệu đã xác thực
 
-            if ($request->hasFile('image')) {
-                $path = Storage::put('hinh_anh_san_phams', $request->file("image"));
-                Log::info('Đường dẫn hình ảnh:', ['path' => $path]);
+        $data = HinhAnhSanPham::query()->create($request->all());
 
-                $data = HinhAnhSanPham::create([
-                    'san_pham_id' => $validated['san_pham_id'],
-                    'duong_dan_hinh_anh' => $path,
-                ]);
-
-                return response()->json([
-                    'message' => 'Hình ảnh sản phẩm được tạo thành công!',
-                    'data' => $data
-                ], Response::HTTP_CREATED);
-            }
-
-            return response()->json([
-                'message' => 'Không có hình ảnh nào được tải lên.'
-            ], Response::HTTP_BAD_REQUEST);
-        } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'Có lỗi xảy ra khi tạo hình ảnh sản phẩm'
-            ], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
+        // Trả về phản hồi JSON khi tạo mới thành công
+        return response()->json([
+            'message' => 'Hình ảnh sản phẩm được tạo thành công!',
+            'data' => $data
+        ], Response::HTTP_CREATED);
     }
 
     /**
@@ -63,19 +45,25 @@ class HinhAnhSanPhamController extends Controller
     public function show(string $id)
     {
         try {
-            $data = HinhAnhSanPham::findOrFail($id);
+            $data = HinhAnhSanPham::query()->findOrFail($id);
 
             return response()->json([
-                'message' => 'Chi tiết hình ảnh sản phẩm id = ' . $id,
+                'message' => 'Chi tiết hình ảnh sản phẩm id = '.$id,
                 'data' => $data
             ]);
-        } catch (ModelNotFoundException $e) {
+        } catch (\Throwable $th) {
+            if($th instanceof ModelNotFoundException){
+                return response()->json([
+                    'message' => 'Không tìm thấy hình ảnh sản phẩm id = '.$id,
+
+                ], Response::HTTP_NOT_FOUND);
+            }
+            Log::error('Lỗi xóa hình ảnh sản phẩm: ' . $th->getMessage());
+
             return response()->json([
-                'message' => 'Không tìm thấy hình ảnh sản phẩm id = ' . $id,
-            ], Response::HTTP_NOT_FOUND);
-        } catch (\Exception $e) {
-            Log::error('Lỗi truy xuất hình ảnh sản phẩm: ' . $e->getMessage());
-            return response()->json(['message' => 'Có lỗi xảy ra khi truy xuất hình ảnh sản phẩm'], Response::HTTP_INTERNAL_SERVER_ERROR);
+                'message' => 'Không tìm thấy hình ảnh sản phẩm id = '.$id,
+
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 
     }
@@ -86,33 +74,24 @@ class HinhAnhSanPhamController extends Controller
     public function update(StoreHinhAnhSanPhamRequest $request, string $id)
     {
         try {
-            $validated = $request->validated();
-            $data = HinhAnhSanPham::find($id);
-            if (!$data) {
-                return response()->json(['message' => 'Không tìm thấy hình ảnh sản phẩm nào'], 404);
-            }
+            $data = HinhAnhSanPham::query()->findOrFail($id);
+            $data->update($request->all());
 
-        if ($request->hasFile('image')) {
-            $path = Storage::put('hinh_anh_san_phams', $request->file("image"));
-            Log::info('Đường dẫn hình ảnh:', ['path' => $path]);
-
-            $data->update([
-                'san_pham_id' => $validated['san_pham_id'],
-                'duong_dan_hinh_anh' => $path,
+            return response()->json([
+                'message' => 'Cập nhật hình ảnh sản phẩm id = '.$id,
+                'data' => $data
             ]);
-
-            return response()->json($data, 200);
-        }
-        return response()->json([
-            'message' => 'Không có hình ảnh nào được tải lên.'
-        ], Response::HTTP_BAD_REQUEST);
         } catch (ModelNotFoundException $e) {
             return response()->json([
-                'message' => 'Không tìm thấy hình ảnh sản phẩm id = ' . $id,
+                'message' => 'Không tìm thấy hình ảnh sản phẩm id = '.$id,
             ], Response::HTTP_NOT_FOUND);
+
         } catch (\Exception $e) {
             Log::error('Lỗi cập nhật hình ảnh sản phẩm: ' . $e->getMessage());
-            return response()->json(['message' => 'Có lỗi xảy ra khi cập nhật hình ảnh sản phẩm'], Response::HTTP_INTERNAL_SERVER_ERROR);
+
+            return response()->json([
+                'message' => 'Có lỗi xảy ra khi cập nhật hình ảnh sản phẩm',
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 
     }
@@ -124,25 +103,22 @@ class HinhAnhSanPhamController extends Controller
     {
 
         try {
-            $data = HinhAnhSanPham::findOrFail($id);
-
-            // Delete the image file from storage
-            if ($data->duong_dan_hinh_anh) {
-                Storage::disk('public')->delete($data->duong_dan_hinh_anh);
-            }
-
-            $data->delete();
-
+            HinhAnhSanPham::destroy($id);
             return response()->json([
-                'message' => 'Xóa hình ảnh sản phẩm thành công',
+                'message' => 'Xóa thành công',
             ], Response::HTTP_OK);
+
         } catch (ModelNotFoundException $e) {
             return response()->json([
-                'message' => 'Không tìm thấy hình ảnh sản phẩm id = ' . $id,
+                'message' => 'Không tìm thấy hình ảnh sản phẩm id = '.$id,
             ], Response::HTTP_NOT_FOUND);
+
         } catch (\Exception $e) {
             Log::error('Lỗi xóa hình ảnh sản phẩm: ' . $e->getMessage());
-            return response()->json(['message' => 'Có lỗi xảy ra khi xóa hình ảnh sản phẩm'], Response::HTTP_INTERNAL_SERVER_ERROR);
+
+            return response()->json([
+                'message' => 'Có lỗi xảy ra khi xóa hình ảnh sản phẩm',
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 

@@ -31,7 +31,6 @@ class DanhMucController extends Controller
 
         $data = DanhMuc::query()->create($request->all());
 
-        // Trả về phản hồi JSON khi tạo mới thành công
         return response()->json([
             'message' => 'Danh mục được tạo thành công!',
             'data' => $data

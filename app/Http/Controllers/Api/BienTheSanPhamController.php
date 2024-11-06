@@ -30,8 +30,6 @@ class BienTheSanPhamController extends Controller
     {
 
         $data = BienTheSanPham::query()->create($request->all());
-
-        // Trả về phản hồi JSON khi tạo mới thành công
         return response()->json([
             'message' => 'Biến thể sản phẩm được tạo thành công!',
             'data' => $data
@@ -122,10 +120,8 @@ class BienTheSanPhamController extends Controller
     }
     public function getBienTheBySanPhamId($san_pham_id): JsonResponse
     {
-        // Lấy tất cả biến thể có `san_pham_id` tương ứng
         $data = BienTheSanPham::where('san_pham_id', $san_pham_id)->get();
 
-        // Kiểm tra nếu không có biến thể nào
         if ($data->isEmpty()) {
             return response()->json([
                 'success' => false,
@@ -133,7 +129,6 @@ class BienTheSanPhamController extends Controller
             ], 404);
         }
 
-        // Trả về danh sách biến thể
         return response()->json([
             'success' => true,
             'data' => $data
