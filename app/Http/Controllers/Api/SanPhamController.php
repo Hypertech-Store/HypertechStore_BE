@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\SanPham;
+use App\Models\BienTheSanPham;
+use App\Models\DanhMucCon; // Import model DanhMucCon
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
@@ -41,12 +43,33 @@ class SanPhamController extends Controller
 
     public function getDetail($id)
     {
-        $sanPham = SanPham::find($id);
+        // Get the product details along with its related images
+        $sanPham = SanPham::with('hinhAnhSanPhams')->find($id);
+
+        // Check if the product exists
         if (!$sanPham) {
             return response()->json(['message' => 'Sản phẩm không tồn tại'], 404);
         }
-        return response()->json($sanPham, 200);
+
+        // Fetch related variants (BienTheSanPham) by san_pham_id
+        $bienTheSanPhams = BienTheSanPham::where('san_pham_id', $id)->get(['ten_bien_the', 'gia_tri_bien_the']);
+
+        // Lấy danh mục con và danh mục cha
+        $danhMucCon = DanhMucCon::with('danhMuc')->where('id', $sanPham->danh_muc_con_id)->first(); // Giả sử `sanPham` có trường `danh_muc_con_id`
+
+        // Kiểm tra nếu danh mục con tồn tại và lấy tên danh mục con cùng tên danh mục cha
+        $tenDanhMucCon = $danhMucCon ? $danhMucCon->ten_danh_muc_con : null;
+        $tenDanhMuc = $danhMucCon && $danhMucCon->danhMuc ? $danhMucCon->danhMuc->ten_danh_muc : null;
+
+        // Return the product details along with variants
+        return response()->json([
+            'sanPham' => $sanPham,
+            'bienTheSanPhams' => $bienTheSanPhams,
+            'ten_danh_muc_con' => $tenDanhMucCon,
+            'ten_danh_muc' => $tenDanhMuc
+        ], 200);
     }
+
 
     // Cập nhật sản phẩm
     public function updateProduct(Request $request, $id)
