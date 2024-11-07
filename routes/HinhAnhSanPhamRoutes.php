@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\Api\BienTheSanPhamController;
 use App\Http\Controllers\Api\HinhAnhSanPhamController;
 use Illuminate\Support\Facades\Route;
 
