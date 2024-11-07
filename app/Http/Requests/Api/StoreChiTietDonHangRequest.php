@@ -7,7 +7,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\Response;
 
-class StoreHinhAnhSanPhamRequest extends FormRequest
+class StoreChiTietDonHangRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -25,8 +25,10 @@ class StoreHinhAnhSanPhamRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'san_pham_id' => 'required|exists:san_phams,id',
-            'image' => 'nullable|string',
+            'don_hang_id' => 'required|integer|exists:don_hangs,id',
+            'san_pham_id' => 'required|integer|exists:san_phams,id',
+            'so_luong' => 'required|integer|min:1',
+            'gia' => 'required|numeric|min:0',
         ];
     }
     protected function failedValidation(Validator $validator)

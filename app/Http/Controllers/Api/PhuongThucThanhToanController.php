@@ -3,23 +3,21 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Api\StoreHinhAnhSanPhamRequest;
-use App\Models\HinhAnhSanPham;
+use App\Http\Requests\Api\StorePhuongThucThanhToanRequest;
+use App\Models\PhuongThucThanhToan;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 
-class HinhAnhSanPhamController extends Controller
+class PhuongThucThanhToanController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        $data = HinhAnhSanPham::query()->get();
+        $data = PhuongThucThanhToan::query()->get();
 
         return response()->json($data);
     }
@@ -27,14 +25,13 @@ class HinhAnhSanPhamController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreHinhAnhSanPhamRequest $request)
+    public function store(StorePhuongThucThanhToanRequest $request)
     {
 
-        $data = HinhAnhSanPham::query()->create($request->all());
+        $data = PhuongThucThanhToan::query()->create($request->all());
 
-        // Trả về phản hồi JSON khi tạo mới thành công
         return response()->json([
-            'message' => 'Hình ảnh sản phẩm được tạo thành công!',
+            'message' => 'Danh mục được tạo thành công!',
             'data' => $data
         ], Response::HTTP_CREATED);
     }
@@ -45,23 +42,23 @@ class HinhAnhSanPhamController extends Controller
     public function show(string $id)
     {
         try {
-            $data = HinhAnhSanPham::query()->findOrFail($id);
+            $data = PhuongThucThanhToan::query()->findOrFail($id);
 
             return response()->json([
-                'message' => 'Chi tiết hình ảnh sản phẩm id = '.$id,
+                'message' => 'Chi tiết danh mục id = '.$id,
                 'data' => $data
             ]);
         } catch (\Throwable $th) {
             if($th instanceof ModelNotFoundException){
                 return response()->json([
-                    'message' => 'Không tìm thấy hình ảnh sản phẩm id = '.$id,
+                    'message' => 'Không tìm thấy danh mục id = '.$id,
 
                 ], Response::HTTP_NOT_FOUND);
             }
-            Log::error('Lỗi xóa hình ảnh sản phẩm: ' . $th->getMessage());
+            Log::error('Lỗi xóa danh mục: ' . $th->getMessage());
 
             return response()->json([
-                'message' => 'Không tìm thấy hình ảnh sản phẩm id = '.$id,
+                'message' => 'Không tìm thấy danh mục id = '.$id,
 
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -71,26 +68,26 @@ class HinhAnhSanPhamController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(StoreHinhAnhSanPhamRequest $request, string $id)
+    public function update(StorePhuongThucThanhToanRequest $request, string $id)
     {
         try {
-            $data = HinhAnhSanPham::query()->findOrFail($id);
+            $data = PhuongThucThanhToan::query()->findOrFail($id);
             $data->update($request->all());
 
             return response()->json([
-                'message' => 'Cập nhật hình ảnh sản phẩm id = '.$id,
+                'message' => 'Cập nhật danh mục id = '.$id,
                 'data' => $data
             ]);
         } catch (ModelNotFoundException $e) {
             return response()->json([
-                'message' => 'Không tìm thấy hình ảnh sản phẩm id = '.$id,
+                'message' => 'Không tìm thấy danh mục id = '.$id,
             ], Response::HTTP_NOT_FOUND);
 
         } catch (\Exception $e) {
-            Log::error('Lỗi cập nhật hình ảnh sản phẩm: ' . $e->getMessage());
+            Log::error('Lỗi cập nhật danh mục: ' . $e->getMessage());
 
             return response()->json([
-                'message' => 'Có lỗi xảy ra khi cập nhật hình ảnh sản phẩm',
+                'message' => 'Có lỗi xảy ra khi cập nhật danh mục',
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 
@@ -103,23 +100,22 @@ class HinhAnhSanPhamController extends Controller
     {
 
         try {
-            HinhAnhSanPham::destroy($id);
+            PhuongThucThanhToan::destroy($id);
             return response()->json([
                 'message' => 'Xóa thành công',
             ], Response::HTTP_OK);
 
         } catch (ModelNotFoundException $e) {
             return response()->json([
-                'message' => 'Không tìm thấy hình ảnh sản phẩm id = '.$id,
+                'message' => 'Không tìm thấy danh mục id = '.$id,
             ], Response::HTTP_NOT_FOUND);
 
         } catch (\Exception $e) {
-            Log::error('Lỗi xóa hình ảnh sản phẩm: ' . $e->getMessage());
+            Log::error('Lỗi xóa danh mục: ' . $e->getMessage());
 
             return response()->json([
-                'message' => 'Có lỗi xảy ra khi xóa hình ảnh sản phẩm',
+                'message' => 'Có lỗi xảy ra khi xóa danh mục',
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
 }

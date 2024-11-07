@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class PhuongThucThanhToan extends Model
 {
     use HasFactory;
-
+    public $timestamps = false;
     protected $fillable = [
         'ten_phuong_thuc',
         'mo_ta',

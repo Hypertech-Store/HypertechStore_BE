@@ -23,15 +23,26 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-Route::apiResource('danhmucs', DanhMucController::class);
+require __DIR__ . '/DanhMucRoutes.php';
 
-Route::apiResource('danhmuccons', DanhMucConController::class);
+require __DIR__ . '/DanhMucConRoutes.php';
 
-Route::apiResource('bienthesanphams', BienTheSanPhamController::class);
-Route::get('/san-pham/{san_pham_id}/bien-the', [BienTheSanPhamController::class, 'getBienTheBySanPhamId']);
+require __DIR__ . '/HinhAnhSanPhamRoutes.php';
+
+require __DIR__ . '/BienTheSanPhamRoutes.php';
+
+require __DIR__ . '/DanhSachYeuThichRoutes.php';
+
+require __DIR__ . '/DonHangRoutes.php';
+
+require __DIR__ . '/ChiTietDonHangRoutes.php';
+
+require __DIR__ . '/KhachHangRoutes.php';
+
+require __DIR__ . '/PhuongThucThanhToanRoutes.php';
+
+require __DIR__ . '/ThanhToanRoutes.php';
 
 require __DIR__ . '/productRoutes.php';
-
-Route::apiResource('hinhanhsanphams', HinhAnhSanPhamController::class);
 
 require __DIR__ . '/GioHangRoutes.php';

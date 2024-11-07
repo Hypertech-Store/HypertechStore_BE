@@ -30,7 +30,6 @@ class DanhMucConController extends Controller
 
         $data = DanhMucCon::query()->create($request->all());
 
-        // Trả về phản hồi JSON khi tạo mới thành công
         return response()->json([
             'message' => 'Danh mục con được tạo thành công!',
             'data' => $data
