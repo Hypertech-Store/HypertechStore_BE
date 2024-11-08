@@ -43,6 +43,12 @@ require __DIR__ . '/PhuongThucThanhToanRoutes.php';
 
 require __DIR__ . '/ThanhToanRoutes.php';
 
+require __DIR__ . '/DanhGiaRoutes.php';
+
+require __DIR__ . '/DinhKemRoutes.php';
+
+require __DIR__ . '/BinhLuanRoutes.php';
+
 require __DIR__ . '/productRoutes.php';
 
 require __DIR__ . '/GioHangRoutes.php';
