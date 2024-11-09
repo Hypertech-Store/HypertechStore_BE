@@ -13,10 +13,13 @@ class KhachHang extends Model implements Authenticatable
     use HasFactory;
 
     protected $fillable = [
+        'ten_nguoi_dung',
         'ho_ten',
         'email',
         'dien_thoai',
         'dia_chi',
+        'gioi_tinh',
+        'ngay_sinh',
         'mat_khau',
     ];
 

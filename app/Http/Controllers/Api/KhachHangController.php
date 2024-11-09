@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 class KhachHangController extends Controller
 {
@@ -16,39 +17,42 @@ class KhachHangController extends Controller
      * Display a listing of the resource.
      */
 
-    public function login(Request $request)
-    {
-        // Xác thực dữ liệu đầu vào
-        $request->validate([
-            'email' => 'required|email',
-            'mat_khau' => 'required|min:8',
-        ]);
+     public function login(Request $request)
+     {
+         // Xác thực dữ liệu đầu vào
+         $request->validate([
+             'email' => 'required|email',
+             'mat_khau' => 'required|min:8',
+         ]);
 
-        // Xác thực thông tin đăng nhập
-        $credentials = [
-            'email' => $request->email,
-            'password' => $request->mat_khau,
-        ];
+         // Tìm người dùng theo email
+         $khachHang = KhachHang::where('email', $request->email)->first();
 
-        if (Auth::guard('khachhang')->attempt($credentials)) {
-            // Đăng nhập thành công
-            return response()->json([
-                'message' => 'Đăng nhập thành công!',
-                // 'redirect_url' => '/khach-hang/dashboard'
-            ], 200);
-        }
+         // Kiểm tra thông tin đăng nhập
+         if ($khachHang && Hash::check($request->mat_khau, $khachHang->mat_khau)) {
 
-        // Đăng nhập thất bại
-        return response()->json([
-            'error' => 'Thông tin đăng nhập không chính xác.',
-        ], 401);
-    }
+            Auth::login($khachHang);
+
+             return response()->json([
+                 'message' => 'Đăng nhập thành công!',
+                 'data' => $khachHang
+             ], Response::HTTP_OK);
+         } else {
+             return response()->json([
+                 'error' => 'Thông tin đăng nhập không chính xác.'
+             ], Response::HTTP_UNAUTHORIZED);
+         }
+     }
     /**
      * Xử lý đăng ký khách hàng mới.
      */
     public function register(StoreKhachHangRequest $request)
     {
-        $khachHang = KhachHang::query()->create($request->all());
+        $khachHang = KhachHang::query()->create( [
+            'ten_nguoi_dung' => $request->ten_nguoi_dung,
+            'email' => $request->email,
+            'mat_khau' => Hash::make($request->mat_khau),
+        ]);
 
         // Trả về phản hồi JSON
         return response()->json([
@@ -61,13 +65,14 @@ class KhachHangController extends Controller
     /**
      * Xử lý đăng xuất khách hàng.
      */
-    public function logout()
+    public function logout(Request $request)
     {
-        Auth::guard('khachhang')->logout();
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
-        // Trả về phản hồi JSON
         return response()->json([
-            'message' => 'Đăng xuất thành công!',
+            'message' => 'Đăng xuất thành công'
         ], 200);
     }
 }

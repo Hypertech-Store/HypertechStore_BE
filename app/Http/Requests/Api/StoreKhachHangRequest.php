@@ -25,10 +25,8 @@ class StoreKhachHangRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'ho_ten' => 'required|string|max:255',
+            'ten_nguoi_dung' => 'required|string|max:255',
             'email' => 'required|email',
-            'dien_thoai' => 'required|string|max:15',
-            'dia_chi' => 'nullable|string|max:255',
             'mat_khau' => 'required|min:8',
         ];
     }

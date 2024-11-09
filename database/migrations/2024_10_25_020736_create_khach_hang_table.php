@@ -13,11 +13,16 @@ return new class extends Migration
     {
         Schema::create('khach_hangs', function (Blueprint $table) {
             $table->id();
-            $table->string('ho_ten')->nullable(false);
+
+            $table->string(column: 'ten_nguoi_dung')->nullable(false);
+            $table->string('ho_ten')->nullable();
             $table->string('email')->unique()->nullable(false);
             $table->string('dien_thoai', 20)->nullable();
             $table->string('dia_chi')->nullable();
+            $table->string('gioi_tinh')->nullable();
+            $table->date('ngay_sinh')->nullable();
             $table->string('mat_khau')->nullable();
+
             $table->timestamps();
         });
     }
