@@ -13,6 +13,7 @@ class ChiTietGioHang extends Model
         'gio_hang_id',
         'san_pham_id',
         'so_luong',
+        'gia', // Thêm trường này để có thể truyền giá trị khi tạo bản ghi
     ];
 
     public function gioHang()
