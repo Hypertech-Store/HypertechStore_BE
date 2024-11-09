@@ -10,5 +10,7 @@ Route::prefix('khach-hang')->group(function () {
     Route::post('/register', [KhachHangController::class, 'register']);
 
     Route::post('/logout', [KhachHangController::class, 'logout']);
+
+
 });
 

@@ -17,7 +17,7 @@ class KhachHangController extends Controller
      * Display a listing of the resource.
      */
 
-     public function login(Request $request)
+     public function login(Request $request): \Illuminate\Http\JsonResponse
      {
          // Xác thực dữ liệu đầu vào
          $request->validate([
