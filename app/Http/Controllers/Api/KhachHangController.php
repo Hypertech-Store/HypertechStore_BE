@@ -75,4 +75,55 @@ class KhachHangController extends Controller
             'message' => 'Đăng xuất thành công'
         ], 200);
     }
+
+    public function show($id): \Illuminate\Http\JsonResponse
+    {
+        $khachHang = KhachHang::find($id);
+
+        if (!$khachHang) {
+            return response()->json([
+                'error' => 'Không tìm thấy người dùng'
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        return response()->json([
+            'message' => 'Lấy thông tin người dùng thành công!',
+            'data' => $khachHang
+        ], Response::HTTP_OK);
+    }
+
+    // Phương thức cập nhật thông tin người dùng theo ID
+    public function update(Request $request, $id): \Illuminate\Http\JsonResponse
+    {
+        $khachHang = KhachHang::find($id);
+
+        if (!$khachHang) {
+            return response()->json([
+                'error' => 'Không tìm thấy người dùng'
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        $validatedData = $request->validate([
+            'ten_nguoi_dung' => 'sometimes|string',
+            'ho_ten' => 'sometimes|string',
+            'email' => 'sometimes|email',
+            'dien_thoai' => 'sometimes|string',
+            'dia_chi' => 'sometimes|string',
+            'gioi_tinh' => 'sometimes|string|in:male,female,other',
+            'ngay_sinh' => 'sometimes|date',
+            'mat_khau' => 'sometimes|min:8'
+        ]);
+
+        // Nếu có trường 'mat_khau' trong yêu cầu, mã hóa trước khi cập nhật
+        if (isset($validatedData['mat_khau'])) {
+            $validatedData['mat_khau'] = Hash::make($validatedData['mat_khau']);
+        }
+
+        $khachHang->update($validatedData);
+
+        return response()->json([
+            'message' => 'Cập nhật thông tin người dùng thành công!',
+            'data' => $khachHang
+        ], Response::HTTP_OK);
+    }
 }

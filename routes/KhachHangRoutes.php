@@ -11,6 +11,10 @@ Route::prefix('khach-hang')->group(function () {
 
     Route::post('/logout', [KhachHangController::class, 'logout']);
 
+    Route::get('/profile/{id}', [KhachHangController::class, 'show']); // API lấy thông tin người dùng
+
+    Route::put('/update-profile/{id}', [KhachHangController::class, 'update']); // API cập nhật thông tin người dùng
+
 
 });
 
