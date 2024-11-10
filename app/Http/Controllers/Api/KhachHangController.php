@@ -111,12 +111,20 @@ class KhachHangController extends Controller
             'dia_chi' => 'sometimes|string',
             'gioi_tinh' => 'sometimes|string|in:male,female,other',
             'ngay_sinh' => 'sometimes|date',
-            'mat_khau' => 'sometimes|min:8'
+            'old_password' => 'sometimes|required_with:new_password|string',
+            'new_password' => 'sometimes|min:8'
         ]);
 
-        // Nếu có trường 'mat_khau' trong yêu cầu, mã hóa trước khi cập nhật
-        if (isset($validatedData['mat_khau'])) {
-            $validatedData['mat_khau'] = Hash::make($validatedData['mat_khau']);
+        // Kiểm tra mật khẩu cũ nếu truyền vào
+        if (isset($validatedData['old_password']) && isset($validatedData['new_password'])) {
+            if (!Hash::check($validatedData['old_password'], $khachHang->mat_khau)) {
+                return response()->json([
+                    'error' => 'Mật khẩu cũ không đúng'
+                ], Response::HTTP_UNAUTHORIZED);
+            }
+            // Mã hóa mật khẩu mới trước khi cập nhật
+            $validatedData['mat_khau'] = Hash::make($validatedData['new_password']);
+            unset($validatedData['old_password'], $validatedData['new_password']);
         }
 
         $khachHang->update($validatedData);

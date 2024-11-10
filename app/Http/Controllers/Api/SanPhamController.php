@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\SanPham;
 use App\Models\BienTheSanPham;
+use App\Models\DanhMuc;
 use App\Models\DanhMucCon; // Import model DanhMucCon
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 
 class SanPhamController extends Controller
 {
@@ -105,4 +107,78 @@ class SanPhamController extends Controller
         $sanPham->delete();
         return response()->json(['message' => 'Xóa sản phẩm thành công'], 200);
     }
+    public function getNewProducts()
+    {
+        $data = SanPham::orderBy('created_at', 'desc')
+            ->take(10)
+            ->get();
+
+        return response()->json([
+            'message' => 'Lấy sản phẩm mới nhất thành công!',
+            'data' => $data
+        ]);
+    }
+    public function getBestSellingProduct()
+    {
+        // Tính tổng số lượng bán của mỗi sản phẩm
+        $bestSellingProduct = SanPham::join('chi_tiet_don_hangs', 'san_phams.id', '=', 'chi_tiet_don_hangs.san_pham_id')
+            ->select('san_phams.id', 'san_phams.ten_san_pham', DB::raw('SUM(chi_tiet_don_hangs.so_luong) as total_quantity_sold'))
+            ->groupBy('san_phams.id', 'san_phams.ten_san_pham')
+            ->orderByDesc('total_quantity_sold')
+            ->take(10) // Lấy 10 sản phẩm bán chạy nhất
+            ->get();
+        return response()->json($bestSellingProduct);
+    }
+
+    public function getSanPhamTheoDanhMuc($danhMucId)
+    {
+
+        $danhMuc = DanhMuc::with('sanPhams')->find($danhMucId);
+
+        if (!$danhMuc) {
+            return response()->json([
+                'message' => 'Danh mục không tồn tại.'
+            ], 404);
+        }
+
+
+        return response()->json([
+            'danh_muc' => $danhMuc->ten_danh_muc,
+            'san_phams' => $danhMuc->sanPhams
+        ], 200);
+    }
+    public function getSanPhamTheoDanhMucCon($danhMucConId)
+    {
+        // Tìm danh mục con theo id
+        $danhMucCon = DanhMuc::with('sanPhams')->find($danhMucConId);
+
+        if (!$danhMucCon) {
+            return response()->json([
+                'message' => 'Danh mục con không tồn tại.'
+            ], 404); // Trả về lỗi 404 nếu không tìm thấy danh mục con
+        }
+
+        // Trả về các sản phẩm trong danh mục con dưới dạng JSON
+        return response()->json([
+            'danh_muc_con' => $danhMucCon->ten_danh_muc,
+            'san_phams' => $danhMucCon->sanPhams
+        ], 200); // Trả về sản phẩm dưới dạng JSON
+    }
+
+    public function timKiemSanPham(Request $request)
+    {
+        $query = $request->input('query'); // Lấy từ khóa tìm kiếm
+
+        if (!$query) {
+            return response()->json(['message' => 'Vui lòng nhập từ khóa tìm kiếm.'], 400);
+        }
+
+        $sanPhams = SanPham::where('ten_san_pham', 'like', "%$query%")
+            ->orWhere('mo_ta', 'like', "%$query%")
+            ->get();
+
+        return response()->json($sanPhams);
+    }
+
+
 }
