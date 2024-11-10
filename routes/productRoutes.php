@@ -11,5 +11,7 @@ Route::prefix('san-pham')->group(function () {
     Route::delete('/delete/{id}', [SanPhamController::class, 'deleteProduct']);
     Route::get('/getNewProducts', [SanPhamController::class, 'getNewProducts']);
     Route::get('/getBestSellingProduct', [SanPhamController::class, 'getBestSellingProduct']);
+    Route::get('/danh-muc/{id}', [SanPhamController::class, 'getSanPhamTheoDanhMuc']);
+    Route::get('/danh-muc-con/{id}', [SanPhamController::class, 'getSanPhamTheoDanhMucCon']);
 
 });

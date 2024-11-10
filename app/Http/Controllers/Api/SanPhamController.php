@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\SanPham;
 use App\Models\BienTheSanPham;
+use App\Models\DanhMuc;
 use App\Models\DanhMucCon; // Import model DanhMucCon
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -127,5 +128,40 @@ class SanPhamController extends Controller
             ->take(10) // Lấy 10 sản phẩm bán chạy nhất
             ->get();
         return response()->json($bestSellingProduct);
+    }
+
+    public function getSanPhamTheoDanhMuc($danhMucId)
+    {
+
+        $danhMuc = DanhMuc::with('sanPhams')->find($danhMucId);
+
+        if (!$danhMuc) {
+            return response()->json([
+                'message' => 'Danh mục không tồn tại.'
+            ], 404);
+        }
+
+
+        return response()->json([
+            'danh_muc' => $danhMuc->ten_danh_muc,
+            'san_phams' => $danhMuc->sanPhams
+        ], 200);
+    }
+    public function getSanPhamTheoDanhMucCon($danhMucConId)
+    {
+        // Tìm danh mục con theo id
+        $danhMucCon = DanhMuc::with('sanPhams')->find($danhMucConId);
+
+        if (!$danhMucCon) {
+            return response()->json([
+                'message' => 'Danh mục con không tồn tại.'
+            ], 404); // Trả về lỗi 404 nếu không tìm thấy danh mục con
+        }
+
+        // Trả về các sản phẩm trong danh mục con dưới dạng JSON
+        return response()->json([
+            'danh_muc_con' => $danhMucCon->ten_danh_muc,
+            'san_phams' => $danhMucCon->sanPhams
+        ], 200); // Trả về sản phẩm dưới dạng JSON
     }
 }
