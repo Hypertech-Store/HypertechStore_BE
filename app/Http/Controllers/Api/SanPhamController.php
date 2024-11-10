@@ -164,4 +164,21 @@ class SanPhamController extends Controller
             'san_phams' => $danhMucCon->sanPhams
         ], 200); // Trả về sản phẩm dưới dạng JSON
     }
+
+    public function timKiemSanPham(Request $request)
+    {
+        $query = $request->input('query'); // Lấy từ khóa tìm kiếm
+
+        if (!$query) {
+            return response()->json(['message' => 'Vui lòng nhập từ khóa tìm kiếm.'], 400);
+        }
+
+        $sanPhams = SanPham::where('ten_san_pham', 'like', "%$query%")
+            ->orWhere('mo_ta', 'like', "%$query%")
+            ->get();
+
+        return response()->json($sanPhams);
+    }
+
+
 }

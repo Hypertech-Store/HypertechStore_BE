@@ -13,5 +13,6 @@ Route::prefix('san-pham')->group(function () {
     Route::get('/getBestSellingProduct', [SanPhamController::class, 'getBestSellingProduct']);
     Route::get('/danh-muc/{id}', [SanPhamController::class, 'getSanPhamTheoDanhMuc']);
     Route::get('/danh-muc-con/{id}', [SanPhamController::class, 'getSanPhamTheoDanhMucCon']);
+    Route::get('/tim-kiem', [SanPhamController::class, 'timKiemSanPham']);
 
 });
