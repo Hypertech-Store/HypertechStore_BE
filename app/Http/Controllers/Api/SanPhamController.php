@@ -105,4 +105,15 @@ class SanPhamController extends Controller
         $sanPham->delete();
         return response()->json(['message' => 'Xóa sản phẩm thành công'], 200);
     }
+    public function getNewProducts()
+    {
+        $data = SanPham::orderBy('created_at', 'desc')
+            ->take(10)
+            ->get();
+
+        return response()->json([
+            'message' => 'Lấy sản phẩm mới nhất thành công!',
+            'data' => $data
+        ]);
+    }
 }

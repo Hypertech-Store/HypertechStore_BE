@@ -9,4 +9,6 @@ Route::prefix('san-pham')->group(function () {
     Route::get('/detail/{id}', [SanPhamController::class, 'getDetail']);
     Route::put('/update/{id}', [SanPhamController::class, 'updateProduct']);
     Route::delete('/delete/{id}', [SanPhamController::class, 'deleteProduct']);
+    Route::get('/getNewProducts', [SanPhamController::class, 'getNewProducts']);
+
 });
