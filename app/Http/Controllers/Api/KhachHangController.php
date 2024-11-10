@@ -88,7 +88,7 @@ class KhachHangController extends Controller
 
         return response()->json([
             'message' => 'Lấy thông tin người dùng thành công!',
-            'data' => $khachHang
+            'user' => $khachHang
         ], Response::HTTP_OK);
     }
 
