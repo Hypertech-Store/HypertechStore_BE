@@ -118,4 +118,12 @@ class DanhSachYeuThichController extends Controller
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+    public function danhSachYeuThich($khachHangId)
+{
+    $data = DanhSachYeuThich::query()
+        ->where('khach_hang_id', $khachHangId)
+        ->get();
+
+    return response()->json($data);
+}
 }
