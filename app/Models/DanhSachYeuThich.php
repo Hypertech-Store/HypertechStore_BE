@@ -16,11 +16,11 @@ class DanhSachYeuThich extends Model
 
     public function khachHang()
     {
-        return $this->belongsTo(KhachHang::class, 'ma_khach_hang');
+        return $this->belongsTo(KhachHang::class, 'khach_hang_id');
     }
 
     public function sanPham()
     {
-        return $this->belongsTo(SanPham::class, 'ma_san_pham');
+        return $this->belongsTo(SanPham::class, 'san_pham_id');
     }
 }

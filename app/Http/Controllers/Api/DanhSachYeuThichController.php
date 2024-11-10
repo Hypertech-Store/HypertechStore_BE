@@ -119,11 +119,11 @@ class DanhSachYeuThichController extends Controller
         }
     }
     public function danhSachYeuThich($khachHangId)
-{
-    $data = DanhSachYeuThich::query()
-        ->where('khach_hang_id', $khachHangId)
-        ->get();
+    {
+        $data = DanhSachYeuThich::with('sanPham')
+            ->where('khach_hang_id', $khachHangId)
+            ->get();
 
-    return response()->json($data);
-}
+        return response()->json($data);
+    }
 }

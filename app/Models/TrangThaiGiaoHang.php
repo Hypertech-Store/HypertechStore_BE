@@ -15,6 +15,6 @@ class TrangThaiGiaoHang extends Model
 
     public function giaoHangs()
     {
-        return $this->hasMany(GiaoHang::class, 'ma_trang_thai_giao_hang', 'ma_trang_thai_giao_hang');
+        return $this->hasMany(GiaoHang::class, 'trang_thai_giao_hang_id');
     }
 }
