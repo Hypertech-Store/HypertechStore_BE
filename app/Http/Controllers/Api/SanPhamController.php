@@ -8,6 +8,7 @@ use App\Models\BienTheSanPham;
 use App\Models\DanhMucCon; // Import model DanhMucCon
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 
 class SanPhamController extends Controller
 {
@@ -115,5 +116,16 @@ class SanPhamController extends Controller
             'message' => 'Lấy sản phẩm mới nhất thành công!',
             'data' => $data
         ]);
+    }
+    public function getBestSellingProduct()
+    {
+        // Tính tổng số lượng bán của mỗi sản phẩm
+        $bestSellingProduct = SanPham::join('chi_tiet_don_hangs', 'san_phams.id', '=', 'chi_tiet_don_hangs.san_pham_id')
+            ->select('san_phams.id', 'san_phams.ten_san_pham', DB::raw('SUM(chi_tiet_don_hangs.so_luong) as total_quantity_sold'))
+            ->groupBy('san_phams.id', 'san_phams.ten_san_pham')
+            ->orderByDesc('total_quantity_sold')
+            ->take(10) // Lấy 10 sản phẩm bán chạy nhất
+            ->get();
+        return response()->json($bestSellingProduct);
     }
 }
