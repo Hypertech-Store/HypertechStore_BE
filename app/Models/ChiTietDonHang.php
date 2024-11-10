@@ -18,11 +18,11 @@ class ChiTietDonHang extends Model
 
     public function donHang()
     {
-        return $this->belongsTo(DonHang::class, 'ma_don_hang');
+        return $this->belongsTo(DonHang::class, 'don_hang_id');
     }
 
     public function sanPham()
     {
-        return $this->belongsTo(SanPham::class, 'ma_san_pham');
+        return $this->belongsTo(SanPham::class, 'san_pham_id');
     }
 }

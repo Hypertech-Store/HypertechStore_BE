@@ -21,11 +21,11 @@ class GiaoHang extends Model
 
     public function donHang()
     {
-        return $this->belongsTo(DonHang::class, 'ma_don_hang', 'ma_don_hang');
+        return $this->belongsTo(DonHang::class, 'don_hang_id', );
     }
 
     public function trangThaiGiaoHang()
     {
-        return $this->belongsTo(TrangThaiGiaoHang::class, 'ma_trang_thai_giao_hang', 'ma_trang_thai_giao_hang');
+        return $this->belongsTo(TrangThaiGiaoHang::class, 'trang_thai_giao_hang_id');
     }
 }
