@@ -58,4 +58,26 @@ class DanhSachYeuThichController extends Controller
         ]);
     }
 
+    public function themSanPhamVaoDanhSachYeuThich(Request $request)
+    {
+        $khachHangId = $request->khach_hang_id;
+        $sanPhamId = $request->san_pham_id;
+
+        $data = DanhSachYeuThich::where('khach_hang_id', $khachHangId)
+                        ->where('san_pham_id', $sanPhamId)
+                        ->exists();
+
+        if (!$data) {
+            DanhSachYeuThich::query()->create($request->all());
+
+            return response()->json([
+                'message' => 'Sản phẩm đã được thêm vào danh sách yêu thích.',
+            ]);
+        }
+
+        return response()->json(
+            ['message' => 'Sản phẩm này đã có trong danh sách yêu thích.'
+        ]);
+    }
+
 }
