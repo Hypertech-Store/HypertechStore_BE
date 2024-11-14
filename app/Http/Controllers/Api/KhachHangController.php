@@ -17,38 +17,38 @@ class KhachHangController extends Controller
      * Display a listing of the resource.
      */
 
-     public function login(Request $request): \Illuminate\Http\JsonResponse
-     {
-         // Xác thực dữ liệu đầu vào
-         $request->validate([
-             'email' => 'required|email',
-             'mat_khau' => 'required|min:8',
-         ]);
+    public function login(Request $request): \Illuminate\Http\JsonResponse
+    {
+        // Xác thực dữ liệu đầu vào
+        $request->validate([
+            'email' => 'required|email',
+            'mat_khau' => 'required|min:8',
+        ]);
 
-         // Tìm người dùng theo email
-         $khachHang = KhachHang::where('email', $request->email)->first();
+        // Tìm người dùng theo email
+        $khachHang = KhachHang::where('email', $request->email)->first();
 
-         // Kiểm tra thông tin đăng nhập
-         if ($khachHang && Hash::check($request->mat_khau, $khachHang->mat_khau)) {
+        // Kiểm tra thông tin đăng nhập
+        if ($khachHang && Hash::check($request->mat_khau, $khachHang->mat_khau)) {
 
             Auth::login($khachHang);
 
-             return response()->json([
-                 'message' => 'Đăng nhập thành công!',
-                 'data' => $khachHang
-             ], Response::HTTP_OK);
-         } else {
-             return response()->json([
-                 'error' => 'Thông tin đăng nhập không chính xác.'
-             ], Response::HTTP_UNAUTHORIZED);
-         }
-     }
+            return response()->json([
+                'message' => 'Đăng nhập thành công!',
+                'user' => $khachHang
+            ], Response::HTTP_OK);
+        } else {
+            return response()->json([
+                'error' => 'Thông tin đăng nhập không chính xác.'
+            ], Response::HTTP_UNAUTHORIZED);
+        }
+    }
     /**
      * Xử lý đăng ký khách hàng mới.
      */
     public function register(StoreKhachHangRequest $request)
     {
-        $khachHang = KhachHang::query()->create( [
+        $khachHang = KhachHang::query()->create([
             'ten_nguoi_dung' => $request->ten_nguoi_dung,
             'email' => $request->email,
             'mat_khau' => Hash::make($request->mat_khau),
