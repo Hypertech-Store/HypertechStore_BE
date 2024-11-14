@@ -9,4 +9,8 @@ Route::prefix('gio-hang')->group(function () {
      Route::post('/xoa-san-pham', [GioHangController::class, 'removeProduct']);        // Xóa sản phẩm khỏi giỏ hàng
      Route::get('/{khach_hang_id}', [GioHangController::class, 'viewCart']);           // Xem giỏ hàng của khách hàng
      Route::delete('/xoa-gio-hang/{khach_hang_id}', [GioHangController::class, 'xoaGioHang']);
+<<<<<<< HEAD
+=======
+
+>>>>>>> 0b6cdac180a98b25933e6d1e7e0301f08c4cdf3b
 });

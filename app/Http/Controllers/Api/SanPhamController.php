@@ -199,6 +199,13 @@ class SanPhamController extends Controller
 
         // Thực hiện query để lấy sản phẩm trong khoảng giá
         $sanPhams = SanPham::whereBetween('gia', [$minPrice, $maxPrice])->get();
+<<<<<<< HEAD
+=======
+
+        // Trả về view với danh sách sản phẩm
+        return response()->json($sanPhams);
+    }
+>>>>>>> 0b6cdac180a98b25933e6d1e7e0301f08c4cdf3b
 
         // Trả về view với danh sách sản phẩm
         return response()->json($sanPhams);

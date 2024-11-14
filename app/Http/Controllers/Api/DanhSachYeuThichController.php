@@ -23,6 +23,7 @@ class DanhSachYeuThichController extends Controller
 
         return response()->json($data);
     }
+<<<<<<< HEAD
 
     /**
      * Xóa sản phẩm khỏi danh sách yêu thích
@@ -54,12 +55,17 @@ class DanhSachYeuThichController extends Controller
      */
     public function themSanPhamYeuThich(Request $request)
     {
+=======
+    public function xoaSanPhamYeuThich(Request $request)
+    {
+>>>>>>> 0b6cdac180a98b25933e6d1e7e0301f08c4cdf3b
         // Lấy dữ liệu từ request
         $khachHangId = $request->khach_hang_id;
         $sanPhamId = $request->san_pham_id;
 
         // Kiểm tra nếu thiếu dữ liệu cần thiết
         if (!$khachHangId || !$sanPhamId) {
+<<<<<<< HEAD
             return response()->json(['message' => 'Vui lòng cung cấp đầy đủ thông tin.'], 400);
         }
 
@@ -87,4 +93,55 @@ class DanhSachYeuThichController extends Controller
 
         return response()->json(['message' => 'Sản phẩm đã được thêm vào danh sách yêu thích.']);
     }
+=======
+            return response()->json([
+                'message' => 'Vui lòng cung cấp đầy đủ thông tin.'
+            ], 400);
+        }
+
+        // Tìm sản phẩm trong danh sách yêu thích của khách hàng
+        $yeuThich = DanhSachYeuThich::where('khach_hang_id', $khachHangId)
+            ->where('san_pham_id', $sanPhamId)
+            ->first();
+
+        // Kiểm tra nếu không tìm thấy sản phẩm
+        if (!$yeuThich) {
+            return response()->json([
+                'message' => 'Sản phẩm không tồn tại trong danh sách yêu thích của khách hàng.'
+            ], 404);
+        }
+        DanhSachYeuThich::destroy($yeuThich->id);
+
+
+        // Xóa sản phẩm khỏi danh sách yêu thích
+
+        return response()->json([
+            'message' => 'Sản phẩm đã được xóa khỏi danh sách yêu thích.',
+
+        ]);
+    }
+
+    public function themSanPhamVaoDanhSachYeuThich(Request $request)
+    {
+        $khachHangId = $request->khach_hang_id;
+        $sanPhamId = $request->san_pham_id;
+
+        $data = DanhSachYeuThich::where('khach_hang_id', $khachHangId)
+                        ->where('san_pham_id', $sanPhamId)
+                        ->exists();
+
+        if (!$data) {
+            DanhSachYeuThich::query()->create($request->all());
+
+            return response()->json([
+                'message' => 'Sản phẩm đã được thêm vào danh sách yêu thích.',
+            ]);
+        }
+
+        return response()->json(
+            ['message' => 'Sản phẩm này đã có trong danh sách yêu thích.'
+        ]);
+    }
+
+>>>>>>> 0b6cdac180a98b25933e6d1e7e0301f08c4cdf3b
 }

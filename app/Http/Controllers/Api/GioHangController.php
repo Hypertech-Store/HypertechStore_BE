@@ -134,21 +134,38 @@ class GioHangController extends Controller
         return response()->json(['message' => 'Xóa sản phẩm khỏi giỏ hàng thành công'], 200);
     }
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 0b6cdac180a98b25933e6d1e7e0301f08c4cdf3b
     public function xoaGioHang($khach_hang_id): JsonResponse
     {
         // Tìm giỏ hàng của khách hàng
         $gioHang = GioHang::where('khach_hang_id', $khach_hang_id)->first();
+<<<<<<< HEAD
+=======
+
+>>>>>>> 0b6cdac180a98b25933e6d1e7e0301f08c4cdf3b
         if (!$gioHang) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Không tìm thấy giỏ hàng của khách hàng.'
             ], 404);
         }
+<<<<<<< HEAD
         // Xóa tất cả chi tiết giỏ hàng dựa trên gio_hang_id
         ChiTietGioHang::where('gio_hang_id', $gioHang->id)->delete();
         // Xóa giỏ hàng của khách hàng
         $gioHang->delete();
+=======
+
+        // Xóa tất cả chi tiết giỏ hàng dựa trên gio_hang_id
+        ChiTietGioHang::where('gio_hang_id', $gioHang->id)->delete();
+
+        // Xóa giỏ hàng của khách hàng
+        $gioHang->delete();
+
+>>>>>>> 0b6cdac180a98b25933e6d1e7e0301f08c4cdf3b
         return response()->json([
             'status' => 'success',
             'message' => 'Giỏ hàng và chi tiết giỏ hàng của khách hàng đã được xóa thành công.'
