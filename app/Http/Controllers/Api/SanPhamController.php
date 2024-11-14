@@ -117,15 +117,19 @@ class SanPhamController extends Controller
     }
     public function getNewProducts()
     {
-        $data = SanPham::orderBy('created_at', 'desc')
+        $sevenDaysAgo = now()->subDays(7); // Lấy thời điểm 7 ngày trước
+
+        $data = SanPham::where('created_at', '>=', $sevenDaysAgo)
+            ->orderBy('created_at', 'desc')
             ->take(10)
             ->get();
 
         return response()->json([
-            'message' => 'Lấy sản phẩm mới nhất thành công!',
+            'message' => 'Lấy sản phẩm mới nhất trong 7 ngày thành công!',
             'data' => $data
         ]);
     }
+
     public function getBestSellingProduct()
     {
         // Tính tổng số lượng bán của mỗi sản phẩm
