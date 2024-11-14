@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreDanhSachYeuThichRequest;
 use App\Models\DanhSachYeuThich;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
+use App\Models\SanPham; // Thêm model SanPham để kiểm tra xem sản phẩm có tồn tại không
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
@@ -15,104 +15,6 @@ class DanhSachYeuThichController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
-    {
-        $data = DanhSachYeuThich::query()->get();
-
-        return response()->json($data);
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(StoreDanhSachYeuThichRequest $request)
-    {
-
-        $data = DanhSachYeuThich::query()->create($request->all());
-
-        return response()->json([
-            'message' => 'Đã thêm vào danh sách yêu thích',
-            'data' => $data
-        ], Response::HTTP_CREATED);
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        try {
-            $data = DanhSachYeuThich::query()->findOrFail($id);
-
-            return response()->json([
-                'message' => 'Chi tiết danh sách yêu thích id = ' . $id,
-                'data' => $data
-            ]);
-        } catch (\Throwable $th) {
-            if ($th instanceof ModelNotFoundException) {
-                return response()->json([
-                    'message' => 'Không tìm thấy danh sách yêu thích id = ' . $id,
-
-                ], Response::HTTP_NOT_FOUND);
-            }
-            Log::error('Lỗi xóa danh sách yêu thích: ' . $th->getMessage());
-
-            return response()->json([
-                'message' => 'Không tìm thấy danh sách yêu thích id = ' . $id,
-
-            ], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(StoreDanhSachYeuThichRequest $request, string $id)
-    {
-        try {
-            $data = DanhSachYeuThich::query()->findOrFail($id);
-            $data->update($request->all());
-
-            return response()->json([
-                'message' => 'Cập nhật danh sách yêu thích id = ' . $id,
-                'data' => $data
-            ]);
-        } catch (ModelNotFoundException $e) {
-            return response()->json([
-                'message' => 'Không tìm thấy danh sách yêu thích id = ' . $id,
-            ], Response::HTTP_NOT_FOUND);
-        } catch (\Exception $e) {
-            Log::error('Lỗi cập nhật danh sách yêu thích: ' . $e->getMessage());
-
-            return response()->json([
-                'message' => 'Có lỗi xảy ra khi cập nhật danh sách yêu thích',
-            ], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-
-        try {
-            DanhSachYeuThich::destroy($id);
-            return response()->json([
-                'message' => 'Xóa thành công',
-            ], Response::HTTP_OK);
-        } catch (ModelNotFoundException $e) {
-            return response()->json([
-                'message' => 'Không tìm thấy danh sách yêu thích id = ' . $id,
-            ], Response::HTTP_NOT_FOUND);
-        } catch (\Exception $e) {
-            Log::error('Lỗi xóa danh sách yêu thích: ' . $e->getMessage());
-
-            return response()->json([
-                'message' => 'Có lỗi xảy ra khi xóa danh sách yêu thích',
-            ], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-    }
     public function danhSachYeuThich($khachHangId)
     {
         $data = DanhSachYeuThich::with('sanPham')
@@ -120,5 +22,69 @@ class DanhSachYeuThichController extends Controller
             ->get();
 
         return response()->json($data);
+    }
+
+    /**
+     * Xóa sản phẩm khỏi danh sách yêu thích
+     */
+    public function xoaSanPhamYeuThich(Request $request)
+    {
+        $khachHangId = $request->khach_hang_id;
+        $sanPhamId = $request->san_pham_id;
+
+        if (!$khachHangId || !$sanPhamId) {
+            return response()->json(['message' => 'Vui lòng cung cấp đầy đủ thông tin.'], 400);
+        }
+
+        $yeuThich = DanhSachYeuThich::where('khach_hang_id', $khachHangId)
+            ->where('san_pham_id', $sanPhamId)
+            ->first();
+
+        if (!$yeuThich) {
+            return response()->json(['message' => 'Sản phẩm không tồn tại trong danh sách yêu thích.'], 404);
+        }
+
+        DanhSachYeuThich::destroy($yeuThich->id);
+
+        return response()->json(['message' => 'Sản phẩm đã được xóa khỏi danh sách yêu thích.']);
+    }
+
+    /**
+     * Thêm sản phẩm vào danh sách yêu thích
+     */
+    public function themSanPhamYeuThich(Request $request)
+    {
+        // Lấy dữ liệu từ request
+        $khachHangId = $request->khach_hang_id;
+        $sanPhamId = $request->san_pham_id;
+
+        // Kiểm tra nếu thiếu dữ liệu cần thiết
+        if (!$khachHangId || !$sanPhamId) {
+            return response()->json(['message' => 'Vui lòng cung cấp đầy đủ thông tin.'], 400);
+        }
+
+        // Kiểm tra xem sản phẩm có tồn tại hay không
+        $sanPham = SanPham::find($sanPhamId);
+
+        if (!$sanPham) {
+            return response()->json(['message' => 'Sản phẩm không tồn tại.'], 404);
+        }
+
+        // Kiểm tra nếu sản phẩm đã tồn tại trong danh sách yêu thích của khách hàng
+        $existingYeuThich = DanhSachYeuThich::where('khach_hang_id', $khachHangId)
+            ->where('san_pham_id', $sanPhamId)
+            ->first();
+
+        if ($existingYeuThich) {
+            return response()->json(['message' => 'Sản phẩm đã có trong danh sách yêu thích.'], 400);
+        }
+
+        // Tạo mới danh sách yêu thích
+        $yeuThich = new DanhSachYeuThich();
+        $yeuThich->khach_hang_id = $khachHangId;
+        $yeuThich->san_pham_id = $sanPhamId;
+        $yeuThich->save();
+
+        return response()->json(['message' => 'Sản phẩm đã được thêm vào danh sách yêu thích.']);
     }
 }

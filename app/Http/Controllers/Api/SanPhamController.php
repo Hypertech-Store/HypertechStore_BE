@@ -22,8 +22,16 @@ class SanPhamController extends Controller
         // Lấy dữ liệu với phân trang
         $sanPhams = SanPham::paginate($numberRow, ['*'], 'page', $page);
 
+        $minPrice = SanPham::min('gia');
+        $maxPrice = SanPham::max('gia');
+
         // Trả về dữ liệu dưới dạng JSON
-        return response()->json($sanPhams);
+        return response()->json([
+            'status' => 'success',
+            'data' => $sanPhams,
+            'min_price' => $minPrice,
+            'max_price' => $maxPrice,
+        ]);
     }
 
     public function createProduct(Request $request)
@@ -179,6 +187,16 @@ class SanPhamController extends Controller
 
         return response()->json($sanPhams);
     }
+    public function locSanPhamTheoGia(Request $request)
+    {
+        // Lấy giá trị min và max từ request, mặc định là 0 cho min và 10000000 cho max
+        $minPrice = $request->min;
+        $maxPrice = $request->max;
 
+        // Thực hiện query để lấy sản phẩm trong khoảng giá
+        $sanPhams = SanPham::whereBetween('gia', [$minPrice, $maxPrice])->get();
 
+        // Trả về view với danh sách sản phẩm
+        return response()->json($sanPhams);
+    }
 }
