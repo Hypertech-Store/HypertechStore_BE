@@ -16,8 +16,8 @@ return new class extends Migration
             $table->id();
             $table->foreignIdFor(SanPham::class)->constrained();
             $table->decimal('sale_theo_phan_tram', 5, 2);
-            $table->date('ngay_bat_dau_sale');
-            $table->date('ngay_ket_thuc_sale');
+            $table->dateTime('ngay_bat_dau_sale');
+            $table->dateTime('ngay_ket_thuc_sale');
             $table->timestamps();
         });
     }
