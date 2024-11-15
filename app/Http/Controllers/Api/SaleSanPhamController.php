@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\SaleSanPham;
 use App\Models\SanPham;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
@@ -35,9 +36,32 @@ class SaleSanPhamController extends Controller
             'message' => 'Sản phẩm sale đã được thêm thành công.',
             'data' => [
                 'sale_san_pham' => $sale_san_pham,
-                'gia' => $sanPham->gia
             ]
 
         ], Response::HTTP_CREATED);
+    }
+
+    public function getSaleSanPhams(Request $request)
+    {
+        // Lấy ngày hiện tại
+        $currentDate = Carbon::now();
+
+        // Lấy các sản phẩm sale còn hiệu lực
+        $saleSanPhams = SaleSanPham::where('ngay_bat_dau_sale', '<=', $currentDate)
+            ->where('ngay_ket_thuc_sale', '>=', $currentDate)
+            ->with('sanPham')
+            ->get();
+
+        // Nếu không có sản phẩm sale nào
+        if ($saleSanPhams->isEmpty()) {
+            return response()->json([
+                'message' => 'Không có sản phẩm nào đang trong chương trình sale.',
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        return response()->json([
+            'message' => 'Danh sách sản phẩm sale',
+            'data' => $saleSanPhams,
+        ], Response::HTTP_OK);
     }
 }
