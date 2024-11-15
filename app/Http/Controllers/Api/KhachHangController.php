@@ -10,6 +10,8 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 class KhachHangController extends Controller
 {
@@ -134,4 +136,54 @@ class KhachHangController extends Controller
             'data' => $khachHang
         ], Response::HTTP_OK);
     }
+
+    // Gửi email đặt lại mật khẩu
+    public function quenMatKhau(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        $khachHang = KhachHang::where('email', $request->email)->first();
+
+        if (!$khachHang) {
+            return response()->json(['message' => 'Email không tồn tại trong hệ thống.'], 404);
+        }
+
+        // Tạo token ngẫu nhiên
+        $token = Str::random(60);
+        $khachHang->update(['mat_khau_reset_token' => $token]);
+
+        // Gửi email đặt lại mật khẩu
+        Mail::send('emails.quen-mat-khau', ['token' => $token], function ($message) use ($khachHang) {
+            $message->to($khachHang->email)
+                ->subject('Yêu cầu đặt lại mật khẩu');
+        });
+
+        return response()->json(['message' => 'Đã gửi email đặt lại mật khẩu.']);
+    }
+
+    // Đặt lại mật khẩu
+    public function datLaiMatKhau(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $request->validate([
+            'token' => 'required',
+            'mat_khau_moi' => 'required|min:6|confirmed',
+        ]);
+
+        $khachHang = KhachHang::where('mat_khau_reset_token', $request->token)->first();
+
+        if (!$khachHang) {
+            return response()->json(['message' => 'Token không hợp lệ.'], 400);
+        }
+
+        // Cập nhật mật khẩu mới
+        $khachHang->update([
+            'mat_khau' => Hash::make($request->mat_khau_moi),
+            'mat_khau_reset_token' => null,
+        ]);
+
+        return response()->json(['message' => 'Đặt lại mật khẩu thành công.']);
+    }
+
 }

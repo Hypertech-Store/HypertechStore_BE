@@ -54,3 +54,6 @@ require __DIR__ . '/SaleSanPhamRoutes.php';
 require __DIR__ . '/productRoutes.php';
 
 require __DIR__ . '/GioHangRoutes.php';
+
+require __DIR__ . '/ForgotPasswordRouters.php';
+

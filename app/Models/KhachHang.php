@@ -21,6 +21,7 @@ class KhachHang extends Model implements Authenticatable
         'gioi_tinh',
         'ngay_sinh',
         'mat_khau',
+        'mat_khau_reset_token',
     ];
 
     public function donHangs()
