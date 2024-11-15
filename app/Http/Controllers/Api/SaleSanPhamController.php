@@ -43,13 +43,13 @@ class SaleSanPhamController extends Controller
 
     public function getSaleSanPhams(Request $request)
     {
-        // Lấy ngày hiện tại
-        $currentDate = Carbon::now();
+        // Lấy ngày hiện tại với thời gian đầy đủ (Ngày giờ hiện tại ở Việt Nam)
+        $currentDate = Carbon::now()->timezone('Asia/Ho_Chi_Minh');
 
-        // Lấy các sản phẩm sale còn hiệu lực
+        // Lấy các sản phẩm sale còn hiệu lực (Sale hiện tại còn hiệu lực nếu ngày bắt đầu nhỏ hơn hoặc bằng hiện tại, và ngày kết thúc lớn hơn hoặc bằng hiện tại)
         $saleSanPhams = SaleSanPham::where('ngay_bat_dau_sale', '<=', $currentDate)
             ->where('ngay_ket_thuc_sale', '>=', $currentDate)
-            ->with('sanPham')
+            ->with('sanPham')  // Tải thông tin sản phẩm liên quan
             ->get();
 
         // Nếu không có sản phẩm sale nào
@@ -64,4 +64,5 @@ class SaleSanPhamController extends Controller
             'data' => $saleSanPhams,
         ], Response::HTTP_OK);
     }
+
 }
