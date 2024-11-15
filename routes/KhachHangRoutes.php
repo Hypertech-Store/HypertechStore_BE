@@ -15,6 +15,5 @@ Route::prefix('khach-hang')->group(function () {
 
     Route::put('/update-profile/{id}', [KhachHangController::class, 'update']); // API cập nhật thông tin người dùng
 
-
+    Route::get('/tai-khoan', [KhachHangController::class, 'getAllUsers']);
 });
-

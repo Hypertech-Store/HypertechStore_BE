@@ -197,4 +197,26 @@ class KhachHangController extends Controller
     }
 
 
+    public function getAllUsers(): \Illuminate\Http\JsonResponse
+    {
+        // Lấy tất cả người dùng từ cơ sở dữ liệu
+        $users = KhachHang::all();
+
+        // Kiểm tra nếu không có người dùng nào
+        if ($users->isEmpty()) {
+            return response()->json([
+                'message' => 'Không có người dùng nào',
+            ], 404);
+        }
+
+        // Trả về danh sách người dùng
+        return response()->json([
+            'message' => 'Lấy danh sách người dùng thành công',
+            'data' => $users,
+        ],
+            200
+        );
+    }
+
+
 }
