@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('mat_khau', 255)->notNull();
             $table->string('ho_ten', 255)->nullable();
             $table->string('email', 255)->unique()->nullable();
+            $table->integer('role');
             $table->timestamps();
         });
     }
