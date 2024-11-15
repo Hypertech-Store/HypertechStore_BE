@@ -13,5 +13,6 @@ class QuanTriVien extends Model
         'mat_khau',
         'ho_ten',
         'email',
+        'role'
     ];
 }
