@@ -49,6 +49,8 @@ require __DIR__ . '/DinhKemRoutes.php';
 
 require __DIR__ . '/BinhLuanRoutes.php';
 
+require __DIR__ . '/SaleSanPhamRoutes.php';
+
 require __DIR__ . '/productRoutes.php';
 
 require __DIR__ . '/GioHangRoutes.php';

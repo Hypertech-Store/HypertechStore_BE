@@ -203,4 +203,6 @@ class SanPhamController extends Controller
         // Trả về view với danh sách sản phẩm
         return response()->json($sanPhams);
     }
+
+
 }
