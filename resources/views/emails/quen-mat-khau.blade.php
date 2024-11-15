@@ -66,7 +66,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>Xin chào,</h1>
+            <h1>Xin chào {{$name}},</h1>
         </div>
         <div class="content">
             <p>Bạn vừa yêu cầu đặt lại mật khẩu. Vui lòng nhấn vào nút dưới đây để thay đổi mật khẩu của bạn:</p>

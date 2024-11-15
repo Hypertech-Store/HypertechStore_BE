@@ -155,10 +155,17 @@ class KhachHangController extends Controller
         $khachHang->update(['mat_khau_reset_token' => $token]);
 
         // Gửi email đặt lại mật khẩu
-        Mail::send('emails.quen-mat-khau', ['token' => $token], function ($message) use ($khachHang) {
-            $message->to($khachHang->email)
-                ->subject('Yêu cầu đặt lại mật khẩu');
-        });
+        Mail::send(
+            'emails.quen-mat-khau',
+            [
+                'token' => $token,
+                'name' => $khachHang->ho_ten,
+            ],
+            function ($message) use ($khachHang) {
+                $message->to($khachHang->email)
+                    ->subject('Yêu cầu đặt lại mật khẩu');
+            }
+        );
 
         return response()->json(['message' => 'Đã gửi email đặt lại mật khẩu.']);
     }
@@ -183,7 +190,11 @@ class KhachHangController extends Controller
             'mat_khau_reset_token' => null,
         ]);
 
-        return response()->json(['message' => 'Đặt lại mật khẩu thành công.']);
+        return response()->json([
+            'message' => 'Đặt lại mật khẩu thành công.',
+            'user' => $khachHang->only(['id', 'email', 'ho_ten']),
+        ]);
     }
+
 
 }
