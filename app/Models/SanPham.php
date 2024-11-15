@@ -59,4 +59,8 @@ class SanPham extends Model
     {
         return $this->hasMany(ChiTietGioHang::class);
     }
+    public function saleSanPhams()
+    {
+        return $this->hasMany(SaleSanPham::class);
+    }
 }
