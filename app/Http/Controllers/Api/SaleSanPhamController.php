@@ -52,17 +52,17 @@ class SaleSanPhamController extends Controller
             ->with('sanPham')  // Tải thông tin sản phẩm liên quan
             ->get();
 
-        // Nếu không có sản phẩm sale nào
+        // Kiểm tra nếu không có sản phẩm nào đang trong chương trình sale
         if ($saleSanPhams->isEmpty()) {
             return response()->json([
                 'message' => 'Không có sản phẩm nào đang trong chương trình sale.',
-            ], Response::HTTP_NOT_FOUND);
+                'data' => [],  // Trả về mảng rỗng nếu không có sản phẩm
+            ], Response::HTTP_OK);
         }
 
         return response()->json([
             'message' => 'Danh sách sản phẩm sale',
-            'data' => $saleSanPhams,
+            'data' => $saleSanPhams, // Trả về dữ liệu sản phẩm sale
         ], Response::HTTP_OK);
     }
-
 }
