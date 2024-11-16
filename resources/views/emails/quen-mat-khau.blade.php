@@ -126,205 +126,272 @@
     </style>
 </head>
 
-<body class="bg-light"
-    style="outline: 0; width: 100%; min-width: 100%; height: 100%; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; font-family: Helvetica, Arial, sans-serif; line-height: 24px; font-weight: normal; font-size: 16px; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; box-sizing: border-box; color: #000000; margin: 0; padding: 0; border-width: 0;"
-    bgcolor="#f7fafc">
-    <table class="bg-light body" valign="top" role="presentation" border="0" cellpadding="0" cellspacing="0"
-        style="outline: 0; width: 100%; min-width: 100%; height: 100%; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; font-family: Helvetica, Arial, sans-serif; line-height: 24px; font-weight: normal; font-size: 16px; -moz-box-sizing: border-box; -webkit-box-sizing: border-box; box-sizing: border-box; color: #000000; margin: 0; padding: 0; border-width: 0;"
-        bgcolor="#f7fafc">
-        <tbody>
-            <tr>
-                <td valign="top" style="line-height: 24px; font-size: 16px; margin: 0;" align="left"
-                    bgcolor="#f7fafc">
-                    <table class="container" role="presentation" border="0" cellpadding="0" cellspacing="0"
-                        style="width: 100%;">
-                        <tbody>
-                            <tr>
-                                <td align="center"
-                                    style="line-height: 24px; font-size: 16px; margin: 0; padding: 0 16px;">
-                                    <table align="center" role="presentation" border="0" cellpadding="0"
-                                        cellspacing="0" style="width: 100%; max-width: 600px; margin: 0 auto;">
-                                        <tbody>
-                                            <tr>
-                                                <td style="line-height: 24px; font-size: 16px; margin: 0;"
-                                                    align="left">
-                                                    <table class="s-10 w-full" role="presentation" border="0"
-                                                        cellpadding="0" cellspacing="0" style="width: 100%;"
-                                                        width="100%">
-                                                        <tbody>
-                                                            <tr>
-                                                                <td style="line-height: 40px; font-size: 40px; width: 100%; height: 40px; margin: 0;"
-                                                                    align="left" width="100%" height="40">
-                                                                    &#160;
-                                                                </td>
-                                                            </tr>
-                                                        </tbody>
-                                                    </table>
-                                                    <table class="ax-center" role="presentation" align="center"
-                                                        border="0" cellpadding="0" cellspacing="0"
-                                                        style="margin: 0 auto;">
-                                                        <tbody>
-                                                            <tr>
-                                                                <td style="line-height: 24px; font-size: 16px; margin: 0;"
-                                                                    align="left">
-                                                                    <img class="w-24"
-                                                                        src="../src/assets/img/logo/logo1.png"
-                                                                        style="height: auto; line-height: 100%; outline: none; text-decoration: none; display: block; width: 96px; border-style: none; border-width: 0;"
-                                                                        width="96">
-                                                                </td>
-                                                            </tr>
-                                                        </tbody>
-                                                    </table>
-                                                    <table class="s-10 w-full" role="presentation" border="0"
-                                                        cellpadding="0" cellspacing="0" style="width: 100%;"
-                                                        width="100%">
-                                                        <tbody>
-                                                            <tr>
-                                                                <td style="line-height: 40px; font-size: 40px; width: 100%; height: 40px; margin: 0;"
-                                                                    align="left" width="100%" height="40">
-                                                                    &#160;
-                                                                </td>
-                                                            </tr>
-                                                        </tbody>
-                                                    </table>
-                                                    <table class="card p-6 p-lg-10 space-y-4" role="presentation"
-                                                        border="0" cellpadding="0" cellspacing="0"
-                                                        style="border-radius: 6px; border-collapse: separate !important; width: 100%; overflow: hidden; border: 1px solid #e2e8f0;"
-                                                        bgcolor="#ffffff">
-                                                        <tbody>
-                                                            <tr>
-                                                                <td style="line-height: 24px; font-size: 16px; width: 100%; margin: 0; padding: 40px;"
-                                                                    align="left" bgcolor="#ffffff">
-                                                                    <h1 class="h3 fw-700"
-                                                                        style="padding-top: 0; padding-bottom: 0; font-weight: 700 !important; vertical-align: baseline; font-size: 28px; line-height: 33.6px; margin: 0;"
-                                                                        align="left">
-                                                                        Xin chào, {{ $name }}
-                                                                    </h1>
-                                                                    <table class="s-4 w-full" role="presentation"
-                                                                        border="0" cellpadding="0" cellspacing="0"
-                                                                        style="width: 100%;" width="100%">
-                                                                        <tbody>
-                                                                            <tr>
-                                                                                <td style="line-height: 16px; font-size: 16px; width: 100%; height: 16px; margin: 0;"
-                                                                                    align="left" width="100%"
-                                                                                    height="16">
-                                                                                    &#160;
-                                                                                </td>
-                                                                            </tr>
-                                                                        </tbody>
-                                                                    </table>
-                                                                    <p class=""
-                                                                        style="line-height: 24px; font-size: 16px; width: 100%; margin: 0;"
-                                                                        align="left">
-                                                                        Bạn vừa yêu cầu thay đổi mật khẩu cho tài khoản
-                                                                        của mình. Để tiếp tục, vui lòng nhấn vào nút
-                                                                        dưới đây để cập nhật mật khẩu mới cho tài khoản
-                                                                        của bạn. Nếu bạn không yêu cầu thay đổi mật
-                                                                        khẩu, vui lòng bỏ qua email này.
-                                                                    </p>
-                                                                    <table class="s-4 w-full" role="presentation"
-                                                                        border="0" cellpadding="0"
-                                                                        cellspacing="0" style="width: 100%;"
-                                                                        width="100%">
-                                                                        <tbody>
-                                                                            <tr>
-                                                                                <td style="line-height: 16px; font-size: 16px; width: 100%; height: 16px; margin: 0;"
-                                                                                    align="left" width="100%"
-                                                                                    height="16">
-                                                                                    &#160;
-                                                                                </td>
-                                                                            </tr>
-                                                                        </tbody>
-                                                                    </table>
-                                                                    <table class="btn btn-primary p-3 fw-700"
-                                                                        role="presentation" border="0"
-                                                                        cellpadding="0" cellspacing="0"
-                                                                        style="border-radius: 6px; border-collapse: separate !important; font-weight: 700 !important;">
-                                                                        <tbody>
-                                                                            <tr>
-                                                                                <td style="line-height: 24px; font-size: 16px; border-radius: 6px; font-weight: 700 !important; margin: 0;"
-                                                                                    align="center" bgcolor="#0d6efd">
-                                                                                    <a href="{{ 'http://localhost:5173/cap-nhat-mat-khau?token=' . $token }}"
-                                                                                        style="color: #ffffff; font-size: 16px; font-family: Helvetica, Arial, sans-serif; text-decoration: none; border-radius: 6px; line-height: 20px; display: block; font-weight: 700 !important; white-space: nowrap; background-color: #0d6efd; padding: 12px; border: 1px solid #0d6efd;">
-                                                                                        Đặt lại mật khẩu
-                                                                                    </a>
-                                                                                </td>
-                                                                            </tr>
-                                                                        </tbody>
-                                                                    </table>
-                                                                </td>
-                                                            </tr>
-                                                        </tbody>
-                                                    </table>
-                                                    <table class="s-10 w-full" role="presentation" border="0"
-                                                        cellpadding="0" cellspacing="0" style="width: 100%;"
-                                                        width="100%">
-                                                        <tbody>
-                                                            <tr>
-                                                                <td style="line-height: 40px; font-size: 40px; width: 100%; height: 40px; margin: 0;"
-                                                                    align="left" width="100%" height="40">
-                                                                    &#160;
-                                                                </td>
-                                                            </tr>
-                                                        </tbody>
-                                                    </table>
-                                                    <table class="ax-center" role="presentation" align="center"
-                                                        border="0" cellpadding="0" cellspacing="0"
-                                                        style="margin: 0 auto;">
-                                                        <tbody>
-                                                            <tr>
-                                                                <td style="line-height: 24px; font-size: 16px; margin: 0;"
-                                                                    align="left">
-                                                                    <img class="w-40"
-                                                                        src="../src/assets/img/logo/logo2.png"
-                                                                        style="height: auto; line-height: 100%; outline: none; text-decoration: none; display: block; width: 160px; border-style: none; border-width: 0;"
-                                                                        width="160">
-                                                                </td>
-                                                            </tr>
-                                                        </tbody>
-                                                    </table>
-                                                    <table class="s-6 w-full" role="presentation" border="0"
-                                                        cellpadding="0" cellspacing="0" style="width: 100%;"
-                                                        width="100%">
-                                                        <tbody>
-                                                            <tr>
-                                                                <td style="line-height: 24px; font-size: 24px; width: 100%; height: 24px; margin: 0;"
-                                                                    align="left" width="100%" height="24">
-                                                                    &#160;
-                                                                </td>
-                                                            </tr>
-                                                        </tbody>
-                                                    </table>
-                                                    <div class="text-muted text-center" style="color: #718096;"
-                                                        align="center">
-                                                        Sent with &lt;3 from Hip Corp. <br>
-                                                        Hip Corp. 1 Hip Street<br>
-                                                        Gnarly State, 01234 USA <br>
-                                                    </div>
-                                                    <table class="s-6 w-full" role="presentation" border="0"
-                                                        cellpadding="0" cellspacing="0" style="width: 100%;"
-                                                        width="100%">
-                                                        <tbody>
-                                                            <tr>
-                                                                <td style="line-height: 24px; font-size: 24px; width: 100%; height: 24px; margin: 0;"
-                                                                    align="left" width="100%" height="24">
-                                                                    &#160;
-                                                                </td>
-                                                            </tr>
-                                                        </tbody>
-                                                    </table>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </td>
-            </tr>
-        </tbody>
-    </table>
-</body>
+<table width="100%" height="100%" bgcolor="#E4E6E9" cellspacing="0" cellpadding="0" border="0">
+    <tbody>
+        <tr>
+            <td width="100%" align="center" valign="top" bgcolor="#E4E6E9"
+                style="background-color:#E4E6E9; min-height: 200px;">
+                <table>
+                    <tbody>
+                        <tr>
+                            <td class="table-td-wrap" align="center" width="458">
+                                <table class="table-space" height="18"
+                                    style="height: 18px; font-size: 0px; line-height: 0; width: 450px; background-color: #e4e6e9;"
+                                    width="450" bgcolor="#E4E6E9" cellspacing="0" cellpadding="0" border="0">
+                                    <tbody>
+                                        <tr>
+                                            <td class="table-space-td" valign="middle" height="18"
+                                                style="height: 18px; width: 450px; background-color: #e4e6e9;"
+                                                width="450" bgcolor="#E4E6E9" align="left">&nbsp;</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <table class="table-space" height="8"
+                                    style="height: 8px; font-size: 0px; line-height: 0; width: 450px; background-color: #ffffff;"
+                                    width="450" bgcolor="#FFFFFF" cellspacing="0" cellpadding="0" border="0">
+                                    <tbody>
+                                        <tr>
+                                            <td class="table-space-td" valign="middle" height="8"
+                                                style="height: 8px; width: 450px; background-color: #ffffff;"
+                                                width="450" bgcolor="#FFFFFF" align="left">&nbsp;</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+
+                                <table class="table-row" width="450" bgcolor="#FFFFFF"
+                                    style="table-layout: fixed; background-color: #ffffff;" cellspacing="0"
+                                    cellpadding="0" border="0">
+                                    <tbody>
+                                        <tr>
+                                            <td class="table-row-td"
+                                                style="font-family: Arial, sans-serif; line-height: 19px; color: #444444; font-size: 13px; font-weight: normal; padding-left: 36px; padding-right: 36px;"
+                                                valign="top" align="left">
+                                                <table class="table-col" align="left" width="378" cellspacing="0"
+                                                    cellpadding="0" border="0" style="table-layout: fixed;">
+                                                    <tbody>
+                                                        <tr>
+                                                            <td class="table-col-td" width="378"
+                                                                style="font-family: Arial, sans-serif; line-height: 19px; color: #444444; font-size: 13px; font-weight: normal; width: 378px;"
+                                                                valign="top" align="left">
+                                                                <table class="header-row" width="378" cellspacing="0"
+                                                                    cellpadding="0" border="0"
+                                                                    style="table-layout: fixed;">
+                                                                    <tbody>
+                                                                        <tr>
+                                                                            <td class="header-row-td" width="378"
+                                                                                style="font-family: Arial, sans-serif; font-weight: normal; line-height: 19px; color: #478fca; margin: 0px; font-size: 18px; padding-bottom: 10px; padding-top: 15px;"
+                                                                                valign="top" align="left">
+                                                                                Quên mật khẩu?
+                                                                            </td>
+                                                                        </tr>
+                                                                    </tbody>
+                                                                </table>
+                                                                <div
+                                                                    style="font-family: Arial, sans-serif; line-height: 20px; color: #444444; font-size: 13px;">
+                                                                    <b style="color: #777777;">Chúng tôi nhận thấy bạn
+                                                                        đã yêu cầu khôi phục mật khẩu.</b>
+                                                                    <br> Vui lòng nhấp vào liên kết dưới đây để đặt lại
+                                                                    mật khẩu của bạn và tiếp tục sử dụng tài khoản:
+                                                                    <br><br>
+                                                                    Nếu bạn không yêu cầu thay đổi mật khẩu, bạn có thể
+                                                                    bỏ qua email này.
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+
+                                                </table>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+
+                                <table class="table-space" height="12"
+                                    style="height: 12px; font-size: 0px; line-height: 0; width: 450px; background-color: #ffffff;"
+                                    width="450" bgcolor="#FFFFFF" cellspacing="0" cellpadding="0" border="0">
+                                    <tbody>
+                                        <tr>
+                                            <td class="table-space-td" valign="middle" height="12"
+                                                style="height: 12px; width: 450px; background-color: #ffffff;"
+                                                width="450" bgcolor="#FFFFFF" align="left">&nbsp;</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <table class="table-space" height="12"
+                                    style="height: 12px; font-size: 0px; line-height: 0; width: 450px; background-color: #ffffff;"
+                                    width="450" bgcolor="#FFFFFF" cellspacing="0" cellpadding="0"
+                                    border="0">
+                                    <tbody>
+                                        <tr>
+                                            <td class="table-space-td" valign="middle" height="12"
+                                                style="height: 12px; width: 450px; padding-left: 16px; padding-right: 16px; background-color: #ffffff;"
+                                                width="450" bgcolor="#FFFFFF" align="center">&nbsp;
+                                                <table bgcolor="#E8E8E8" height="0" width="100%"
+                                                    cellspacing="0" cellpadding="0" border="0">
+                                                    <tbody>
+                                                        <tr>
+                                                            <td bgcolor="#E8E8E8" height="1" width="100%"
+                                                                style="height: 1px; font-size:0;" valign="top"
+                                                                align="left">&nbsp;</td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <table class="table-space" height="16"
+                                    style="height: 16px; font-size: 0px; line-height: 0; width: 450px; background-color: #ffffff;"
+                                    width="450" bgcolor="#FFFFFF" cellspacing="0" cellpadding="0"
+                                    border="0">
+                                    <tbody>
+                                        <tr>
+                                            <td class="table-space-td" valign="middle" height="16"
+                                                style="height: 16px; width: 450px; background-color: #ffffff;"
+                                                width="450" bgcolor="#FFFFFF" align="left">&nbsp;</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+
+                                <table class="table-row" width="450" bgcolor="#FFFFFF"
+                                    style="table-layout: fixed; background-color: #ffffff;" cellspacing="0"
+                                    cellpadding="0" border="0">
+                                    <tbody>
+                                        <tr>
+                                            <td class="table-row-td"
+                                                style="font-family: Arial, sans-serif; line-height: 19px; color: #444444; font-size: 13px; font-weight: normal; padding-left: 36px; padding-right: 36px;"
+                                                valign="top" align="left">
+                                                <table class="table-col" align="left" width="378"
+                                                    cellspacing="0" cellpadding="0" border="0"
+                                                    style="table-layout: fixed;">
+                                                    <tbody>
+                                                        <tr>
+                                                            <td class="table-col-td" width="378"
+                                                                style="font-family: Arial, sans-serif; line-height: 19px; color: #444444; font-size: 13px; font-weight: normal; width: 378px;"
+                                                                valign="top" align="left">
+                                                                <div
+                                                                    style="font-family: Arial, sans-serif; line-height: 19px; color: #444444; font-size: 13px; text-align: center;">
+                                                                    <a href="{{ 'http://localhost:5173/cap-nhat-mat-khau?token=' . $token }}"
+                                                                        style="color: #ffffff; text-decoration: none; margin: 0px; text-align: center; vertical-align: baseline; border: 4px solid #6fb3e0; padding: 4px 9px; font-size: 15px; line-height: 21px; background-color: #6fb3e0;">&nbsp;
+                                                                        Đặt lại mật khẩu &nbsp;</a>
+                                                                </div>
+                                                                <table class="table-space" height="16"
+                                                                    style="height: 16px; font-size: 0px; line-height: 0; width: 378px; background-color: #ffffff;"
+                                                                    width="378" bgcolor="#FFFFFF" cellspacing="0"
+                                                                    cellpadding="0" border="0">
+                                                                    <tbody>
+                                                                        <tr>
+                                                                            <td class="table-space-td" valign="middle"
+                                                                                height="16"
+                                                                                style="height: 16px; width: 378px; background-color: #ffffff;"
+                                                                                width="378" bgcolor="#FFFFFF"
+                                                                                align="left">&nbsp;</td>
+                                                                        </tr>
+                                                                    </tbody>
+                                                                </table>
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+
+                                <table class="table-space" height="6"
+                                    style="height: 6px; font-size: 0px; line-height: 0; width: 450px; background-color: #ffffff;"
+                                    width="450" bgcolor="#FFFFFF" cellspacing="0" cellpadding="0"
+                                    border="0">
+                                    <tbody>
+                                        <tr>
+                                            <td class="table-space-td" valign="middle" height="6"
+                                                style="height: 6px; width: 450px; background-color: #ffffff;"
+                                                width="450" bgcolor="#FFFFFF" align="left">&nbsp;</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+
+                                <table class="table-row-fixed" width="450" bgcolor="#FFFFFF"
+                                    style="table-layout: fixed; background-color: #ffffff;" cellspacing="0"
+                                    cellpadding="0" border="0">
+                                    <tbody>
+                                        <tr>
+                                            <td class="table-row-fixed-td"
+                                                style="font-family: Arial, sans-serif; line-height: 19px; color: #444444; font-size: 13px; font-weight: normal; padding-left: 1px; padding-right: 1px;"
+                                                valign="top" align="left">
+                                                <table class="table-col" align="left" width="448"
+                                                    cellspacing="0" cellpadding="0" border="0"
+                                                    style="table-layout: fixed;">
+                                                    <tbody>
+                                                        <tr>
+                                                            <td class="table-col-td" width="448"
+                                                                style="font-family: Arial, sans-serif; line-height: 19px; color: #444444; font-size: 13px; font-weight: normal;"
+                                                                valign="top" align="left">
+                                                                <table width="100%" cellspacing="0" cellpadding="0"
+                                                                    border="0" style="table-layout: fixed;">
+                                                                    <tbody>
+                                                                        <tr>
+                                                                            <td width="100%" align="center"
+                                                                                bgcolor="#f5f5f5"
+                                                                                style="font-family: Arial, sans-serif; line-height: 24px; color: #bbbbbb; font-size: 13px; font-weight: normal; text-align: center; padding: 9px; border-width: 1px 0px 0px; border-style: solid; border-color: #e3e3e3; background-color: #f5f5f5;"
+                                                                                valign="top">
+                                                                                <a href="#"
+                                                                                    style="color: #428bca; text-decoration: none; background-color: transparent;">
+                                                                                    Hypertech Store &copy;
+                                                                                    <?php echo date('Y'); ?>
+                                                                                </a>
+                                                                                <br>
+                                                                                <a href="#"
+                                                                                    style="color: #478fca; text-decoration: none; background-color: transparent;">Twitter</a>
+                                                                                .
+                                                                                <a href="#"
+                                                                                    style="color: #5b7a91; text-decoration: none; background-color: transparent;">Facebook</a>
+                                                                                .
+                                                                                <a href="#"
+                                                                                    style="color: #dd5a43; text-decoration: none; background-color: transparent;">Google+</a>
+                                                                            </td>
+                                                                        </tr>
+                                                                    </tbody>
+                                                                </table>
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <table class="table-space" height="1"
+                                    style="height: 1px; font-size: 0px; line-height: 0; width: 450px; background-color: #ffffff;"
+                                    width="450" bgcolor="#FFFFFF" cellspacing="0" cellpadding="0"
+                                    border="0">
+                                    <tbody>
+                                        <tr>
+                                            <td class="table-space-td" valign="middle" height="1"
+                                                style="height: 1px; width: 450px; background-color: #ffffff;"
+                                                width="450" bgcolor="#FFFFFF" align="left">&nbsp;</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <table class="table-space" height="36"
+                                    style="height: 36px; font-size: 0px; line-height: 0; width: 450px; background-color: #e4e6e9;"
+                                    width="450" bgcolor="#E4E6E9" cellspacing="0" cellpadding="0"
+                                    border="0">
+                                    <tbody>
+                                        <tr>
+                                            <td class="table-space-td" valign="middle" height="36"
+                                                style="height: 36px; width: 450px; background-color: #e4e6e9;"
+                                                width="450" bgcolor="#E4E6E9" align="left">&nbsp;</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </tbody>
+</table>
 
 </html>
