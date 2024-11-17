@@ -19,6 +19,9 @@ class QuanTriVienController extends Controller
             'email' => 'required|email|unique:quan_tri_viens,email',
             'role' => 'required|string',
             'trang_thai' => 'boolean',
+            'anh_nguoi_dung' => 'nullable|string',
+            'dia_chi' => 'nullable|string|max:255',
+            'so_dien_thoai' => 'nullable|string|max:15',
         ]);
 
         $validated['mat_khau'] = Hash::make($validated['mat_khau']);
@@ -39,6 +42,9 @@ class QuanTriVienController extends Controller
             'email' => 'email|unique:quan_tri_viens,email,' . $id,
             'role' => 'string|nullable',
             'trang_thai' => 'boolean|nullable',
+            'anh_nguoi_dung' => 'nullable|string',
+            'dia_chi' => 'nullable|string|max:255',
+            'so_dien_thoai' => 'nullable|string|max:15',
         ]);
 
         if (!empty($validated['mat_khau'])) {
