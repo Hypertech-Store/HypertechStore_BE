@@ -57,3 +57,5 @@ require __DIR__ . '/GioHangRoutes.php';
 
 require __DIR__ . '/ForgotPasswordRouters.php';
 
+require __DIR__ . '/QuanTriVienRoutes.php';
+
