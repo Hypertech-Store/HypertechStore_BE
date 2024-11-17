@@ -63,4 +63,34 @@ class SanPham extends Model
     {
         return $this->hasMany(SaleSanPham::class);
     }
+    public function thongSoKyThuat()
+    {
+        // Kiểm tra danh mục của sản phẩm và trả về thông số kỹ thuật tương ứng
+        switch ($this->danhMuc->ten_danh_muc) {
+            case 'Điện thoại':
+                return $this->hasOne(ThongSoDienThoai::class);  // Nếu là điện thoại, trả về thông số kỹ thuật từ bảng `phones`
+            case 'Đồng Hồ':
+                return $this->hasOne(ThongSoDongHo::class);  // Nếu là đồng hồ, trả về thông số kỹ thuật từ bảng `watches`
+            case 'Máy tính':
+                return $this->hasOne(ThongSoMayTinh::class);  // Nếu là máy tính, trả về thông số kỹ thuật từ bảng `computers`
+            default:
+                return null;  // Nếu không phải sản phẩm thuộc danh mục trên, không có thông số kỹ thuật
+        }
+    }
+    public function thongSoDongHo()
+    {
+        return $this->hasOne(ThongSoDongHo::class, 'san_pham_id');
+    }
+
+    public function thongSoMayTinh()
+    {
+        return $this->hasOne(ThongSoMayTinh::class, 'san_pham_id');
+    }
+
+    public function thongSoDienThoai()
+    {
+        return $this->hasOne(ThongSoDienThoai::class, 'san_pham_id');
+    }
+
+
 }
