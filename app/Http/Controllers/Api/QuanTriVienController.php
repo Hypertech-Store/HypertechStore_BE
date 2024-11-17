@@ -72,4 +72,20 @@ class QuanTriVienController extends Controller
             'data' => $quanTriVien,
         ], 200);
     }
+
+    public function index(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $pageSize = $request->query('per_page', 10); // Số bản ghi mỗi trang, mặc định là 10
+        $quanTriViens = QuanTriVien::paginate($pageSize);
+
+        return response()->json($quanTriViens, 200);
+    }
+
+    public function show($id): \Illuminate\Http\JsonResponse
+    {
+        $quanTriVien = QuanTriVien::findOrFail($id);
+
+        return response()->json($quanTriVien, 200);
+    }
+
 }
