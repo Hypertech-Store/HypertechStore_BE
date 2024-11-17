@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
@@ -17,7 +18,7 @@ class QuanTriVienController extends Controller
             'ho_ten' => 'required|string|max:255',
             'email' => 'required|email|unique:quan_tri_viens,email',
             'role' => 'required|string',
-            'is_active' => 'boolean',
+            'trang_thai' => 'boolean',
         ]);
 
         $validated['mat_khau'] = Hash::make($validated['mat_khau']);
@@ -37,7 +38,7 @@ class QuanTriVienController extends Controller
             'ho_ten' => 'string|max:255|nullable',
             'email' => 'email|unique:quan_tri_viens,email,' . $id,
             'role' => 'string|nullable',
-            'is_active' => 'boolean|nullable',
+            'trang_thai' => 'boolean|nullable',
         ]);
 
         if (!empty($validated['mat_khau'])) {
@@ -62,7 +63,7 @@ class QuanTriVienController extends Controller
     {
         $quanTriVien = QuanTriVien::findOrFail($id);
 
-        // Đảo trạng thái is_active
+        // Đảo trạng thái trang_thai
         $quanTriVien->trang_thai = !$quanTriVien->trang_thai;
         $quanTriVien->save();
 
