@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreThanhToanRequest;
+use App\Models\DonHang;
 use App\Models\ThanhToan;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
@@ -118,4 +119,34 @@ class ThanhToanController extends Controller
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+    public function layDonHangCuaKhangHang($khachHangId, $donHangId)
+    {
+        // Lấy ra đơn hàng theo khach_hang_id và don_hang_id
+        $donHang = DonHang::where('khach_hang_id', $khachHangId)
+                        ->where('id', $donHangId)
+                        ->first();
+
+        if (!$donHang) {
+            return response()->json(['message' => 'Không tìm thấy đơn hàng này của khách hàng'], 404);
+        }
+
+        // Lấy thông tin đơn hàng và thanh toán kèm theo
+        $donHangInfo = [
+            'don_hang_id' => $donHang->id,
+            'tong_tien' => $donHang->tong_tien,
+            'dia_chi_giao_hang' => $donHang->dia_chi_giao_hang,
+            'phuong_thuc_thanh_toan' => $donHang->phuong_thuc_thanh_toan,
+            'trang_thai_don_hang' => $donHang->trang_thai_don_hang,
+            'created_at' => $donHang->created_at,
+        ];
+
+        return response()->json([
+            'khach_hang_id' => $khachHangId,
+            'don_hang' => $donHangInfo,
+        ]);
+    }
+
+
+
 }
