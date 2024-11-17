@@ -63,7 +63,7 @@ class QuanTriVienController extends Controller
         $quanTriVien = QuanTriVien::findOrFail($id);
 
         // Đảo trạng thái is_active
-        $quanTriVien->is_active = !$quanTriVien->is_active;
+        $quanTriVien->trang_thai = !$quanTriVien->trang_thai;
         $quanTriVien->save();
 
         return response()->json([
