@@ -20,7 +20,7 @@ class KhachHang extends Model implements Authenticatable
         'dia_chi',
         'gioi_tinh',
         'ngay_sinh',
-        'img',
+        'hinh_anh',
         'mat_khau',
         'mat_khau_reset_token',
     ];
