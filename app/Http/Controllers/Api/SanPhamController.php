@@ -7,6 +7,9 @@ use App\Models\SanPham;
 use App\Models\BienTheSanPham;
 use App\Models\DanhMuc;
 use App\Models\DanhMucCon; // Import model DanhMucCon
+use App\Models\ThongSoDienThoai;
+use App\Models\ThongSoDongHo;
+use App\Models\ThongSoMayTinh;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -34,6 +37,9 @@ class SanPhamController extends Controller
         ]);
     }
 
+
+
+
     public function createProduct(Request $request)
     {
         $request->validate([
@@ -52,33 +58,45 @@ class SanPhamController extends Controller
     }
 
     public function getDetail($id)
-    {
-        // Get the product details along with its related images
-        $sanPham = SanPham::with('hinhAnhSanPhams')->find($id);
+{
+    // Get the product details along with its related images
+    $sanPham = SanPham::with('hinhAnhSanPhams')->find($id);
 
-        // Check if the product exists
-        if (!$sanPham) {
-            return response()->json(['message' => 'Sản phẩm không tồn tại'], 404);
-        }
-
-        // Fetch related variants (BienTheSanPham) by san_pham_id
-        $bienTheSanPhams = BienTheSanPham::where('san_pham_id', $id)->get(['ten_bien_the', 'gia_tri_bien_the']);
-
-        // Lấy danh mục con và danh mục cha
-        $danhMucCon = DanhMucCon::with('danhMuc')->where('id', $sanPham->danh_muc_con_id)->first(); // Giả sử `sanPham` có trường `danh_muc_con_id`
-
-        // Kiểm tra nếu danh mục con tồn tại và lấy tên danh mục con cùng tên danh mục cha
-        $tenDanhMucCon = $danhMucCon ? $danhMucCon->ten_danh_muc_con : null;
-        $tenDanhMuc = $danhMucCon && $danhMucCon->danhMuc ? $danhMucCon->danhMuc->ten_danh_muc : null;
-
-        // Return the product details along with variants
-        return response()->json([
-            'sanPham' => $sanPham,
-            'bienTheSanPhams' => $bienTheSanPhams,
-            'ten_danh_muc_con' => $tenDanhMucCon,
-            'ten_danh_muc' => $tenDanhMuc
-        ], 200);
+    // Check if the product exists
+    if (!$sanPham) {
+        return response()->json(['message' => 'Sản phẩm không tồn tại'], 404);
     }
+
+    // Fetch related variants (BienTheSanPham) by san_pham_id
+    $bienTheSanPhams = BienTheSanPham::where('san_pham_id', $id)->get(['ten_bien_the', 'gia_tri_bien_the']);
+
+    // Lấy danh mục con và danh mục cha
+    $danhMucCon = DanhMucCon::with('danhMuc')->where('id', $sanPham->danh_muc_con_id)->first(); // Giả sử `sanPham` có trường `danh_muc_con_id`
+
+    // Kiểm tra nếu danh mục con tồn tại và lấy tên danh mục con cùng tên danh mục cha
+    $tenDanhMucCon = $danhMucCon ? $danhMucCon->ten_danh_muc_con : null;
+    $tenDanhMuc = $danhMucCon && $danhMucCon->danhMuc ? $danhMucCon->danhMuc->ten_danh_muc : null;
+
+    // Lấy thông số kỹ thuật tương ứng với danh mục sản phẩm
+    $thongSo = null;
+    if ($sanPham->danh_muc_id == 2) {  // Điện thoại
+        // Lấy thông số điện thoại nếu có
+        $thongSo = $sanPham->thongSoDienThoai ? array_filter($sanPham->thongSoDienThoai->toArray(), fn($value) => $value !== null) : null;
+    } elseif ($sanPham->danh_muc_id == 3) {  // Đồng hồ
+        // Lấy thông số đồng hồ nếu có
+        $thongSo = $sanPham->thongSoDongHo ? array_filter($sanPham->thongSoDongHo->toArray(), fn($value) => $value !== null) : null;
+    } elseif ($sanPham->danh_muc_id == 1) {  // Máy tính
+        // Lấy thông số máy tính nếu có
+        $thongSo = $sanPham->thongSoMayTinh ? array_filter($sanPham->thongSoMayTinh->toArray(), fn($value) => $value !== null) : null;
+    }
+
+    // Return the product details along with variants and specifications
+    return response()->json([
+        'sanPham' => $sanPham,
+        'bienTheSanPhams' => $bienTheSanPhams,
+    ], 200);
+}
+
 
 
     // Cập nhật sản phẩm
@@ -203,6 +221,7 @@ class SanPhamController extends Controller
         // Trả về view với danh sách sản phẩm
         return response()->json($sanPhams);
     }
+
 
 
 }
