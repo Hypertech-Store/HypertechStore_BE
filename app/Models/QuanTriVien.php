@@ -14,6 +14,9 @@ class QuanTriVien extends Model
         'ho_ten',
         'email',
         'role',
-        'trang_thai'
+        'trang_thai',
+        'anh_nguoi_dung',
+        'dia_chi',
+        'so_dien_thoai'
     ];
 }
