@@ -156,7 +156,7 @@ class BienTheSanPhamController extends Controller
         // Trả về biến thể nếu tìm thấy
         return response()->json([
             'success' => true,
-            'bien_the_san_pham_id' => $bienThe->id
+            'bien_the_san_pham' => $bienThe
         ], 200);
     }
 }
