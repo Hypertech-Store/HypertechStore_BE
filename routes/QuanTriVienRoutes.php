@@ -1,4 +1,5 @@
 <?php
+
 use App\Http\Controllers\Api\QuanTriVienController;
 use Illuminate\Support\Facades\Route;
 
