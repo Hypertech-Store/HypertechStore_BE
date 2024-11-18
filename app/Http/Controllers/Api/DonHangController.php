@@ -4,7 +4,12 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreDonHangRequest;
+use App\Models\BienTheSanPham;
+use App\Models\ChiTietDonHang;
 use App\Models\DonHang;
+use App\Models\GioHang;
+use App\Models\PhuongThucThanhToan;
+use App\Models\ThanhToan;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -140,4 +145,75 @@ class DonHangController extends Controller
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+    public function checkout(Request $request)
+    {
+        // Xác thực dữ liệu trong request
+        $request->validate([
+            'khach_hang_id' => 'required|integer|exists:khach_hangs,id',
+            'dia_chi_giao_hang' => 'required|string|max:255',
+            'phuong_thuc_thanh_toan_id' => 'required|integer|exists:phuong_thuc_thanh_toans,id',
+        ]);
+
+        // Lấy tên phương thức thanh toán từ bảng phuong_thuc_thanh_toan
+        $phuongThucThanhToan = PhuongThucThanhToan::find($request->phuong_thuc_thanh_toan_id);
+
+        // Nếu không tìm thấy phương thức thanh toán
+        if (!$phuongThucThanhToan) {
+            return response()->json(['error' => 'Phương thức thanh toán không tồn tại'], 400);
+        }
+
+        // Lấy thông tin khách hàng từ request
+        $khachHangId = $request->khach_hang_id;
+
+        // Lấy giỏ hàng của khách hàng
+        $gioHang = GioHang::where('khach_hang_id', $khachHangId)->first();
+
+        // Kiểm tra nếu giỏ hàng trống
+        if (!$gioHang || $gioHang->chiTietGioHangs->isEmpty()) {
+            return response()->json(['error' => 'Giỏ hàng trống'], 400);
+        }
+
+        $tongTien = $gioHang->chiTietGioHangs->sum(function ($chiTiet) {
+            // Kiểm tra nếu có biến thể sản phẩm
+            if ($chiTiet->bien_the_san_pham_id) {
+                $bienThe = BienTheSanPham::find($chiTiet->bien_the_san_pham_id);
+                return $bienThe->gia * $chiTiet->so_luong; // Tính theo giá của biến thể
+            }
+            return $chiTiet->gia * $chiTiet->so_luong; // Tính theo giá của sản phẩm chính
+        });
+
+        // Tạo đơn hàng
+        $donHang = DonHang::create([
+            'khach_hang_id' => $khachHangId,
+            'trang_thai_don_hang' => 'Đang xử lý',
+            'tong_tien' => $tongTien,
+            'dia_chi_giao_hang' => $request->dia_chi_giao_hang,
+            'phuong_thuc_thanh_toan' => $phuongThucThanhToan->ten_phuong_thuc,  // Lưu tên phương thức thanh toán
+        ]);
+
+        // Tạo chi tiết đơn hàng từ giỏ hàng
+        foreach ($gioHang->chiTietGioHangs as $chiTiet) {
+            ChiTietDonHang::create([
+                'don_hang_id' => $donHang->id,
+                'san_pham_id' => $chiTiet->san_pham_id,
+                'so_luong' => $chiTiet->so_luong,
+                'gia' => $chiTiet->gia,
+            ]);
+        }
+
+        // Tạo thông tin thanh toán
+        ThanhToan::create([
+            'don_hang_id' => $donHang->id,
+            'phuong_thuc_thanh_toan_id' => $phuongThucThanhToan->id,
+            'so_tien_thanh_toan' => $tongTien,
+        ]);
+
+        // Xóa chi tiết giỏ hàng sau khi thanh toán thành công
+        $gioHang->chiTietGioHangs()->delete();
+
+        // Trả về thông tin đơn hàng đã tạo
+        return response()->json(['message' => 'Đơn hàng đã được tạo thành công', 'don_hang' => $donHang], 201);
+    }
+
 }
