@@ -134,4 +134,29 @@ class BienTheSanPhamController extends Controller
             'data' => $data
         ], 200);
     }
+    public function getBienTheByAttributes(Request $request): JsonResponse
+    {
+        // Lấy dữ liệu từ POST request
+        $ten_bien_the = $request->ten_bien_the;
+        $gia_tri_bien_the = $request->gia_tri_bien_the;
+
+        // Tìm biến thể với các thuộc tính này
+        $bienThe = BienTheSanPham::where('ten_bien_the', $ten_bien_the)
+                                ->where('gia_tri_bien_the', $gia_tri_bien_the)
+                                ->first();
+
+        // Kiểm tra nếu không tìm thấy biến thể
+        if (!$bienThe) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy biến thể với tên và giá trị này.'
+            ], 404);
+        }
+
+        // Trả về biến thể nếu tìm thấy
+        return response()->json([
+            'success' => true,
+            'bien_the_san_pham_id' => $bienThe->id
+        ], 200);
+    }
 }
