@@ -216,7 +216,7 @@ class SanPhamController extends Controller
     }
 
     // Fetch related variants (BienTheSanPham) by san_pham_id
-    $bienTheSanPhams = BienTheSanPham::where('san_pham_id', $id)->get(['ten_bien_the', 'gia_tri_bien_the']);
+    $bienTheSanPhams = BienTheSanPham::where('san_pham_id', $id)->get(['ten_bien_the', 'gia_tri_bien_the', 'gia']);
 
     // Lấy danh mục con và danh mục cha
     $danhMucCon = DanhMucCon::with('danhMuc')->where('id', $sanPham->danh_muc_con_id)->first(); // Giả sử `sanPham` có trường `danh_muc_con_id`
@@ -241,6 +241,8 @@ class SanPhamController extends Controller
     // Return the product details along with variants and specifications
     return response()->json([
         'sanPham' => $sanPham,
+        'ten_danh_muc' => $tenDanhMuc ,
+        'ten_danh_muc_con' => $tenDanhMucCon,
         'bienTheSanPhams' => $bienTheSanPhams,
     ], 200);
 }
