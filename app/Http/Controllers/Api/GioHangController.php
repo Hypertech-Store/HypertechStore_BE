@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\BienTheSanPham;
 use App\Models\ChiTietGioHang;
 use App\Models\GioHang;
 use App\Models\KhachHang;
@@ -34,14 +35,13 @@ class GioHangController extends Controller
     }
 
     // Thêm sản phẩm vào giỏ hàng
-    // Thêm sản phẩm vào giỏ hàng
     public function addProduct(Request $request): JsonResponse
     {
         $request->validate([
             'khach_hang_id' => 'required|exists:khach_hangs,id',
             'san_pham_id' => 'required|exists:san_phams,id',
             'so_luong' => 'required|integer|min:1',
-            'bien_the_san_pham_id' => 'nullable|exists:bien_the_san_phams,id',
+            'bien_the_san_pham_id' => 'required|exists:bien_the_san_phams,id', // Bắt buộc có biến thể sản phẩm
             'gia' => 'required|numeric|min:0'
         ]);
 
@@ -57,27 +57,34 @@ class GioHangController extends Controller
             return response()->json(['message' => 'Sản phẩm không tồn tại'], 404);
         }
 
+        // Kiểm tra sự tồn tại của biến thể sản phẩm
+        $bienTheSanPham = BienTheSanPham::find($request->bien_the_san_pham_id);
+        if (!$bienTheSanPham || $bienTheSanPham->san_pham_id != $sanPham->id) {
+            return response()->json(['message' => 'Biến thể sản phẩm không hợp lệ'], 400);
+        }
+
         // Tìm hoặc tạo giỏ hàng cho khách hàng
         $gioHang = GioHang::firstOrCreate([
             'khach_hang_id' => $request->khach_hang_id,
             'trang_thai' => 'chua_thanh_toan'
         ]);
 
-        // Kiểm tra nếu sản phẩm đã tồn tại trong giỏ hàng
+        // Kiểm tra nếu biến thể sản phẩm đã tồn tại trong giỏ hàng
         $chiTietGioHang = ChiTietGioHang::where('gio_hang_id', $gioHang->id)
             ->where('san_pham_id', $request->san_pham_id)
+            ->where('bien_the_san_pham_id', $request->bien_the_san_pham_id)
             ->first();
 
         if ($chiTietGioHang) {
-            // Nếu sản phẩm đã có trong giỏ hàng, cập nhật số lượng
+            // Nếu biến thể sản phẩm đã có trong giỏ hàng, cập nhật số lượng
             $chiTietGioHang->so_luong += $request->so_luong; // Tăng số lượng sản phẩm hiện tại
             $chiTietGioHang->save();
         } else {
-            // Nếu sản phẩm chưa có, thêm mới vào giỏ hàng
+            // Nếu biến thể sản phẩm chưa có, thêm mới vào giỏ hàng
             $chiTietGioHang = ChiTietGioHang::create([
                 'gio_hang_id' => $gioHang->id,
                 'san_pham_id' => $request->san_pham_id,
-                'bien_the_san_pham_id' => $request->bien_the_san_pham_id, // Truyền biến thể sản phẩm (nếu có)
+                'bien_the_san_pham_id' => $request->bien_the_san_pham_id,
                 'so_luong' => $request->so_luong,
                 'gia' => $request->gia
             ]);
@@ -85,7 +92,7 @@ class GioHangController extends Controller
 
         return response()->json([
             'message' => 'Sản phẩm đã được thêm vào giỏ hàng thành công',
-            'gio_hang' => $gioHang->load('chiTietGioHangs.sanPham')
+            'gio_hang' => $gioHang->load('chiTietGioHangs.sanPham', 'chiTietGioHangs.bienTheSanPham') // Load cả thông tin biến thể
         ], 200);
     }
 

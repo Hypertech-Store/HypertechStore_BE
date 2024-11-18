@@ -12,8 +12,9 @@ class ChiTietGioHang extends Model
     protected $fillable = [
         'gio_hang_id',
         'san_pham_id',
+        'bien_the_san_pham_id',
         'so_luong',
-        'gia', // Thêm trường này để có thể truyền giá trị khi tạo bản ghi
+        'gia',
     ];
 
     public function gioHang()
@@ -25,4 +26,9 @@ class ChiTietGioHang extends Model
     {
         return $this->belongsTo(SanPham::class);
     }
+    public function bienTheSanPham()
+    {
+        return $this->belongsTo(BienTheSanPham::class, 'bien_the_san_pham_id', 'id');
+    }
 }
+

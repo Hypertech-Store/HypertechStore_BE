@@ -20,4 +20,8 @@ class BienTheSanPham extends Model
     {
         return $this->belongsTo(SanPham::class);
     }
+    public function chiTietGioHang()
+    {
+        return $this->hasMany(ChiTietGioHang::class, 'bien_the_san_pham_id', 'id');
+    }
 }
