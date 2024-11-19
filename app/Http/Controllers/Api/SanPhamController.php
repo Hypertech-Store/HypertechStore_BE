@@ -10,9 +10,11 @@ use App\Models\SanPham;
 use App\Models\BienTheSanPham;
 use App\Models\DanhMuc;
 use App\Models\DanhMucCon; // Import model DanhMucCon
+use App\Models\SaleSanPham;
 use App\Models\ThongSoDienThoai;
 use App\Models\ThongSoDongHo;
 use App\Models\ThongSoMayTinh;
+use Carbon\Carbon;
 use GuzzleHttp\Psr7\Response;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -24,25 +26,63 @@ use Illuminate\Support\Facades\Storage;
 class SanPhamController extends Controller
 {
     public function getAllProduct(Request $request): JsonResponse
-    {
-        // Lấy query param với giá trị mặc định: page = 1 và number_row = 10
-        $page = $request->query('page', 1);
-        $numberRow = $request->query('number_row', 10);
+{
+    // Lấy query param với giá trị mặc định: page = 1 và number_row = 10
+    $page = $request->query('page', 1);
+    $numberRow = $request->query('number_row', 10);
 
-        // Lấy dữ liệu với phân trang
-        $sanPhams = SanPham::paginate($numberRow, ['*'], 'page', $page);
+    // Lấy dữ liệu với phân trang
+    $sanPhams = SanPham::paginate($numberRow, ['*'], 'page', $page);
 
-        $minPrice = SanPham::min('gia');
-        $maxPrice = SanPham::max('gia');
+    $minPrice = SanPham::min('gia');
+    $maxPrice = SanPham::max('gia');
 
-        // Trả về dữ liệu dưới dạng JSON
-        return response()->json([
-            'status' => 'success',
-            'data' => $sanPhams,
-            'min_price' => $minPrice,
-            'max_price' => $maxPrice,
-        ]);
+    // Kiểm tra trạng thái "new" và "sale" cho mỗi sản phẩm
+    foreach ($sanPhams as $sanPham) {
+        $saleStatus = null;
+        $currentDate = Carbon::now()->timezone('Asia/Ho_Chi_Minh');
+
+        // Kiểm tra trạng thái sale của sản phẩm
+        $sale = SaleSanPham::where('san_pham_id', $sanPham->id)
+                        ->where('ngay_bat_dau_sale', '<=', $currentDate)
+                        ->where('ngay_ket_thuc_sale', '>=', $currentDate)
+                        ->first();
+
+        if ($sale) {
+            $saleStatus = $sale->sale_theo_phan_tram;
+
+            // Nếu sản phẩm có sale và được tạo trong vòng 1 tuần
+            $saleStatus = $sale->created_at >= now()->subWeek() ? 'Sản phẩm mới đang sale' : 'Sale';
+        }
+
+        // Kiểm tra xem sản phẩm có phải là sản phẩm mới (thêm trong 1 tuần qua)
+        $isNew = null;
+        if ($sanPham->created_at >= now()->subWeek()) {
+            $isNew = true;
+        }
+
+        // Xử lý trạng thái "new" và "sale" cho sản phẩm
+        $status = null;
+        if ($saleStatus && $isNew) {
+            $status = 'Sản phẩm mới đang sale';  // Cả sale và new
+        } elseif ($saleStatus) {
+            $status = 'Sale';  // Chỉ sale
+        } elseif ($isNew) {
+            $status = 'Sản phẩm mới';   // Chỉ mới
+        }
+
+        // Thêm trạng thái vào mỗi sản phẩm
+        $sanPham->trang_thai = $status;
     }
+
+    // Trả về dữ liệu dưới dạng JSON
+    return response()->json([
+        'status' => 'success',
+        'data' => $sanPhams,
+        'min_price' => $minPrice,
+        'max_price' => $maxPrice,
+    ]);
+}
 
 
     public function createProduct(Request $request, StoreThongSoMayTinhRequest $requestMayTinh, StoreThongSoDongHoRequest $requestDongHo, StoreThongSoDienThoaiRequest $requestDienThoai)
@@ -237,7 +277,7 @@ class SanPhamController extends Controller
         $bienTheSanPhams = BienTheSanPham::where('san_pham_id', $id)->get(['ten_bien_the', 'gia_tri_bien_the', 'gia']);
 
         // Lấy danh mục con và danh mục cha
-        $danhMucCon = DanhMucCon::with('danhMuc')->where('id', $sanPham->danh_muc_con_id)->first(); // Giả sử `sanPham` có trường `danh_muc_con_id`
+        $danhMucCon = DanhMucCon::with('danhMuc')->where('id', $sanPham->danh_muc_con_id)->first();
 
         // Kiểm tra nếu danh mục con tồn tại và lấy tên danh mục con cùng tên danh mục cha
         $tenDanhMucCon = $danhMucCon ? $danhMucCon->ten_danh_muc_con : null;
@@ -246,25 +286,55 @@ class SanPhamController extends Controller
         // Lấy thông số kỹ thuật tương ứng với danh mục sản phẩm
         $thongSo = null;
         if ($sanPham->danh_muc_id == 2) {  // Điện thoại
-            // Lấy thông số điện thoại nếu có
             $thongSo = $sanPham->thongSoDienThoai ? array_filter($sanPham->thongSoDienThoai->toArray(), fn($value) => $value !== null) : null;
         } elseif ($sanPham->danh_muc_id == 3) {  // Đồng hồ
-            // Lấy thông số đồng hồ nếu có
             $thongSo = $sanPham->thongSoDongHo ? array_filter($sanPham->thongSoDongHo->toArray(), fn($value) => $value !== null) : null;
         } elseif ($sanPham->danh_muc_id == 1) {  // Máy tính
-            // Lấy thông số máy tính nếu có
             $thongSo = $sanPham->thongSoMayTinh ? array_filter($sanPham->thongSoMayTinh->toArray(), fn($value) => $value !== null) : null;
         }
 
-        // Return the product details along with variants and specifications
+        // Kiểm tra xem sản phẩm có đang sale không và tính phần trăm giảm giá
+        $salePercentage = null;
+        $saleStatus = null;
+
+        // Lấy thông tin sale của sản phẩm
+        $currentDate = Carbon::now()->timezone('Asia/Ho_Chi_Minh');
+        $sale = SaleSanPham::where('san_pham_id', $id)
+                    ->where('ngay_bat_dau_sale', '<=', $currentDate)
+                    ->where('ngay_ket_thuc_sale', '>=', $currentDate)
+                    ->first();
+
+        // Kiểm tra nếu có sale và tính phần trăm giảm giá
+        if ($sale) {
+            $sale_theo_phan_tram = $sale->sale_theo_phan_tram;
+
+            // Kiểm tra nếu sản phẩm đang sale và mới
+            $saleStatus = $sale->created_at >= now()->subWeek() ? 'Sản phẩm mới đang sale' : 'Sale';
+        }
+
+        // Kiểm tra xem sản phẩm có phải là sản phẩm mới (thêm trong 1 tuần qua)
+        $isNew = null;
+        if ($sanPham->created_at >= now()->subWeek()) {
+            $isNew = true;
+        }
+
+        // Nếu sản phẩm vừa sale vừa mới
+        if ($salePercentage && $isNew) {
+            $saleStatus = 'Sản phẩm mới đang sale';
+        } elseif (!$salePercentage && $isNew) {
+            $saleStatus = 'Sản phẩm mới';
+        }
+
+        // Return the product details along with variants, specifications, sale/new status
         return response()->json([
             'sanPham' => $sanPham,
             'ten_danh_muc' => $tenDanhMuc,
             'ten_danh_muc_con' => $tenDanhMucCon,
             'bienTheSanPhams' => $bienTheSanPhams,
+            'sale_theo_phan_tram' => $sale_theo_phan_tram,
+            'trang_thai' => $saleStatus,
         ], 200);
     }
-
 
 
     // Cập nhật sản phẩm

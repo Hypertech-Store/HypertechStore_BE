@@ -25,8 +25,11 @@ class StoreHinhAnhSanPhamRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'san_pham_id' => 'required|exists:san_phams,id',
-            'image' => 'required|image|mimes:jpg,jpeg,png|max:2048',
+           'san_pham_id' => 'required|exists:san_phams,id',
+
+            // Cập nhật `image` để hỗ trợ mảng hình ảnh
+            'image' => 'required|array', // `image` phải là mảng
+            'image.*' => 'required|image|mimes:jpg,jpeg,png|max:2048', // Mỗi phần tử trong mảng phải là một tệp hình ảnh hợp lệ
         ];
     }
     protected function failedValidation(Validator $validator)
