@@ -26,7 +26,7 @@ class StoreHinhAnhSanPhamRequest extends FormRequest
     {
         return [
             'san_pham_id' => 'required|exists:san_phams,id',
-            'image' => 'nullable|string',
+            'image' => 'required|image|mimes:jpg,jpeg,png|max:2048',
         ];
     }
     protected function failedValidation(Validator $validator)
