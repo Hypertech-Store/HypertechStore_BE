@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\QuanTriVien;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Auth;
 
 class QuanTriVienController extends Controller
 {
@@ -92,6 +94,33 @@ class QuanTriVienController extends Controller
         $quanTriVien = QuanTriVien::findOrFail($id);
 
         return response()->json($quanTriVien, 200);
+    }
+
+    public function login(Request $request): \Illuminate\Http\JsonResponse
+    {
+        // Xác thực dữ liệu đầu vào
+        $request->validate([
+            'email' => 'required|email',
+            'mat_khau' => 'required|min:8',
+        ]);
+
+        // Tìm người dùng theo email
+        $quantrivien = QuanTriVien::where('email', $request->email)->first();
+
+        // Kiểm tra thông tin đăng nhập
+        if ($quantrivien && Hash::check($request->mat_khau, $quantrivien->mat_khau)) {
+
+            Auth::login($quantrivien);
+
+            return response()->json([
+                'message' => 'Đăng nhập thành công!',
+                'quantrivien' => $quantrivien
+            ], Response::HTTP_OK);
+        } else {
+            return response()->json([
+                'error' => 'Thông tin đăng nhập không chính xác.'
+            ], Response::HTTP_UNAUTHORIZED);
+        }
     }
 
 }
