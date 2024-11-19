@@ -32,22 +32,34 @@ class HinhAnhSanPhamController extends Controller
         try {
             $validated = $request->validated();
             Log::info('Validated data:', $validated); // Ghi log dữ liệu đã xác thực
-            if ($request->hasFile('image')) {
-                $path = $request->file('image')->store('hinh_anh_san_phams', 'public');
-                Log::info('Đường dẫn hình ảnh:', ['path' => $path]);
-                $data = HinhAnhSanPham::create([
-                    'san_pham_id' => $validated['san_pham_id'],
-                    'duong_dan_hinh_anh' => $path,
-                ]);
+            if ($request->hasFile('image') && is_array($request->file('image'))) {
+
+                $imagePaths = [];
+
+                // Duyệt qua từng tệp hình ảnh và lưu vào thư mục
+                foreach ($request->file('image') as $image) {
+                    $path = $image->store('hinh_anh_san_phams', 'public');
+                    $imagePaths[] = $path; // Lưu đường dẫn của từng hình ảnh
+                    Log::info('Đường dẫn hình ảnh:', ['path' => $path]);
+
+                    // Tạo bản ghi trong cơ sở dữ liệu cho mỗi hình ảnh
+                    HinhAnhSanPham::create([
+                        'san_pham_id' => $validated['san_pham_id'],
+                        'duong_dan_hinh_anh' => $path,
+                    ]);
+                }
+
                 return response()->json([
                     'message' => 'Hình ảnh sản phẩm được tạo thành công!',
-                    'data' => $data
+                    'data' => $imagePaths
                 ], Response::HTTP_CREATED);
             }
+
             return response()->json([
                 'message' => 'Không có hình ảnh nào được tải lên.'
             ], Response::HTTP_BAD_REQUEST);
         } catch (\Exception $e) {
+            Log::error('Lỗi khi tạo hình ảnh sản phẩm:', ['error' => $e->getMessage()]);
             return response()->json([
                 'message' => 'Có lỗi xảy ra khi tạo hình ảnh sản phẩm'
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
