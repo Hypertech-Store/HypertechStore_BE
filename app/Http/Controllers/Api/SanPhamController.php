@@ -13,9 +13,13 @@ use App\Models\DanhMucCon; // Import model DanhMucCon
 use App\Models\ThongSoDienThoai;
 use App\Models\ThongSoDongHo;
 use App\Models\ThongSoMayTinh;
+use GuzzleHttp\Psr7\Response;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Response as HttpResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class SanPhamController extends Controller
 {
@@ -43,19 +47,34 @@ class SanPhamController extends Controller
 
     public function createProduct(Request $request, StoreThongSoMayTinhRequest $requestMayTinh, StoreThongSoDongHoRequest $requestDongHo, StoreThongSoDienThoaiRequest $requestDienThoai)
     {
-        $request->validate([
+        $validated = $request->validate([
             'danh_muc_id' => 'required|exists:danh_mucs,id',
             'danh_muc_con_id' => 'nullable|exists:danh_muc_cons,id',
             'ten_san_pham' => 'required|string|max:255',
             'mo_ta' => 'nullable|string',
             'gia' => 'required|numeric|min:0',
             'so_luong_ton_kho' => 'required|integer|min:0',
-            'duong_dan_anh' => 'nullable|string',
+            'image' => 'required|image|mimes:jpg,jpeg,png|max:2048',
             'luot_xem' => 'integer|min:0',
         ]);
 
         // Tạo sản phẩm
-        $sanPham = SanPham::create($request->all());
+
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('san_phams', 'public');
+            Log::info('Đường dẫn hình ảnh:', ['path' => $path]);
+            $sanPham = SanPham::create([
+                'danh_muc_id' => $validated['danh_muc_id'],
+                'danh_muc_con_id' => $validated['danh_muc_con_id'] ?? null,
+                'ten_san_pham' => $validated['ten_san_pham'],
+                'mo_ta' => $validated['mo_ta'] ?? null,
+                'gia' => $validated['gia'],
+                'so_luong_ton_kho' => $validated['so_luong_ton_kho'],
+                'duong_dan_anh' => $path,
+                'luot_xem' => $validated['luot_xem'] ?? 0,
+            ]);
+        }
+
         $thongSoDienThoai = [];
         $thongSoMayTinh = [];
         $thongSoDongHo = [];
@@ -200,52 +219,51 @@ class SanPhamController extends Controller
         }
 
         return response()->json($response, 201);
-
     }
 
 
 
     public function getDetail($id)
-{
-    // Get the product details along with its related images
-    $sanPham = SanPham::with('hinhAnhSanPhams')->find($id);
+    {
+        // Get the product details along with its related images
+        $sanPham = SanPham::with('hinhAnhSanPhams')->find($id);
 
-    // Check if the product exists
-    if (!$sanPham) {
-        return response()->json(['message' => 'Sản phẩm không tồn tại'], 404);
+        // Check if the product exists
+        if (!$sanPham) {
+            return response()->json(['message' => 'Sản phẩm không tồn tại'], 404);
+        }
+
+        // Fetch related variants (BienTheSanPham) by san_pham_id
+        $bienTheSanPhams = BienTheSanPham::where('san_pham_id', $id)->get(['ten_bien_the', 'gia_tri_bien_the', 'gia']);
+
+        // Lấy danh mục con và danh mục cha
+        $danhMucCon = DanhMucCon::with('danhMuc')->where('id', $sanPham->danh_muc_con_id)->first(); // Giả sử `sanPham` có trường `danh_muc_con_id`
+
+        // Kiểm tra nếu danh mục con tồn tại và lấy tên danh mục con cùng tên danh mục cha
+        $tenDanhMucCon = $danhMucCon ? $danhMucCon->ten_danh_muc_con : null;
+        $tenDanhMuc = $danhMucCon && $danhMucCon->danhMuc ? $danhMucCon->danhMuc->ten_danh_muc : null;
+
+        // Lấy thông số kỹ thuật tương ứng với danh mục sản phẩm
+        $thongSo = null;
+        if ($sanPham->danh_muc_id == 2) {  // Điện thoại
+            // Lấy thông số điện thoại nếu có
+            $thongSo = $sanPham->thongSoDienThoai ? array_filter($sanPham->thongSoDienThoai->toArray(), fn($value) => $value !== null) : null;
+        } elseif ($sanPham->danh_muc_id == 3) {  // Đồng hồ
+            // Lấy thông số đồng hồ nếu có
+            $thongSo = $sanPham->thongSoDongHo ? array_filter($sanPham->thongSoDongHo->toArray(), fn($value) => $value !== null) : null;
+        } elseif ($sanPham->danh_muc_id == 1) {  // Máy tính
+            // Lấy thông số máy tính nếu có
+            $thongSo = $sanPham->thongSoMayTinh ? array_filter($sanPham->thongSoMayTinh->toArray(), fn($value) => $value !== null) : null;
+        }
+
+        // Return the product details along with variants and specifications
+        return response()->json([
+            'sanPham' => $sanPham,
+            'ten_danh_muc' => $tenDanhMuc,
+            'ten_danh_muc_con' => $tenDanhMucCon,
+            'bienTheSanPhams' => $bienTheSanPhams,
+        ], 200);
     }
-
-    // Fetch related variants (BienTheSanPham) by san_pham_id
-    $bienTheSanPhams = BienTheSanPham::where('san_pham_id', $id)->get(['ten_bien_the', 'gia_tri_bien_the', 'gia']);
-
-    // Lấy danh mục con và danh mục cha
-    $danhMucCon = DanhMucCon::with('danhMuc')->where('id', $sanPham->danh_muc_con_id)->first(); // Giả sử `sanPham` có trường `danh_muc_con_id`
-
-    // Kiểm tra nếu danh mục con tồn tại và lấy tên danh mục con cùng tên danh mục cha
-    $tenDanhMucCon = $danhMucCon ? $danhMucCon->ten_danh_muc_con : null;
-    $tenDanhMuc = $danhMucCon && $danhMucCon->danhMuc ? $danhMucCon->danhMuc->ten_danh_muc : null;
-
-    // Lấy thông số kỹ thuật tương ứng với danh mục sản phẩm
-    $thongSo = null;
-    if ($sanPham->danh_muc_id == 2) {  // Điện thoại
-        // Lấy thông số điện thoại nếu có
-        $thongSo = $sanPham->thongSoDienThoai ? array_filter($sanPham->thongSoDienThoai->toArray(), fn($value) => $value !== null) : null;
-    } elseif ($sanPham->danh_muc_id == 3) {  // Đồng hồ
-        // Lấy thông số đồng hồ nếu có
-        $thongSo = $sanPham->thongSoDongHo ? array_filter($sanPham->thongSoDongHo->toArray(), fn($value) => $value !== null) : null;
-    } elseif ($sanPham->danh_muc_id == 1) {  // Máy tính
-        // Lấy thông số máy tính nếu có
-        $thongSo = $sanPham->thongSoMayTinh ? array_filter($sanPham->thongSoMayTinh->toArray(), fn($value) => $value !== null) : null;
-    }
-
-    // Return the product details along with variants and specifications
-    return response()->json([
-        'sanPham' => $sanPham,
-        'ten_danh_muc' => $tenDanhMuc ,
-        'ten_danh_muc_con' => $tenDanhMucCon,
-        'bienTheSanPhams' => $bienTheSanPhams,
-    ], 200);
-}
 
 
 
@@ -374,28 +392,44 @@ class SanPhamController extends Controller
 
     public function updateProduct(Request $request, $id, StoreThongSoMayTinhRequest $requestMayTinh, StoreThongSoDongHoRequest $requestDongHo, StoreThongSoDienThoaiRequest $requestDienThoai)
     {
-        $request->validate([
-            'danh_muc_id' => 'required|exists:danh_mucs,id',
-            'danh_muc_con_id' => 'nullable|exists:danh_muc_cons,id',
-            'ten_san_pham' => 'required|string|max:255',
-            'mo_ta' => 'nullable|string',
-            'gia' => 'required|numeric|min:0',
-            'so_luong_ton_kho' => 'required|integer|min:0',
-            'duong_dan_anh' => 'nullable|string',
-            'luot_xem' => 'integer|min:0',
-        ]);
-
-        // Tìm sản phẩm cũ
         $sanPham = SanPham::find($id);
+
         if (!$sanPham) {
-            return response()->json(['error' => 'Sản phẩm không tồn tại'], 404);
+            return response()->json(['message' => 'Sản phẩm không tồn tại'], 404);
         }
+
+        $validated = $request->validate([
+            'danh_muc_id' => 'nullable|exists:danh_mucs,id',
+            'danh_muc_con_id' => 'nullable|exists:danh_muc_cons,id',
+            'ten_san_pham' => 'nullable|string|max:255',
+            'mo_ta' => 'nullable|string',
+            'gia' => 'nullable|numeric|min:0',
+            'so_luong_ton_kho' => 'nullable|integer|min:0',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'luot_xem' => 'nullable|integer|min:0',
+        ]);
 
         // Lưu danh mục cũ để kiểm tra
         $oldDanhMucId = $sanPham->danh_muc_id;
 
-        // Cập nhật thông tin sản phẩm
-        $sanPham->update($request->all());
+        // Nếu có ảnh mới, lưu ảnh và cập nhật đường dẫn
+        if ($request->hasFile('image')) {
+            if ($sanPham->duong_dan_anh && Storage::exists('public/' . $sanPham->duong_dan_anh)) {
+                Storage::delete('public/' . $sanPham->duong_dan_anh);
+            }
+
+            $path = $request->file('image')->store('san_phams', 'public');
+            $validated['duong_dan_anh'] = $path;
+        } else {
+            // Nếu không có ảnh mới, giữ nguyên ảnh cũ
+            $validated['duong_dan_anh'] = $sanPham->duong_dan_anh;
+        }
+
+        // Kết hợp dữ liệu cũ và dữ liệu mới
+        $updatedData = array_merge($sanPham->toArray(), $validated);
+
+        // Cập nhật dữ liệu
+        $sanPham->update($updatedData);
 
         $thongSoDienThoai = [];
         $thongSoMayTinh = [];
@@ -660,7 +694,6 @@ class SanPhamController extends Controller
             }
         }
 
-        $response = ['san_pham' => $sanPham];
 
         // Chỉ trả về thông số nếu không rỗng
         if ($thongSoDienThoai) {
@@ -673,8 +706,7 @@ class SanPhamController extends Controller
             $response['thong_so_may_tinh'] = $thongSoMayTinh;
         }
 
-        return response()->json($response, 201);
-
+        return response()->json($sanPham, 201);
     }
 
     public function deleteOldTechnicalSpecs($oldDanhMucId, $sanPhamId)
@@ -691,7 +723,4 @@ class SanPhamController extends Controller
                 break;
         }
     }
-
-
-
 }
