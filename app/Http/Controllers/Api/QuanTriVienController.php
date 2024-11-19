@@ -101,7 +101,7 @@ class QuanTriVienController extends Controller
         // Xác thực dữ liệu đầu vào
         $request->validate([
             'email' => 'required|email',
-            'mat_khau' => 'required|min:8',
+            'mat_khau' => 'required|min:6',
         ]);
 
         // Tìm người dùng theo email
@@ -122,5 +122,4 @@ class QuanTriVienController extends Controller
             ], Response::HTTP_UNAUTHORIZED);
         }
     }
-
 }
