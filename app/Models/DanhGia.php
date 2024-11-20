@@ -25,4 +25,8 @@ class DanhGia extends Model
     {
         return $this->belongsTo(KhachHang::class);
     }
+    public function chiTietDanhGias()
+    {
+        return $this->hasMany(ChiTietDanhGia::class, 'danh_gia_id');
+    }
 }
