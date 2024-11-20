@@ -300,16 +300,15 @@ class SanPhamController extends Controller
         // Lấy thông tin sale của sản phẩm
         $currentDate = Carbon::now()->timezone('Asia/Ho_Chi_Minh');
         $sale = SaleSanPham::where('san_pham_id', $id)
-                    ->where('ngay_bat_dau_sale', '<=', $currentDate)
-                    ->where('ngay_ket_thuc_sale', '>=', $currentDate)
-                    ->first();
+                        ->where('ngay_bat_dau_sale', '<=', $currentDate)
+                        ->where('ngay_ket_thuc_sale', '>=', $currentDate)
+                        ->first();
 
         // Kiểm tra nếu có sale và tính phần trăm giảm giá
         if ($sale) {
-            $sale_theo_phan_tram = $sale->sale_theo_phan_tram;
-
+            $salePercentage = $sale->sale_theo_phan_tram;
             // Kiểm tra nếu sản phẩm đang sale và mới
-            $saleStatus = $sale->created_at >= now()->subWeek() ? 'Sản phẩm mới đang sale' : 'Sale';
+            $saleStatus = $sale->created_at >= now()->subWeek() ? 'Both' : 'Sale';
         }
 
         // Kiểm tra xem sản phẩm có phải là sản phẩm mới (thêm trong 1 tuần qua)
@@ -319,11 +318,14 @@ class SanPhamController extends Controller
         }
 
         // Nếu sản phẩm vừa sale vừa mới
-        if ($salePercentage && $isNew) {
-            $saleStatus = 'Sản phẩm mới đang sale';
+        if ($isNew && $salePercentage) {
+            $saleStatus = 'Both';  // Sản phẩm vừa sale vừa mới
         } elseif (!$salePercentage && $isNew) {
-            $saleStatus = 'Sản phẩm mới';
+            $saleStatus = 'New';   // Sản phẩm mới nhưng không sale
+        } elseif ($salePercentage && !$isNew) {
+            $saleStatus = 'Sale';  // Sản phẩm đang sale nhưng không mới
         }
+
 
         // Return the product details along with variants, specifications, sale/new status
         return response()->json([
@@ -331,7 +333,7 @@ class SanPhamController extends Controller
             'ten_danh_muc' => $tenDanhMuc,
             'ten_danh_muc_con' => $tenDanhMucCon,
             'bienTheSanPhams' => $bienTheSanPhams,
-            'sale_theo_phan_tram' => $sale_theo_phan_tram,
+            'sale_theo_phan_tram' => $salePercentage,
             'trang_thai' => $saleStatus,
         ], 200);
     }
