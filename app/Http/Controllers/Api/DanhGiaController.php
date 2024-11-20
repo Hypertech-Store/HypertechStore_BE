@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Validator;
 
 class DanhGiaController extends Controller
@@ -22,8 +23,8 @@ class DanhGiaController extends Controller
     public function index()
     {
         $data = DanhGia::query()
-        ->with('chiTietDanhGias')
-        ->get();
+            ->with('chiTietDanhGias')
+            ->get();
 
         return response()->json($data);
     }
@@ -157,11 +158,25 @@ class DanhGiaController extends Controller
      */
     public function destroy(string $id)
     {
-
         try {
-            DanhGia::destroy($id);
+            // Tìm đánh giá với chi tiết hình ảnh
+            $danhGia = DanhGia::with('chiTietDanhGias')->findOrFail($id);
+
+            // Xóa hình ảnh trong chi tiết đánh giá
+            foreach ($danhGia->chiTietDanhGias as $chiTiet) {
+                // Kiểm tra và xóa hình ảnh vật lý nếu có
+                if ($chiTiet->hinh_anh_duong_dan && Storage::exists('public/' . $chiTiet->hinh_anh_duong_dan)) {
+                    Storage::delete('public/' . $chiTiet->hinh_anh_duong_dan);
+                }
+                // Xóa chi tiết đánh giá
+                $chiTiet->delete();
+            }
+
+            // Xóa đánh giá chính
+            $danhGia->delete();
+
             return response()->json([
-                'message' => 'Xóa thành công',
+                'message' => 'Xóa đánh giá và các chi tiết liên quan thành công.',
             ], Response::HTTP_OK);
         } catch (ModelNotFoundException $e) {
             return response()->json([
@@ -171,32 +186,31 @@ class DanhGiaController extends Controller
             Log::error('Lỗi xóa đánh giá: ' . $e->getMessage());
 
             return response()->json([
-                'message' => 'Có lỗi xảy ra khi xóa đánh giá',
+                'message' => 'Có lỗi xảy ra khi xóa đánh giá.',
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     public function getDanhGiaBySanPhamId($san_pham_id)
-{
-    // Kiểm tra sản phẩm có tồn tại không
-    $sanPham = SanPham::find($san_pham_id);
+    {
+        // Kiểm tra sản phẩm có tồn tại không
+        $sanPham = SanPham::find($san_pham_id);
 
-    if (!$sanPham) {
+        if (!$sanPham) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Sản phẩm không tồn tại.'
+            ], 404);
+        }
+
+        // Lấy danh sách đánh giá theo sản phẩm ID
+        $danhGias = DanhGia::where('san_pham_id', $san_pham_id)
+            ->with(['chiTietDanhGias', 'khachHang'])
+            ->get();
+
         return response()->json([
-            'status' => 'error',
-            'message' => 'Sản phẩm không tồn tại.'
-        ], 404);
+            'status' => 'success',
+            'message' => 'Lấy danh sách đánh giá thành công.',
+            'data' => $danhGias
+        ]);
     }
-
-    // Lấy danh sách đánh giá theo sản phẩm ID
-    $danhGias = DanhGia::where('san_pham_id', $san_pham_id)
-        ->with(['chiTietDanhGias', 'khachHang'])
-        ->get();
-
-    return response()->json([
-        'status' => 'success',
-        'message' => 'Lấy danh sách đánh giá thành công.',
-        'data' => $danhGias
-    ]);
-}
-
 }
