@@ -45,24 +45,23 @@ class BienTheSanPhamController extends Controller
             $data = BienTheSanPham::query()->findOrFail($id);
 
             return response()->json([
-                'message' => 'Chi tiết Biến thể sản phẩm id = '.$id,
+                'message' => 'Chi tiết Biến thể sản phẩm id = ' . $id,
                 'data' => $data
             ]);
         } catch (\Throwable $th) {
-            if($th instanceof ModelNotFoundException){
+            if ($th instanceof ModelNotFoundException) {
                 return response()->json([
-                    'message' => 'Không tìm thấy biến thể sản phẩm id = '.$id,
+                    'message' => 'Không tìm thấy biến thể sản phẩm id = ' . $id,
 
                 ], Response::HTTP_NOT_FOUND);
             }
             Log::error('Lỗi xóa biến thể sản phẩm: ' . $th->getMessage());
 
             return response()->json([
-                'message' => 'Không tìm thấy biến thể sản phẩm id = '.$id,
+                'message' => 'Không tìm thấy biến thể sản phẩm id = ' . $id,
 
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-
     }
 
     /**
@@ -75,14 +74,13 @@ class BienTheSanPhamController extends Controller
             $data->update($request->all());
 
             return response()->json([
-                'message' => 'Cập nhật biến thể sản phẩm id = '.$id,
+                'message' => 'Cập nhật biến thể sản phẩm id = ' . $id,
                 'data' => $data
             ]);
         } catch (ModelNotFoundException $e) {
             return response()->json([
-                'message' => 'Không tìm thấy biến thể sản phẩm id = '.$id,
+                'message' => 'Không tìm thấy biến thể sản phẩm id = ' . $id,
             ], Response::HTTP_NOT_FOUND);
-
         } catch (\Exception $e) {
             Log::error('Lỗi cập nhật biến thể sản phẩm: ' . $e->getMessage());
 
@@ -90,7 +88,6 @@ class BienTheSanPhamController extends Controller
                 'message' => 'Có lỗi xảy ra khi cập nhật biến thể sản phẩm',
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-
     }
 
     /**
@@ -104,12 +101,10 @@ class BienTheSanPhamController extends Controller
             return response()->json([
                 'message' => 'Xóa thành công',
             ], Response::HTTP_OK);
-
         } catch (ModelNotFoundException $e) {
             return response()->json([
-                'message' => 'Không tìm thấy biến thể sản phẩm id = '.$id,
+                'message' => 'Không tìm thấy biến thể sản phẩm id = ' . $id,
             ], Response::HTTP_NOT_FOUND);
-
         } catch (\Exception $e) {
             Log::error('Lỗi xóa biến thể sản phẩm: ' . $e->getMessage());
 
@@ -136,14 +131,26 @@ class BienTheSanPhamController extends Controller
     }
     public function getBienTheByAttributes(Request $request): JsonResponse
     {
-        // Lấy dữ liệu từ POST request
-        $ten_bien_the = $request->ten_bien_the;
-        $gia_tri_bien_the = $request->gia_tri_bien_the;
+        // Log giá trị đầu vào
+        Log::info('Dữ liệu đầu vào:', [
+            'ten_bien_the' => $request->ten_bien_the,
+            'gia_tri_bien_the' => $request->gia_tri_bien_the
+        ]);
+
+        // Validate dữ liệu đầu vào
+        $validatedData = $request->validate([
+            'ten_bien_the' => 'required|string|max:255',
+            'gia_tri_bien_the' => 'required|string|max:255',
+        ]);
+
+        // Lấy dữ liệu từ POST request sau khi đã validate
+        $ten_bien_the = $validatedData['ten_bien_the'];
+        $gia_tri_bien_the = $validatedData['gia_tri_bien_the'];
 
         // Tìm biến thể với các thuộc tính này
         $bienThe = BienTheSanPham::where('ten_bien_the', $ten_bien_the)
-                                ->where('gia_tri_bien_the', $gia_tri_bien_the)
-                                ->first();
+            ->where('gia_tri_bien_the', $gia_tri_bien_the)
+            ->first();
 
         // Kiểm tra nếu không tìm thấy biến thể
         if (!$bienThe) {
@@ -153,10 +160,14 @@ class BienTheSanPhamController extends Controller
             ], 404);
         }
 
+        Log::info('Kết quả tìm kiếm:', [
+            'bien_the_san_pham' => $bienThe
+        ]);
+
         // Trả về biến thể nếu tìm thấy
         return response()->json([
             'success' => true,
-            'bien_the_san_pham' => $bienThe
+            'data' => $bienThe
         ], 200);
     }
 }
