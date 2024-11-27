@@ -15,6 +15,7 @@ class DonHang extends Model
         'tong_tien',
         'dia_chi_giao_hang',
         'phuong_thuc_thanh_toan',
+        'created_at',
     ];
 
     public function khachHang()

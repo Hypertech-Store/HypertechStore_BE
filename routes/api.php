@@ -59,3 +59,5 @@ require __DIR__ . '/ForgotPasswordRouters.php';
 
 require __DIR__ . '/QuanTriVienRoutes.php';
 
+require __DIR__ . '/DonHangsRoutes.php';
+
