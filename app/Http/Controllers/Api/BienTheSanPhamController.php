@@ -5,10 +5,14 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreBienTheSanPhamRequest;
 use App\Models\BienTheSanPham;
+use App\Models\GiaTriThuocTinh;
+use App\Models\LienKetBienTheVaGiaTriThuocTinh;
+use App\Models\ThuocTinhSanPham;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class BienTheSanPhamController extends Controller
@@ -131,43 +135,40 @@ class BienTheSanPhamController extends Controller
     }
     public function getBienTheByAttributes(Request $request): JsonResponse
     {
-        // Log giá trị đầu vào
-        Log::info('Dữ liệu đầu vào:', [
-            'ten_bien_the' => $request->ten_bien_the,
-            'gia_tri_bien_the' => $request->gia_tri_bien_the
-        ]);
+        $attributes = $request->input('attributes', []); // Lấy mảng thuộc tính từ yêu cầu
 
-        // Validate dữ liệu đầu vào
-        $validatedData = $request->validate([
-            'ten_bien_the' => 'required|string|max:255',
-            'gia_tri_bien_the' => 'required|string|max:255',
-        ]);
-
-        // Lấy dữ liệu từ POST request sau khi đã validate
-        $ten_bien_the = $validatedData['ten_bien_the'];
-        $gia_tri_bien_the = $validatedData['gia_tri_bien_the'];
-
-        // Tìm biến thể với các thuộc tính này
-        $bienThe = BienTheSanPham::where('ten_bien_the', $ten_bien_the)
-            ->where('gia_tri_bien_the', $gia_tri_bien_the)
-            ->first();
-
-        // Kiểm tra nếu không tìm thấy biến thể
-        if (!$bienThe) {
+        // Kiểm tra nếu không có thuộc tính nào được truyền vào
+        if (empty($attributes)) {
             return response()->json([
-                'success' => false,
-                'message' => 'Không tìm thấy biến thể với tên và giá trị này.'
+                'message' => 'Không có ID giá trị thuộc tính nào được cung cấp.'
+            ], 400);
+        }
+
+        // Tìm các `bien_the_san_pham_id` khớp với tất cả các `gia_tri_thuoc_tinh_id` sử dụng Model
+        $bienTheIds = LienKetBienTheVaGiaTriThuocTinh::whereIn('gia_tri_thuoc_tinh_id', $attributes)
+            ->groupBy('bien_the_san_pham_id')
+            ->havingRaw('COUNT(DISTINCT gia_tri_thuoc_tinh_id) = ?', [count($attributes)]) // Đảm bảo rằng số lượng thuộc tính cần khớp
+            ->pluck('bien_the_san_pham_id');
+
+        $bienTheSanPhams = BienTheSanPham::query()->findOrFail($bienTheIds);
+
+        // Kiểm tra nếu không tìm thấy kết quả
+        if ($bienTheIds->isEmpty()) {
+            return response()->json([
+                'message' => 'Không có biến thể sản phẩm nào khớp với các giá trị thuộc tính đã chọn.'
             ], 404);
         }
 
-        Log::info('Kết quả tìm kiếm:', [
-            'bien_the_san_pham' => $bienThe
-        ]);
+        // Lấy tên các giá trị thuộc tính sử dụng Model
+        $tenGiaTriThuocTins = GiaTriThuocTinh::whereIn('id', $attributes)
+            ->pluck('ten_gia_tri', 'id');
 
-        // Trả về biến thể nếu tìm thấy
+        // Trả về danh sách ID biến thể sản phẩm cùng với tên giá trị thuộc tính
         return response()->json([
-            'success' => true,
-            'data' => $bienThe
+            'bien_the_san_pham' => $bienTheSanPhams,
+            'attributes' => $attributes,
+            'mang_gia_tri_thuoc_tinh' => $tenGiaTriThuocTins
         ], 200);
     }
+
 }

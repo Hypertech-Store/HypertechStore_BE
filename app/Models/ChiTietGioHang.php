@@ -15,6 +15,7 @@ class ChiTietGioHang extends Model
         'bien_the_san_pham_id',
         'so_luong',
         'gia',
+        'thuoc_tinh'
     ];
 
     public function gioHang()
