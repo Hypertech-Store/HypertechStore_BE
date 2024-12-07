@@ -51,6 +51,12 @@ require __DIR__ . '/BinhLuanRoutes.php';
 
 require __DIR__ . '/SaleSanPhamRoutes.php';
 
+require __DIR__ . '/ThuocTinhSanPhamRoutes.php';
+
+require __DIR__ . '/GiaTriThuocTinhRoutes.php';
+
+require __DIR__ . '/LienKetBienTheVaGiaTriThuocTinhRoutes.php';
+
 require __DIR__ . '/productRoutes.php';
 
 require __DIR__ . '/GioHangRoutes.php';

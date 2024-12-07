@@ -12,6 +12,7 @@ use App\Models\SanPham;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class GioHangController extends Controller
 {
@@ -32,6 +33,16 @@ class GioHangController extends Controller
     $gioHang->chiTietGioHangs->each(function ($chiTiet) use ($currentDate) {
         $sanPham = $chiTiet->sanPham;
         $bienThe = $chiTiet->bienTheSanPham;
+
+        if ($chiTiet->thuoc_tinh) {
+            $chiTiet->thuoc_tinh = json_decode($chiTiet->thuoc_tinh, true);
+        }
+
+        // Kiểm tra xem sanPham và bienThe có tồn tại hay không
+        if (!$sanPham || !$bienThe) {
+            // Nếu không tồn tại, bỏ qua hoặc trả về thông báo lỗi tùy vào yêu cầu
+            return;
+        }
 
         // Tìm thông tin sale
         $sale = SaleSanPham::where('san_pham_id', $sanPham->id)
@@ -72,93 +83,81 @@ class GioHangController extends Controller
     ], 200);
 }
 
-
-
     // Thêm sản phẩm vào giỏ hàng
     public function addProduct(Request $request): JsonResponse
     {
-        $request->validate([
+        $validatedData = $request->validate([
             'khach_hang_id' => 'required|exists:khach_hangs,id',
             'san_pham_id' => 'required|exists:san_phams,id',
             'so_luong' => 'required|integer|min:1',
-            'bien_the_san_pham_id' => 'required|exists:bien_the_san_phams,id', // Bắt buộc có biến thể sản phẩm
+            'bien_the_san_pham_id' => 'required|exists:bien_the_san_phams,id',
+            'attributes' => 'required|array',
+            'attributes.*.gia_tri_thuoc_tinh_id' => 'required|exists:gia_tri_thuoc_tinhs,id',
+            'attributes.*.ten_gia_tri' => 'required|string',
             'gia' => 'required|numeric|min:0'
         ]);
 
-        // Kiểm tra sự tồn tại của khách hàng
-        $khachHang = KhachHang::find($request->khach_hang_id);
-        if (!$khachHang) {
-            return response()->json(['message' => 'Khách hàng không tồn tại'], 404);
-        }
-
-        // Kiểm tra sự tồn tại của sản phẩm
-        $sanPham = SanPham::find($request->san_pham_id);
-        if (!$sanPham) {
-            return response()->json(['message' => 'Sản phẩm không tồn tại'], 404);
-        }
-
-        // Kiểm tra sự tồn tại của biến thể sản phẩm
-        $bienTheSanPham = BienTheSanPham::find($request->bien_the_san_pham_id);
-        if (!$bienTheSanPham || $bienTheSanPham->san_pham_id != $sanPham->id) {
-            return response()->json(['message' => 'Biến thể sản phẩm không hợp lệ'], 400);
-        }
-
-        // Tìm hoặc tạo giỏ hàng cho khách hàng
-        $gioHang = GioHang::firstOrCreate([
-            'khach_hang_id' => $request->khach_hang_id,
-            'trang_thai' => 'chua_thanh_toan'
-        ]);
-
-        // Kiểm tra nếu biến thể sản phẩm đã tồn tại trong giỏ hàng
-        $chiTietGioHang = ChiTietGioHang::where('gio_hang_id', $gioHang->id)
-            ->where('san_pham_id', $request->san_pham_id)
-            ->where('bien_the_san_pham_id', $request->bien_the_san_pham_id)
-            ->first();
-
-        if ($chiTietGioHang) {
-            // Nếu biến thể sản phẩm đã có trong giỏ hàng, cập nhật số lượng
-            $chiTietGioHang->so_luong += $request->so_luong; // Tăng số lượng sản phẩm hiện tại
-            $chiTietGioHang->gia +=  $request->gia ;
-            $chiTietGioHang->save();
-        } else {
-            // Nếu biến thể sản phẩm chưa có, thêm mới vào giỏ hàng
-            $chiTietGioHang = ChiTietGioHang::create([
-                'gio_hang_id' => $gioHang->id,
-                'san_pham_id' => $request->san_pham_id,
-                'bien_the_san_pham_id' => $request->bien_the_san_pham_id,
-                'so_luong' => $request->so_luong,
-                'gia' => $request->gia
+        // Sử dụng transaction để đảm bảo dữ liệu đồng bộ
+        $gioHang = DB::transaction(function () use ($validatedData) {
+            // Tìm hoặc tạo giỏ hàng cho khách hàng
+            $gioHang = GioHang::firstOrCreate([
+                'khach_hang_id' => $validatedData['khach_hang_id'],
+                'trang_thai' => 'chua_thanh_toan'
             ]);
-        }
+
+            // Lưu thuộc tính dưới dạng JSON
+            $thuocTinh = json_encode($validatedData['attributes']); // Chuyển attributes thành JSON
+
+            // Lấy chi tiết giỏ hàng liên quan
+            $chiTietGioHang = ChiTietGioHang::where('gio_hang_id', $gioHang->id)
+                ->where('san_pham_id', $validatedData['san_pham_id'])
+                ->where('bien_the_san_pham_id', $validatedData['bien_the_san_pham_id'])
+                ->get()
+                ->first(function ($item) use ($thuocTinh) {
+                    // So sánh thuộc tính (JSON)
+                    return json_decode($item->thuoc_tinh, true) == json_decode($thuocTinh, true);
+                });
+
+            if ($chiTietGioHang) {
+                // Nếu sản phẩm đã tồn tại, cập nhật số lượng và giá
+                $chiTietGioHang->so_luong += $validatedData['so_luong'];
+                $chiTietGioHang->gia += $validatedData['gia'] * $validatedData['so_luong'];
+                $chiTietGioHang->save();
+            } else {
+                // Nếu sản phẩm chưa tồn tại, thêm mới vào giỏ hàng
+                ChiTietGioHang::create([
+                    'gio_hang_id' => $gioHang->id,
+                    'san_pham_id' => $validatedData['san_pham_id'],
+                    'bien_the_san_pham_id' => $validatedData['bien_the_san_pham_id'],
+                    'so_luong' => $validatedData['so_luong'],
+                    'gia' => $validatedData['gia'] * $validatedData['so_luong'],
+                    'thuoc_tinh' => $thuocTinh,
+                ]);
+            }
+
+            return $gioHang;
+        });
 
         return response()->json([
             'message' => 'Sản phẩm đã được thêm vào giỏ hàng thành công',
-            'gio_hang' => $gioHang->load('chiTietGioHangs.sanPham', 'chiTietGioHangs.bienTheSanPham') // Load cả thông tin biến thể
+            'gio_hang' => $gioHang->load('chiTietGioHangs.sanPham', 'chiTietGioHangs.bienTheSanPham')
         ], 200);
     }
-
 
     // Cập nhật số lượng sản phẩm trong giỏ hàng
     public function updateProduct(Request $request): JsonResponse
     {
         $request->validate([
-            'gio_hang_id' => 'required|exists:gio_hangs,id',
-            'san_pham_id' => 'required|exists:san_phams,id',
-            'bien_the_san_pham_id' => 'required|exists:bien_the_san_phams,id',
+            'chi_tiet_gio_hang_id' => 'required|exists:chi_tiet_gio_hangs,id',
             'so_luong' => 'required|integer|min:1',
             'gia_sau_sale_them_gia_bien_the' => 'required|numeric|min:0'
         ]);
 
-        // Tìm sản phẩm trong giỏ hàng
-        $chiTietGioHang = ChiTietGioHang::where('gio_hang_id', $request->gio_hang_id)
-            ->where('san_pham_id', $request->san_pham_id)
-            ->where('bien_the_san_pham_id', $request->bien_the_san_pham_id)
-            ->first();
+        $chiTietGioHang = ChiTietGioHang::find($request->chi_tiet_gio_hang_id);
 
         if (!$chiTietGioHang) {
-            return response()->json(['message' => 'Sản phẩm không có trong giỏ hàng'], 404);
+            return response()->json(['message' => 'Chi tiết giỏ hàng không tồn tại'], 404);
         }
-
         // // Cập nhật chi tiết giỏ hàng
         $chiTietGioHang->so_luong = $request->so_luong;
         $chiTietGioHang->gia = $request->gia_sau_sale_them_gia_bien_the * $chiTietGioHang->so_luong;
@@ -174,13 +173,10 @@ class GioHangController extends Controller
     public function removeProduct(Request $request)
     {
         $request->validate([
-            'gio_hang_id' => 'required|exists:gio_hangs,id',
-            'san_pham_id' => 'required|exists:san_phams,id',
+            'chi_tiet_gio_hang_id' => 'required|exists:chi_tiet_gio_hangs,id',
         ]);
 
-        $chiTietGioHang = ChiTietGioHang::where('gio_hang_id', $request->gio_hang_id)
-            ->where('san_pham_id', $request->san_pham_id)
-            ->first();
+        $chiTietGioHang = ChiTietGioHang::find($request->chi_tiet_gio_hang_id);
 
         if (!$chiTietGioHang) {
             return response()->json(['message' => 'Sản phẩm không có trong giỏ hàng'], 404);
@@ -190,7 +186,6 @@ class GioHangController extends Controller
 
         return response()->json(['message' => 'Xóa sản phẩm khỏi giỏ hàng thành công'], 200);
     }
-
 
     public function xoaGioHang($khach_hang_id): JsonResponse
     {
