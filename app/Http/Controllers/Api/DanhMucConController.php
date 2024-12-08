@@ -15,11 +15,25 @@ class DanhMucConController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(string $danh_muc_id): \Illuminate\Http\JsonResponse
     {
-        $data = DanhMucCon::query()->get();
+        try {
+            // Lấy danh sách danh mục con theo danh_muc_id
+            $data = DanhMucCon::query()
+                ->where('danh_muc_id', $danh_muc_id)
+                ->get();
 
-        return response()->json($data);
+            return response()->json([
+                'message' => 'Danh sách danh mục con thuộc danh mục id = ' . $danh_muc_id,
+                'data' => $data,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Lỗi khi lấy danh sách danh mục con: ' . $e->getMessage());
+
+            return response()->json([
+                'message' => 'Có lỗi xảy ra khi lấy danh sách danh mục con',
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
     /**
