@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('danh-muc-con')->group(function() {
     // Hiển thị danh sách các danh mục con
-    Route::get('/{danh_muc_id}', [DanhMucConController::class, 'index']);
+    Route::get('/find-by-id/{danh_muc_id}', [DanhMucConController::class, 'index']);
 
     // Tạo mới danh mục con
     Route::post('/create/', [DanhMucConController::class, 'store']);
@@ -18,4 +18,7 @@ Route::prefix('danh-muc-con')->group(function() {
 
     // Xóa danh mục con
     Route::delete('/delete/{id}', [DanhMucConController::class, 'destroy']);
+
+    Route::get('/getAll', [DanhMucConController::class, 'getAll']);
+
 });
