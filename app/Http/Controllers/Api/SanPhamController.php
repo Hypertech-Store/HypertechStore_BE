@@ -29,7 +29,7 @@ class SanPhamController extends Controller
     {
         // Lấy query param với giá trị mặc định: page = 1 và number_row = 10
         $page = $request->query('page', 1);
-        $numberRow = $request->query('number_row', 10);
+        $numberRow = $request->query('number_row', 9);
 
         // Lấy dữ liệu với phân trang
         $sanPhams = SanPham::paginate($numberRow, ['*'], 'page', $page);
@@ -353,6 +353,7 @@ class SanPhamController extends Controller
             'bienTheSanPhams' => $bienTheSanPhams,
             'grouped_attributes' => $groupedAttributes,
             'sale_theo_phan_tram' => $salePercentage,
+            'sale' => $sale,
             'trang_thai' => $saleStatus,
         ], 200);
     }
