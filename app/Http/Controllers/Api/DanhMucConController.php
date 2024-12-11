@@ -129,4 +129,16 @@ class DanhMucConController extends Controller
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+    /**
+     * Display all resources.
+     */
+    public function getAll(): \Illuminate\Http\JsonResponse
+    {
+        $data = DanhMucCon::query()->get();
+
+        return response()->json($data);
+    }
+
+
 }
