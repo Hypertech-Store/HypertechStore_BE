@@ -23,4 +23,8 @@ class LienKetBienTheVaGiaTriThuocTinh extends Model
     {
         return $this->belongsTo(GiaTriThuocTinh::class);
     }
+    public function hinhAnhSanPhams()
+    {
+        return $this->hasMany(HinhAnhSanPham::class);
+    }
 }

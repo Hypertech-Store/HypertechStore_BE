@@ -44,7 +44,7 @@ class HinhAnhSanPhamController extends Controller
 
                     // Tạo bản ghi trong cơ sở dữ liệu cho mỗi hình ảnh
                     HinhAnhSanPham::create([
-                        'san_pham_id' => $validated['san_pham_id'],
+                        'lien_ket_bien_the_va_gia_tri_thuoc_tinh_id' => $validated['lien_ket_bien_the_va_gia_tri_thuoc_tinh_id'],
                         'duong_dan_hinh_anh' => $path,
                     ]);
                 }
@@ -103,7 +103,7 @@ class HinhAnhSanPhamController extends Controller
     {
         try {
             $validated = $request->validate([
-                'san_pham_id' => 'nullable|integer|exists:san_phams,id',
+                'lien_ket_bien_the_va_gia_tri_thuoc_tinh_id' => 'nullable|integer|exists:lien_ket_bien_the_va_gia_tri_thuoc_tinhs,id',
                 'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             ]);
             $data = HinhAnhSanPham::find($id);
@@ -120,13 +120,13 @@ class HinhAnhSanPhamController extends Controller
                 $path =  $request->file('image')->store('hinh_anh_san_phams', 'public');
                 Log::info('Đường dẫn hình ảnh mới:', ['path' => $path]);
                 $data->update([
-                    'san_pham_id' => $validated['san_pham_id'],
+                    'lien_ket_bien_the_va_gia_tri_thuoc_tinh_id' => $validated['lien_ket_bien_the_va_gia_tri_thuoc_tinh_id'],
                     'duong_dan_hinh_anh' => $path,
                 ]);
             } else {
                 // Nếu không có ảnh mới, chỉ cập nhật các trường khác
                 $data->update([
-                    'san_pham_id' => $validated['san_pham_id'],
+                    'lien_ket_bien_the_va_gia_tri_thuoc_tinh_id' => $validated['lien_ket_bien_the_va_gia_tri_thuoc_tinh_id'],
                 ]);
             }
 

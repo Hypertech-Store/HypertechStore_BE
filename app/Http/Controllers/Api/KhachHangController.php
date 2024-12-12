@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class KhachHangController extends Controller
@@ -106,17 +107,32 @@ class KhachHangController extends Controller
         }
 
         $validatedData = $request->validate([
-            'ten_nguoi_dung' => 'sometimes|string',
-            'ho_ten' => 'sometimes|string',
-            'email' => 'sometimes|email',
-            'dien_thoai' => 'sometimes|string',
-            'dia_chi' => 'sometimes|string',
-            'gioi_tinh' => 'sometimes|string|in:male,female,other',
-            'ngay_sinh' => 'sometimes|date',
-            'old_password' => 'sometimes|required_with:new_password|string',
-            'new_password' => 'sometimes|min:8'
+            'ten_nguoi_dung' => 'nullable|string',
+            'ho_ten' => 'nullable|string',
+            'dien_thoai' => 'nullable|string',
+            'dia_chi' => 'nullable|string',
+            'gioi_tinh' => 'nullable|string|in:Male,Female',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'ngay_sinh' => 'nullable|date',
+            'old_password' => 'nullable|required_with:new_password|string',
+            'new_password' => 'nullable|min:8'
         ]);
 
+        if (!$khachHang) {
+            return response()->json(['message' => 'Không tìm thấy hình ảnh sản phẩm nào'], 404);
+        }
+
+        // Nếu có ảnh mới được tải lên, lưu ảnh và cập nhật đường dẫn
+        if ($request->hasFile('image')) {
+            if ($khachHang->duong_dan_hinh_anh && Storage::exists('public/' . $khachHang->duong_dan_hinh_anh)) {
+                Storage::delete('public/' . $khachHang->duong_dan_hinh_anh);
+            }
+            $path =  $request->file('image')->store('khach_hangs', 'public');
+            Log::info('Đường dẫn hình ảnh mới:', ['path' => $path]);
+            $khachHang->update([
+                'hinh_anh' => $path,
+            ]);
+        }
         // Kiểm tra mật khẩu cũ nếu truyền vào
         if (isset($validatedData['old_password']) && isset($validatedData['new_password'])) {
             if (!Hash::check($validatedData['old_password'], $khachHang->mat_khau)) {

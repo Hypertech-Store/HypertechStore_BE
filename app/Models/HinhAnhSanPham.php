@@ -10,12 +10,12 @@ class HinhAnhSanPham extends Model
     use HasFactory;
 
     protected $fillable = [
-        'san_pham_id',
+        'lien_ket_bien_the_va_gia_tri_thuoc_tinh_id',
         'duong_dan_hinh_anh',
     ];
 
-    public function sanPham()
+    public function lienKetBienTheVaThuocTinh()
     {
-        return $this->belongsTo(SanPham::class);
+        return $this->belongsTo(LienKetBienTheVaGiaTriThuocTinh::class, 'lien_ket_bien_the_va_gia_tri_thuoc_tinh_id', 'id');
     }
 }

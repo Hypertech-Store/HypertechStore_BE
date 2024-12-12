@@ -10,7 +10,9 @@ use App\Models\SanPham;
 use App\Models\BienTheSanPham;
 use App\Models\DanhMuc;
 use App\Models\DanhMucCon; // Import model DanhMucCon
+use App\Models\HinhAnhSanPham;
 use App\Models\SaleSanPham;
+use App\Models\ThongSo;
 use App\Models\ThongSoDienThoai;
 use App\Models\ThongSoDongHo;
 use App\Models\ThongSoMayTinh;
@@ -85,8 +87,9 @@ class SanPhamController extends Controller
     }
 
 
-    public function createProduct(Request $request, StoreThongSoMayTinhRequest $requestMayTinh, StoreThongSoDongHoRequest $requestDongHo, StoreThongSoDienThoaiRequest $requestDienThoai)
+    public function createProduct(Request $request)
     {
+        // Xác thực dữ liệu từ request
         $validated = $request->validate([
             'danh_muc_id' => 'required|exists:danh_mucs,id',
             'danh_muc_con_id' => 'nullable|exists:danh_muc_cons,id',
@@ -94,15 +97,28 @@ class SanPhamController extends Controller
             'mo_ta' => 'nullable|string',
             'gia' => 'required|numeric|min:0',
             'so_luong_ton_kho' => 'required|integer|min:0',
-            'image' => 'required|image|mimes:jpg,jpeg,png|max:2048',
             'luot_xem' => 'integer|min:0',
+            'thong_so' => 'required|array',
+            'thong_so.*.id' => 'required|exists:thong_sos,id',
         ]);
 
-        // Tạo sản phẩm
+        // Kiểm tra thông số có thuộc danh mục không
+        if ($request->has('thong_so')) {
+            foreach ($validated['thong_so'] as $thongSo) {
+                $thongSoModel = ThongSo::find($thongSo['id']);
+                if ($thongSoModel->danh_muc_id != $validated['danh_muc_id']) {
+                    return response()->json(['error' => 'Thông số không thuộc danh mục này.'], 400);
+                }
+            }
+        }
 
+        // Lưu thông tin sản phẩm vào database
         if ($request->hasFile('image')) {
+            // Upload hình ảnh và lưu đường dẫn
             $path = $request->file('image')->store('san_phams', 'public');
             Log::info('Đường dẫn hình ảnh:', ['path' => $path]);
+
+            // Tạo sản phẩm với đường dẫn hình ảnh đã lưu
             $sanPham = SanPham::create([
                 'danh_muc_id' => $validated['danh_muc_id'],
                 'danh_muc_con_id' => $validated['danh_muc_con_id'] ?? null,
@@ -110,163 +126,37 @@ class SanPhamController extends Controller
                 'mo_ta' => $validated['mo_ta'] ?? null,
                 'gia' => $validated['gia'],
                 'so_luong_ton_kho' => $validated['so_luong_ton_kho'],
-                'duong_dan_anh' => $path,
+                'duong_dan_anh' => $path, // Đảm bảo bạn lưu đường dẫn ảnh
+                'luot_xem' => $validated['luot_xem'] ?? 0,
+            ]);
+        } else {
+            // Trường hợp không có ảnh thì vẫn tạo sản phẩm
+            $sanPham = SanPham::create([
+                'danh_muc_id' => $validated['danh_muc_id'],
+                'danh_muc_con_id' => $validated['danh_muc_con_id'] ?? null,
+                'ten_san_pham' => $validated['ten_san_pham'],
+                'mo_ta' => $validated['mo_ta'] ?? null,
+                'gia' => $validated['gia'],
+                'so_luong_ton_kho' => $validated['so_luong_ton_kho'],
                 'luot_xem' => $validated['luot_xem'] ?? 0,
             ]);
         }
 
-        $thongSoDienThoai = [];
-        $thongSoMayTinh = [];
-        $thongSoDongHo = [];
-
-        // Thêm thông số theo danh mục
-        switch ($request->danh_muc_id) {
-            case 1: // Máy tính
-                $thongSoMayTinh = ThongSoMayTinh::create([
-                    'san_pham_id' => $sanPham->id,
-                    'cong_nghe_cpu' => $requestMayTinh->cong_nghe_cpu,
-                    'so_nhan' => $requestMayTinh->so_nhan,
-                    'so_luong_luong' => $requestMayTinh->so_luong_luong,
-                    'toc_do_cpu' => $requestMayTinh->toc_do_cpu,
-                    'toc_do_toi_da' => $requestMayTinh->toc_do_toi_da,
-                    'bo_nho_cache' => $requestMayTinh->bo_nho_cache,
-                    'ram' => $requestMayTinh->ram,
-                    'loai_ram' => $requestMayTinh->loai_ram,
-                    'toc_do_bus_ram' => $requestMayTinh->toc_do_bus_ram,
-                    'ho_tro_ram_toi_da' => $requestMayTinh->ho_tro_ram_toi_da,
-                    'o_cung' => $requestMayTinh->o_cung,
-                    'man_hinh' => $requestMayTinh->man_hinh,
-                    'do_phan_giai' => $requestMayTinh->do_phan_giai,
-                    'tan_so_quet' => $requestMayTinh->tan_so_quet,
-                    'cong_nghe_man_hinh' => $requestMayTinh->cong_nghe_man_hinh,
-                    'card_do_hoa' => $requestMayTinh->card_do_hoa,
-                    'cong_nghe_am_thanh' => $requestMayTinh->cong_nghe_am_thanh,
-                    'cong_giao_tiep' => $requestMayTinh->cong_giao_tiep,
-                    'ket_noi_khong_day' => $requestMayTinh->ket_noi_khong_day,
-                    'webcam' => $requestMayTinh->webcam,
-                    'tinh_nang_khac' => $requestMayTinh->tinh_nang_khac,
-                    'den_ban_phim' => $requestMayTinh->den_ban_phim,
-                    'khoi_luong' => $requestMayTinh->khoi_luong,
-                    'thoi_diem_ra_mat' => $requestMayTinh->thoi_diem_ra_mat,
-                ]);
-                break;
-            case 2: // Điện thoại
-                $thongSoDienThoai = ThongSoDienThoai::create([
-                    'san_pham_id' => $sanPham->id,
-                    'he_dieu_hanh' => $requestDienThoai->he_dieu_hanh,
-                    'chip_xu_ly' => $requestDienThoai->chip_xu_ly,
-                    'toc_do_cpu' => $requestDienThoai->toc_do_cpu,
-                    'chip_do_hoa' => $requestDienThoai->chip_do_hoa,
-                    'ram' => $requestDienThoai->ram,
-                    'dung_luong_luu_tru' => $requestDienThoai->dung_luong_luu_tru,
-                    'dung_luong_con_lai' => $requestDienThoai->dung_luong_con_lai,
-                    'the_nho' => $requestDienThoai->the_nho,
-                    'danh_ba' => $requestDienThoai->danh_ba,
-                    'camera_sau_resolution' => $requestDienThoai->camera_sau_resolution,
-                    'camera_sau_video' => $requestDienThoai->camera_sau_video,
-                    'camera_sau_flash' => $requestDienThoai->camera_sau_flash,
-                    'camera_sau_tinh_nang' => $requestDienThoai->camera_sau_tinh_nang,
-                    'camera_truoc_resolution' => $requestDienThoai->camera_truoc_resolution,
-                    'camera_truoc_tinh_nang' => $requestDienThoai->camera_truoc_tinh_nang,
-                    'cong_nghe_man_hinh' => $requestDienThoai->cong_nghe_man_hinh,
-                    'man_hinh_resolution' => $requestDienThoai->man_hinh_resolution,
-                    'man_hinh_rong' => $requestDienThoai->man_hinh_rong,
-                    'man_hinh_do_sang_max' => $requestDienThoai->man_hinh_do_sang_max,
-                    'mat_kinh_cam_ung' => $requestDienThoai->mat_kinh_cam_ung,
-                    'dung_luong_pin' => $requestDienThoai->dung_luong_pin,
-                    'loai_pin' => $requestDienThoai->loai_pin,
-                    'sac_toi_da' => $requestDienThoai->sac_toi_da,
-                    'sac_kem_theo' => $requestDienThoai->sac_kem_theo,
-                    'cong_nghe_pin' => $requestDienThoai->cong_nghe_pin,
-                    'bao_mat_nang_cao' => $requestDienThoai->bao_mat_nang_cao,
-                    'tinh_nang_dac_biet' => $requestDienThoai->tinh_nang_dac_biet,
-                    'khang_nuoc_bui' => $requestDienThoai->khang_nuoc_bui,
-                    'ghi_am' => $requestDienThoai->ghi_am,
-                    'radio' => $requestDienThoai->radio,
-                    'xem_phim' => $requestDienThoai->xem_phim,
-                    'nghe_nhac' => $requestDienThoai->nghe_nhac,
-                    'mang_di_dong' => $requestDienThoai->mang_di_dong,
-                    'sim' => $requestDienThoai->sim,
-                    'wifi' => $requestDienThoai->wifi,
-                    'gps' => $requestDienThoai->gps,
-                    'bluetooth' => $requestDienThoai->bluetooth,
-                    'cong_ket_noi_sac' => $requestDienThoai->cong_ket_noi_sac,
-                    'jack_tai_nghe' => $requestDienThoai->jack_tai_nghe,
-                    'ket_noi_khac' => $requestDienThoai->ket_noi_khac,
-                    'thiet_ke' => $requestDienThoai->thiet_ke,
-                    'chat_lieu' => $requestDienThoai->chat_lieu,
-                    'kich_thuoc_khoi_luong' => $requestDienThoai->kich_thuoc_khoi_luong,
-                    'thoi_diem_ra_mat' => $requestDienThoai->thoi_diem_ra_mat,
-                    'hang' => $requestDienThoai->hang,
-                ]);
-                break;
-
-            case 3: // Đồng hồ
-                $thongSoDongHo = ThongSoDongHo::create([
-                    'san_pham_id' => $sanPham->id,
-                    'cong_nghe_man_hinh' => $requestDongHo->cong_nghe_man_hinh,
-                    'kich_thuoc_man_hinh' => $requestDongHo->kich_thuoc_man_hinh,
-                    'do_phan_giai' => $requestDongHo->do_phan_giai,
-                    'kich_thuoc_mat' => $requestDongHo->kich_thuoc_mat,
-                    'chat_lieu_mat' => $requestDongHo->chat_lieu_mat,
-                    'chat_lieu_khung_vien' => $requestDongHo->chat_lieu_khung_vien,
-                    'chat_lieu_day' => $requestDongHo->chat_lieu_day,
-                    'do_rong_day' => $requestDongHo->do_rong_day,
-                    'do_dai_day' => $requestDongHo->do_dai_day,
-                    'kha_nang_thay_day' => $requestDongHo->kha_nang_thay_day,
-                    'mon_the_thao' => $requestDongHo->mon_the_thao,
-                    'ho_tro_ngoai_ghi' => $requestDongHo->ho_tro_ngoai_ghi,
-                    'tien_ich_dac_biet' => $requestDongHo->tien_ich_dac_biet,
-                    'chong_nuoc' => $requestDongHo->chong_nuoc,
-                    'theo_doi_suc_khoe' => $requestDongHo->theo_doi_suc_khoe,
-                    'tien_ich_khac' => $requestDongHo->tien_ich_khac,
-                    'hien_thi_thong_bao' => $requestDongHo->hien_thi_thong_bao,
-                    'thoi_gian_su_dung_pin' => $requestDongHo->thoi_gian_su_dung_pin,
-                    'thoi_gian_sac' => $requestDongHo->thoi_gian_sac,
-                    'dung_luong_pin' => $requestDongHo->dung_luong_pin,
-                    'cong_sac' => $requestDongHo->cong_sac,
-                    'cpu' => $requestDongHo->cpu,
-                    'bo_nho_trong' => $requestDongHo->bo_nho_trong,
-                    'he_dieu_hanh' => $requestDongHo->he_dieu_hanh,
-                    'ket_noi_he_dieu_hanh' => $requestDongHo->ket_noi_he_dieu_hanh,
-                    'ung_dung_quan_ly' => $requestDongHo->ung_dung_quan_ly,
-                    'ket_noi' => $requestDongHo->ket_noi,
-                    'cam_bien' => $requestDongHo->cam_bien,
-                    'dinh_vi' => $requestDongHo->dinh_vi,
-                    'san_xuat_tai' => $requestDongHo->san_xuat_tai,
-                    'thoi_diem_ra_mat' => $requestDongHo->thoi_diem_ra_mat,
-                    'ngon_ngu' => $requestDongHo->ngon_ngu,
-                    'hang_san_xuat' => $requestDongHo->hang_san_xuat,
-                ]);
-
-                break;
-
-            default:
-                return response()->json(['error' => 'Danh mục không hợp lệ'], 400);
+        // Thêm thông số cho sản phẩm nếu có
+        if ($request->has('thong_so') && isset($sanPham)) {
+            foreach ($validated['thong_so'] as $thongSo) {
+                $sanPham->thongSos()->attach($thongSo['id']);  // Liên kết thông số vào sản phẩm
+            }
         }
 
-        $response = ['san_pham' => $sanPham];
-
-        // Chỉ trả về thông số nếu không rỗng
-        if ($thongSoDienThoai) {
-            $response['thong_so_dien_thoai'] = $thongSoDienThoai;
-        }
-        if ($thongSoDongHo) {
-            $response['thong_so_dong_ho'] = $thongSoDongHo;
-        }
-        if ($thongSoMayTinh) {
-            $response['thong_so_may_tinh'] = $thongSoMayTinh;
-        }
-
-        return response()->json($response, 201);
+        // Trả về phản hồi
+        return response()->json(['san_pham' => $sanPham], 201);
     }
-
-
 
     public function getDetail($id)
     {
         // Get the product details along with its related images
-        $sanPham = SanPham::with('hinhAnhSanPhams')->find($id);
+        $sanPham = SanPham::with('thongSos')->find($id);
 
         // Check if the product exists
         if (!$sanPham) {
@@ -302,16 +192,6 @@ class SanPhamController extends Controller
         $tenDanhMucCon = $danhMucCon ? $danhMucCon->ten_danh_muc_con : null;
         $tenDanhMuc = $danhMucCon && $danhMucCon->danhMuc ? $danhMucCon->danhMuc->ten_danh_muc : null;
 
-        // Lấy thông số kỹ thuật tương ứng với danh mục sản phẩm
-        $thongSo = null;
-        if ($sanPham->danh_muc_id == 2) {  // Điện thoại
-            $thongSo = $sanPham->thongSoDienThoai ? array_filter($sanPham->thongSoDienThoai->toArray(), fn($value) => $value !== null) : null;
-        } elseif ($sanPham->danh_muc_id == 3) {  // Đồng hồ
-            $thongSo = $sanPham->thongSoDongHo ? array_filter($sanPham->thongSoDongHo->toArray(), fn($value) => $value !== null) : null;
-        } elseif ($sanPham->danh_muc_id == 1) {  // Máy tính
-            $thongSo = $sanPham->thongSoMayTinh ? array_filter($sanPham->thongSoMayTinh->toArray(), fn($value) => $value !== null) : null;
-        }
-
         // Kiểm tra xem sản phẩm có đang sale không và tính phần trăm giảm giá
         $salePercentage = null;
         $saleStatus = null;
@@ -345,7 +225,15 @@ class SanPhamController extends Controller
             $saleStatus = 'Sale';  // Sản phẩm đang sale nhưng không mới
         }
 
-        // Return the product details along with variants, specifications, sale/new status
+        $hinhAnhBienTheSanPham = [];
+        foreach ($bienTheSanPhams as $bienThe) {
+            $variantImages = HinhAnhSanPham::where('lien_ket_bien_the_va_gia_tri_thuoc_tinh_id', $bienThe->id)
+                ->select('id', 'lien_ket_bien_the_va_gia_tri_thuoc_tinh_id', 'duong_dan_hinh_anh')
+                ->get();
+            $hinhAnhBienTheSanPham[] = $variantImages;
+        }
+
+        // Return product details along with grouped attributes, sale status, and images
         return response()->json([
             'sanPham' => $sanPham,
             'ten_danh_muc' => $tenDanhMuc,
@@ -355,6 +243,7 @@ class SanPhamController extends Controller
             'sale_theo_phan_tram' => $salePercentage,
             'sale' => $sale,
             'trang_thai' => $saleStatus,
+            'hinh_anh_bien_the_san_pham' => $hinhAnhBienTheSanPham, // Add images to the response
         ], 200);
     }
 
@@ -482,7 +371,7 @@ class SanPhamController extends Controller
         return response()->json($sanPhams);
     }
 
-    public function updateProduct(Request $request, $id, StoreThongSoMayTinhRequest $requestMayTinh, StoreThongSoDongHoRequest $requestDongHo, StoreThongSoDienThoaiRequest $requestDienThoai)
+    public function updateProduct(Request $request, $id)
     {
         $sanPham = SanPham::find($id);
 
@@ -522,281 +411,6 @@ class SanPhamController extends Controller
 
         // Cập nhật dữ liệu
         $sanPham->update($updatedData);
-
-        $thongSoDienThoai = [];
-        $thongSoMayTinh = [];
-        $thongSoDongHo = [];
-
-        // Kiểm tra nếu thay đổi danh mục
-        if ($request->danh_muc_id != $oldDanhMucId) {
-            // Xóa thông số kỹ thuật cũ
-            $this->deleteOldTechnicalSpecs($oldDanhMucId, $sanPham->id);
-
-            // Thêm thông số kỹ thuật mới theo danh mục
-            switch ($request->danh_muc_id) {
-                case 1: // Máy tính
-                    $thongSoMayTinh = ThongSoMayTinh::create([
-                        'san_pham_id' => $sanPham->id,
-                        'cong_nghe_cpu' => $requestMayTinh->cong_nghe_cpu,
-                        'so_nhan' => $requestMayTinh->so_nhan,
-                        'so_luong_luong' => $requestMayTinh->so_luong_luong,
-                        'toc_do_cpu' => $requestMayTinh->toc_do_cpu,
-                        'toc_do_toi_da' => $requestMayTinh->toc_do_toi_da,
-                        'bo_nho_cache' => $requestMayTinh->bo_nho_cache,
-                        'ram' => $requestMayTinh->ram,
-                        'loai_ram' => $requestMayTinh->loai_ram,
-                        'toc_do_bus_ram' => $requestMayTinh->toc_do_bus_ram,
-                        'ho_tro_ram_toi_da' => $requestMayTinh->ho_tro_ram_toi_da,
-                        'o_cung' => $requestMayTinh->o_cung,
-                        'man_hinh' => $requestMayTinh->man_hinh,
-                        'do_phan_giai' => $requestMayTinh->do_phan_giai,
-                        'tan_so_quet' => $requestMayTinh->tan_so_quet,
-                        'cong_nghe_man_hinh' => $requestMayTinh->cong_nghe_man_hinh,
-                        'card_do_hoa' => $requestMayTinh->card_do_hoa,
-                        'cong_nghe_am_thanh' => $requestMayTinh->cong_nghe_am_thanh,
-                        'cong_giao_tiep' => $requestMayTinh->cong_giao_tiep,
-                        'ket_noi_khong_day' => $requestMayTinh->ket_noi_khong_day,
-                        'webcam' => $requestMayTinh->webcam,
-                        'tinh_nang_khac' => $requestMayTinh->tinh_nang_khac,
-                        'den_ban_phim' => $requestMayTinh->den_ban_phim,
-                        'khoi_luong' => $requestMayTinh->khoi_luong,
-                        'thoi_diem_ra_mat' => $requestMayTinh->thoi_diem_ra_mat,
-                    ]);
-                    break;
-
-                case 2: // Điện thoại
-                    $thongSoDienThoai = ThongSoDienThoai::create([
-                        'san_pham_id' => $sanPham->id,
-                        'he_dieu_hanh' => $requestDienThoai->he_dieu_hanh,
-                        'chip_xu_ly' => $requestDienThoai->chip_xu_ly,
-                        'toc_do_cpu' => $requestDienThoai->toc_do_cpu,
-                        'chip_do_hoa' => $requestDienThoai->chip_do_hoa,
-                        'ram' => $requestDienThoai->ram,
-                        'dung_luong_luu_tru' => $requestDienThoai->dung_luong_luu_tru,
-                        'dung_luong_con_lai' => $requestDienThoai->dung_luong_con_lai,
-                        'the_nho' => $requestDienThoai->the_nho,
-                        'danh_ba' => $requestDienThoai->danh_ba,
-                        'camera_sau_resolution' => $requestDienThoai->camera_sau_resolution,
-                        'camera_sau_video' => $requestDienThoai->camera_sau_video,
-                        'camera_sau_flash' => $requestDienThoai->camera_sau_flash,
-                        'camera_sau_tinh_nang' => $requestDienThoai->camera_sau_tinh_nang,
-                        'camera_truoc_resolution' => $requestDienThoai->camera_truoc_resolution,
-                        'camera_truoc_tinh_nang' => $requestDienThoai->camera_truoc_tinh_nang,
-                        'cong_nghe_man_hinh' => $requestDienThoai->cong_nghe_man_hinh,
-                        'man_hinh_resolution' => $requestDienThoai->man_hinh_resolution,
-                        'man_hinh_rong' => $requestDienThoai->man_hinh_rong,
-                        'man_hinh_do_sang_max' => $requestDienThoai->man_hinh_do_sang_max,
-                        'mat_kinh_cam_ung' => $requestDienThoai->mat_kinh_cam_ung,
-                        'dung_luong_pin' => $requestDienThoai->dung_luong_pin,
-                        'loai_pin' => $requestDienThoai->loai_pin,
-                        'sac_toi_da' => $requestDienThoai->sac_toi_da,
-                        'sac_kem_theo' => $requestDienThoai->sac_kem_theo,
-                        'cong_nghe_pin' => $requestDienThoai->cong_nghe_pin,
-                        'bao_mat_nang_cao' => $requestDienThoai->bao_mat_nang_cao,
-                        'tinh_nang_dac_biet' => $requestDienThoai->tinh_nang_dac_biet,
-                        'khang_nuoc_bui' => $requestDienThoai->khang_nuoc_bui,
-                        'ghi_am' => $requestDienThoai->ghi_am,
-                        'radio' => $requestDienThoai->radio,
-                        'xem_phim' => $requestDienThoai->xem_phim,
-                        'nghe_nhac' => $requestDienThoai->nghe_nhac,
-                        'mang_di_dong' => $requestDienThoai->mang_di_dong,
-                        'sim' => $requestDienThoai->sim,
-                        'wifi' => $requestDienThoai->wifi,
-                        'gps' => $requestDienThoai->gps,
-                        'bluetooth' => $requestDienThoai->bluetooth,
-                        'cong_ket_noi_sac' => $requestDienThoai->cong_ket_noi_sac,
-                        'jack_tai_nghe' => $requestDienThoai->jack_tai_nghe,
-                        'ket_noi_khac' => $requestDienThoai->ket_noi_khac,
-                        'thiet_ke' => $requestDienThoai->thiet_ke,
-                        'chat_lieu' => $requestDienThoai->chat_lieu,
-                        'kich_thuoc_khoi_luong' => $requestDienThoai->kich_thuoc_khoi_luong,
-                        'thoi_diem_ra_mat' => $requestDienThoai->thoi_diem_ra_mat,
-                        'hang' => $requestDienThoai->hang,
-                    ]);
-                    break;
-
-                case 3: // Đồng hồ
-                    $thongSoDongHo = ThongSoDongHo::create([
-                        'san_pham_id' => $sanPham->id,
-                        'cong_nghe_man_hinh' => $requestDongHo->cong_nghe_man_hinh,
-                        'kich_thuoc_man_hinh' => $requestDongHo->kich_thuoc_man_hinh,
-                        'do_phan_giai' => $requestDongHo->do_phan_giai,
-                        'kich_thuoc_mat' => $requestDongHo->kich_thuoc_mat,
-                        'chat_lieu_mat' => $requestDongHo->chat_lieu_mat,
-                        'chat_lieu_khung_vien' => $requestDongHo->chat_lieu_khung_vien,
-                        'chat_lieu_day' => $requestDongHo->chat_lieu_day,
-                        'do_rong_day' => $requestDongHo->do_rong_day,
-                        'do_dai_day' => $requestDongHo->do_dai_day,
-                        'kha_nang_thay_day' => $requestDongHo->kha_nang_thay_day,
-                        'mon_the_thao' => $requestDongHo->mon_the_thao,
-                        'ho_tro_ngoai_ghi' => $requestDongHo->ho_tro_ngoai_ghi,
-                        'tien_ich_dac_biet' => $requestDongHo->tien_ich_dac_biet,
-                        'chong_nuoc' => $requestDongHo->chong_nuoc,
-                        'theo_doi_suc_khoe' => $requestDongHo->theo_doi_suc_khoe,
-                        'tien_ich_khac' => $requestDongHo->tien_ich_khac,
-                        'hien_thi_thong_bao' => $requestDongHo->hien_thi_thong_bao,
-                        'thoi_gian_su_dung_pin' => $requestDongHo->thoi_gian_su_dung_pin,
-                        'thoi_gian_sac' => $requestDongHo->thoi_gian_sac,
-                        'dung_luong_pin' => $requestDongHo->dung_luong_pin,
-                        'cong_sac' => $requestDongHo->cong_sac,
-                        'cpu' => $requestDongHo->cpu,
-                        'bo_nho_trong' => $requestDongHo->bo_nho_trong,
-                        'he_dieu_hanh' => $requestDongHo->he_dieu_hanh,
-                        'ket_noi_he_dieu_hanh' => $requestDongHo->ket_noi_he_dieu_hanh,
-                        'ung_dung_quan_ly' => $requestDongHo->ung_dung_quan_ly,
-                        'ket_noi' => $requestDongHo->ket_noi,
-                        'cam_bien' => $requestDongHo->cam_bien,
-                        'dinh_vi' => $requestDongHo->dinh_vi,
-                        'san_xuat_tai' => $requestDongHo->san_xuat_tai,
-                        'thoi_diem_ra_mat' => $requestDongHo->thoi_diem_ra_mat,
-                        'ngon_ngu' => $requestDongHo->ngon_ngu,
-                        'hang_san_xuat' => $requestDongHo->hang_san_xuat,
-                    ]);
-                    break;
-            }
-        } else {
-            // Nếu không thay đổi danh mục, chỉ cần thêm thông số kỹ thuật của sản phẩm mới.
-            switch ($sanPham->danh_muc_id) {
-                case 1:
-                    $thongSoMayTinh = ThongSoMayTinh::where('san_pham_id', $sanPham->id)->first();
-
-                    $thongSoMayTinh->update([
-                        'san_pham_id' => $sanPham->id,
-                        'cong_nghe_cpu' => $requestMayTinh->cong_nghe_cpu,
-                        'so_nhan' => $requestMayTinh->so_nhan,
-                        'so_luong_luong' => $requestMayTinh->so_luong_luong,
-                        'toc_do_cpu' => $requestMayTinh->toc_do_cpu,
-                        'toc_do_toi_da' => $requestMayTinh->toc_do_toi_da,
-                        'bo_nho_cache' => $requestMayTinh->bo_nho_cache,
-                        'ram' => $requestMayTinh->ram,
-                        'loai_ram' => $requestMayTinh->loai_ram,
-                        'toc_do_bus_ram' => $requestMayTinh->toc_do_bus_ram,
-                        'ho_tro_ram_toi_da' => $requestMayTinh->ho_tro_ram_toi_da,
-                        'o_cung' => $requestMayTinh->o_cung,
-                        'man_hinh' => $requestMayTinh->man_hinh,
-                        'do_phan_giai' => $requestMayTinh->do_phan_giai,
-                        'tan_so_quet' => $requestMayTinh->tan_so_quet,
-                        'cong_nghe_man_hinh' => $requestMayTinh->cong_nghe_man_hinh,
-                        'card_do_hoa' => $requestMayTinh->card_do_hoa,
-                        'cong_nghe_am_thanh' => $requestMayTinh->cong_nghe_am_thanh,
-                        'cong_giao_tiep' => $requestMayTinh->cong_giao_tiep,
-                        'ket_noi_khong_day' => $requestMayTinh->ket_noi_khong_day,
-                        'webcam' => $requestMayTinh->webcam,
-                        'tinh_nang_khac' => $requestMayTinh->tinh_nang_khac,
-                        'den_ban_phim' => $requestMayTinh->den_ban_phim,
-                        'khoi_luong' => $requestMayTinh->khoi_luong,
-                        'thoi_diem_ra_mat' => $requestMayTinh->thoi_diem_ra_mat,
-
-                    ]);
-                    break;
-                case 2:
-                    $thongSoDienThoai = ThongSoDienThoai::where('san_pham_id', $sanPham->id)->first();
-
-                    $thongSoDienThoai->update([
-                        'san_pham_id' => $sanPham->id,
-                        'he_dieu_hanh' => $requestDienThoai->he_dieu_hanh,
-                        'chip_xu_ly' => $requestDienThoai->chip_xu_ly,
-                        'toc_do_cpu' => $requestDienThoai->toc_do_cpu,
-                        'chip_do_hoa' => $requestDienThoai->chip_do_hoa,
-                        'ram' => $requestDienThoai->ram,
-                        'dung_luong_luu_tru' => $requestDienThoai->dung_luong_luu_tru,
-                        'dung_luong_con_lai' => $requestDienThoai->dung_luong_con_lai,
-                        'the_nho' => $requestDienThoai->the_nho,
-                        'danh_ba' => $requestDienThoai->danh_ba,
-                        'camera_sau_resolution' => $requestDienThoai->camera_sau_resolution,
-                        'camera_sau_video' => $requestDienThoai->camera_sau_video,
-                        'camera_sau_flash' => $requestDienThoai->camera_sau_flash,
-                        'camera_sau_tinh_nang' => $requestDienThoai->camera_sau_tinh_nang,
-                        'camera_truoc_resolution' => $requestDienThoai->camera_truoc_resolution,
-                        'camera_truoc_tinh_nang' => $requestDienThoai->camera_truoc_tinh_nang,
-                        'cong_nghe_man_hinh' => $requestDienThoai->cong_nghe_man_hinh,
-                        'man_hinh_resolution' => $requestDienThoai->man_hinh_resolution,
-                        'man_hinh_rong' => $requestDienThoai->man_hinh_rong,
-                        'man_hinh_do_sang_max' => $requestDienThoai->man_hinh_do_sang_max,
-                        'mat_kinh_cam_ung' => $requestDienThoai->mat_kinh_cam_ung,
-                        'dung_luong_pin' => $requestDienThoai->dung_luong_pin,
-                        'loai_pin' => $requestDienThoai->loai_pin,
-                        'sac_toi_da' => $requestDienThoai->sac_toi_da,
-                        'sac_kem_theo' => $requestDienThoai->sac_kem_theo,
-                        'cong_nghe_pin' => $requestDienThoai->cong_nghe_pin,
-                        'bao_mat_nang_cao' => $requestDienThoai->bao_mat_nang_cao,
-                        'tinh_nang_dac_biet' => $requestDienThoai->tinh_nang_dac_biet,
-                        'khang_nuoc_bui' => $requestDienThoai->khang_nuoc_bui,
-                        'ghi_am' => $requestDienThoai->ghi_am,
-                        'radio' => $requestDienThoai->radio,
-                        'xem_phim' => $requestDienThoai->xem_phim,
-                        'nghe_nhac' => $requestDienThoai->nghe_nhac,
-                        'mang_di_dong' => $requestDienThoai->mang_di_dong,
-                        'sim' => $requestDienThoai->sim,
-                        'wifi' => $requestDienThoai->wifi,
-                        'gps' => $requestDienThoai->gps,
-                        'bluetooth' => $requestDienThoai->bluetooth,
-                        'cong_ket_noi_sac' => $requestDienThoai->cong_ket_noi_sac,
-                        'jack_tai_nghe' => $requestDienThoai->jack_tai_nghe,
-                        'ket_noi_khac' => $requestDienThoai->ket_noi_khac,
-                        'thiet_ke' => $requestDienThoai->thiet_ke,
-                        'chat_lieu' => $requestDienThoai->chat_lieu,
-                        'kich_thuoc_khoi_luong' => $requestDienThoai->kich_thuoc_khoi_luong,
-                        'thoi_diem_ra_mat' => $requestDienThoai->thoi_diem_ra_mat,
-                        'hang' => $requestDienThoai->hang,
-
-                    ]);
-                    break;
-                case 3:
-                    $thongSoDongHo = ThongSoDongHo::where('san_pham_id', $sanPham->id)->first();
-
-                    $thongSoDongHo->update([
-                        'san_pham_id' => $sanPham->id,
-                        'cong_nghe_man_hinh' => $requestDongHo->cong_nghe_man_hinh,
-                        'kich_thuoc_man_hinh' => $requestDongHo->kich_thuoc_man_hinh,
-                        'do_phan_giai' => $requestDongHo->do_phan_giai,
-                        'kich_thuoc_mat' => $requestDongHo->kich_thuoc_mat,
-                        'chat_lieu_mat' => $requestDongHo->chat_lieu_mat,
-                        'chat_lieu_khung_vien' => $requestDongHo->chat_lieu_khung_vien,
-                        'chat_lieu_day' => $requestDongHo->chat_lieu_day,
-                        'do_rong_day' => $requestDongHo->do_rong_day,
-                        'do_dai_day' => $requestDongHo->do_dai_day,
-                        'kha_nang_thay_day' => $requestDongHo->kha_nang_thay_day,
-                        'mon_the_thao' => $requestDongHo->mon_the_thao,
-                        'ho_tro_ngoai_ghi' => $requestDongHo->ho_tro_ngoai_ghi,
-                        'tien_ich_dac_biet' => $requestDongHo->tien_ich_dac_biet,
-                        'chong_nuoc' => $requestDongHo->chong_nuoc,
-                        'theo_doi_suc_khoe' => $requestDongHo->theo_doi_suc_khoe,
-                        'tien_ich_khac' => $requestDongHo->tien_ich_khac,
-                        'hien_thi_thong_bao' => $requestDongHo->hien_thi_thong_bao,
-                        'thoi_gian_su_dung_pin' => $requestDongHo->thoi_gian_su_dung_pin,
-                        'thoi_gian_sac' => $requestDongHo->thoi_gian_sac,
-                        'dung_luong_pin' => $requestDongHo->dung_luong_pin,
-                        'cong_sac' => $requestDongHo->cong_sac,
-                        'cpu' => $requestDongHo->cpu,
-                        'bo_nho_trong' => $requestDongHo->bo_nho_trong,
-                        'he_dieu_hanh' => $requestDongHo->he_dieu_hanh,
-                        'ket_noi_he_dieu_hanh' => $requestDongHo->ket_noi_he_dieu_hanh,
-                        'ung_dung_quan_ly' => $requestDongHo->ung_dung_quan_ly,
-                        'ket_noi' => $requestDongHo->ket_noi,
-                        'cam_bien' => $requestDongHo->cam_bien,
-                        'dinh_vi' => $requestDongHo->dinh_vi,
-                        'san_xuat_tai' => $requestDongHo->san_xuat_tai,
-                        'thoi_diem_ra_mat' => $requestDongHo->thoi_diem_ra_mat,
-                        'ngon_ngu' => $requestDongHo->ngon_ngu,
-                        'hang_san_xuat' => $requestDongHo->hang_san_xuat,
-
-                    ]);
-                    break;
-            }
-        }
-
-
-        // Chỉ trả về thông số nếu không rỗng
-        if ($thongSoDienThoai) {
-            $response['thong_so_dien_thoai'] = $thongSoDienThoai;
-        }
-        if ($thongSoDongHo) {
-            $response['thong_so_dong_ho'] = $thongSoDongHo;
-        }
-        if ($thongSoMayTinh) {
-            $response['thong_so_may_tinh'] = $thongSoMayTinh;
-        }
 
         return response()->json($sanPham, 201);
     }
