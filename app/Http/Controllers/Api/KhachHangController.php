@@ -127,7 +127,7 @@ class KhachHangController extends Controller
             if ($khachHang->duong_dan_hinh_anh && Storage::exists('public/' . $khachHang->duong_dan_hinh_anh)) {
                 Storage::delete('public/' . $khachHang->duong_dan_hinh_anh);
             }
-            $path =  $request->file('image')->store('hinh_anh_san_phams', 'public');
+            $path =  $request->file('image')->store('khach_hangs', 'public');
             Log::info('Đường dẫn hình ảnh mới:', ['path' => $path]);
             $khachHang->update([
                 'hinh_anh' => $path,

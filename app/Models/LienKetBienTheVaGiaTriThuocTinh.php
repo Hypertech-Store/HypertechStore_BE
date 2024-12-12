@@ -11,7 +11,6 @@ class LienKetBienTheVaGiaTriThuocTinh extends Model
     protected $fillable = [
         'bien_the_san_pham_id',
         'gia_tri_thuoc_tinh_id',
-        'anh_bien_the'
     ];
 
     // Quan hệ n-1 với bảng GiaTriThuocTinh
@@ -23,5 +22,9 @@ class LienKetBienTheVaGiaTriThuocTinh extends Model
     public function giaTriThuocTinh()
     {
         return $this->belongsTo(GiaTriThuocTinh::class);
+    }
+    public function hinhAnhSanPhams()
+    {
+        return $this->hasMany(HinhAnhSanPham::class);
     }
 }

@@ -40,10 +40,6 @@ class SanPham extends Model
     }
 
     // Quan hệ 1-n với bảng HinhAnhSanPham
-    public function hinhAnhSanPhams()
-    {
-        return $this->hasMany(HinhAnhSanPham::class, 'san_pham_id');
-    }
     public function danhGias()
     {
         return $this->hasMany(DanhGia::class);
