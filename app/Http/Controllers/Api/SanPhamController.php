@@ -266,7 +266,7 @@ class SanPhamController extends Controller
     public function getDetail($id)
     {
         // Get the product details along with its related images
-        $sanPham = SanPham::with('hinhAnhSanPhams')->find($id);
+        $sanPham = SanPham::find($id);
 
         // Check if the product exists
         if (!$sanPham) {
@@ -301,16 +301,6 @@ class SanPhamController extends Controller
         // Kiểm tra nếu danh mục con tồn tại và lấy tên danh mục con cùng tên danh mục cha
         $tenDanhMucCon = $danhMucCon ? $danhMucCon->ten_danh_muc_con : null;
         $tenDanhMuc = $danhMucCon && $danhMucCon->danhMuc ? $danhMucCon->danhMuc->ten_danh_muc : null;
-
-        // Lấy thông số kỹ thuật tương ứng với danh mục sản phẩm
-        $thongSo = null;
-        if ($sanPham->danh_muc_id == 2) {  // Điện thoại
-            $thongSo = $sanPham->thongSoDienThoai ? array_filter($sanPham->thongSoDienThoai->toArray(), fn($value) => $value !== null) : null;
-        } elseif ($sanPham->danh_muc_id == 3) {  // Đồng hồ
-            $thongSo = $sanPham->thongSoDongHo ? array_filter($sanPham->thongSoDongHo->toArray(), fn($value) => $value !== null) : null;
-        } elseif ($sanPham->danh_muc_id == 1) {  // Máy tính
-            $thongSo = $sanPham->thongSoMayTinh ? array_filter($sanPham->thongSoMayTinh->toArray(), fn($value) => $value !== null) : null;
-        }
 
         // Kiểm tra xem sản phẩm có đang sale không và tính phần trăm giảm giá
         $salePercentage = null;
