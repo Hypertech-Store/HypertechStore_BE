@@ -227,10 +227,22 @@ class SanPhamController extends Controller
 
         $hinhAnhBienTheSanPham = [];
         foreach ($bienTheSanPhams as $bienThe) {
-            $variantImages = HinhAnhSanPham::where('lien_ket_bien_the_va_gia_tri_thuoc_tinh_id', $bienThe->id)
-                ->select('id', 'lien_ket_bien_the_va_gia_tri_thuoc_tinh_id', 'duong_dan_hinh_anh')
-                ->get();
-            $hinhAnhBienTheSanPham[] = $variantImages;
+            $variantImages = [];
+            foreach ($bienThe->lienKetBienTheVaGiaTri as $lienKet) {
+                foreach ($lienKet->hinhAnhSanPhams as $hinhAnh) {
+                    $variantImages[] = [
+                        'bien_the_id' => $bienThe->id,
+                        'gia_tri_thuoc_tinh_id' => $lienKet->gia_tri_thuoc_tinh_id,
+                        'ten_gia_tri' => $lienKet->giaTriThuocTinh->ten_gia_tri, // Thêm tên giá trị thuộc tính
+                        'hinh_anh_id' => $hinhAnh->id,
+                        'duong_dan_hinh_anh' => $hinhAnh->duong_dan_hinh_anh
+                    ];
+                }
+            }
+            $hinhAnhBienTheSanPham[] = [
+                'bien_the_id' => $bienThe->id,
+                'hinh_anh' => $variantImages
+            ];
         }
 
         // Return product details along with grouped attributes, sale status, and images
