@@ -26,4 +26,14 @@ class BienTheSanPham extends Model
     {
         return $this->belongsToMany(GiaTriThuocTinh::class, 'lien_ket_bien_the_va_gia_tri_thuoc_tinhs', 'bien_the_san_pham_id', 'gia_tri_thuoc_tinh_id');
     }
+
+    public function lienKetBienTheVaGiaTri()
+    {
+        return $this->hasMany(LienKetBienTheVaGiaTriThuocTinh::class, 'bien_the_san_pham_id', 'id');
+    }
+
+    public function hinhAnhSanPhams()
+    {
+        return $this->hasMany(HinhAnhSanPham::class, 'lien_ket_bien_the_va_gia_tri_thuoc_tinh_id', 'id');
+    }
 }
