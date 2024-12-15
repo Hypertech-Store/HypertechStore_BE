@@ -101,7 +101,14 @@ class DanhMucController extends Controller
     {
 
         try {
-            DanhMuc::destroy($id);
+            $danhMuc = DanhMuc::findOrFail($id);
+
+            // Xóa các danh mục con liên quan
+            $danhMuc->danhMucCons()->delete();
+
+            // Xóa danh mục chính
+            $danhMuc->delete();
+
             return response()->json([
                 'message' => 'Xóa thành công',
             ], Response::HTTP_OK);
@@ -120,7 +127,7 @@ class DanhMucController extends Controller
         }
     }
 
-    
+
 
 
 }
