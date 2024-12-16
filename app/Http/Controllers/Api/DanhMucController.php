@@ -16,9 +16,13 @@ class DanhMucController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $data = DanhMuc::query()->get();
+        $page = $request->query('page', 1);  // Sử dụng query 'page' hoặc mặc định là 1
+        $numberRow = $request->query('number_row', 10);  // Sử dụng query 'number_row' hoặc mặc định là 9
+
+        $data = DanhMuc::with('danhMucCons')->paginate($numberRow, ['*'], 'page', $page);
+
         return response()->json($data);
     }
 
