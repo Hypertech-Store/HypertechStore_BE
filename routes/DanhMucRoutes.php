@@ -19,4 +19,4 @@ use Illuminate\Support\Facades\Route;
 //     // Xóa danh mục
 //     Route::delete('/delete/{id}', [DanhMucController::class, 'destroy']);
 // });
-Route::apiResource('danh-muc-con', DanhMucController::class);
+Route::apiResource('danh-muc', DanhMucController::class);
