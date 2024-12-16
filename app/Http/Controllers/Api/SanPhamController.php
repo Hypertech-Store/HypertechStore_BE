@@ -98,7 +98,7 @@ class SanPhamController extends Controller
             'gia' => 'required|numeric|min:0',
             'so_luong_ton_kho' => 'required|integer|min:0',
             'luot_xem' => 'integer|min:0',
-            'thong_so' => 'required|array',
+            'thong_so' => 'nullable|array',
             'thong_so.*.id' => 'required|exists:thong_sos,id',
         ]);
 
