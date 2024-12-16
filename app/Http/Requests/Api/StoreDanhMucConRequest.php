@@ -27,7 +27,7 @@ class StoreDanhMucConRequest extends FormRequest
         return [
             'danh_muc_id' => 'integer|required|exists:danh_mucs,id',
             'ten_danh_muc_con' => 'string|required|max:255',
-            'mo_ta' => 'string|nullable|max:1000',
+            'image' => 'required|image|mimes:jpg,jpeg,png|max:2048',
         ];
     }
 
