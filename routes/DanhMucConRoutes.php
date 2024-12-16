@@ -20,5 +20,6 @@ Route::prefix('danh-muc-con')->group(function() {
     Route::delete('/delete/{id}', [DanhMucConController::class, 'destroy']);
 
     Route::get('/getAll', [DanhMucConController::class, 'getAll']);
-
 });
+Route::get('/danh-muc-con/{danh_muc_id}', [DanhMucConController::class, 'getSubCategoriesByCategoryId']);
+

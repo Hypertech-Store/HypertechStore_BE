@@ -28,8 +28,8 @@ class DanhMucConController extends Controller
 
         // Trả về dữ liệu dạng JSON
         return response()->json($data);
-
-    public function index(string $danh_muc_id): \Illuminate\Http\JsonResponse
+    }
+    public function getSubCategoriesByCategoryId(string $danh_muc_id): \Illuminate\Http\JsonResponse
     {
         try {
             // Lấy danh sách danh mục con theo danh_muc_id
@@ -49,7 +49,6 @@ class DanhMucConController extends Controller
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
 
     /**
      * Store a newly created resource in storage.
