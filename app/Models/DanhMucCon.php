@@ -12,7 +12,7 @@ class DanhMucCon extends Model
     protected $fillable = [
         'danh_muc_id',
         'ten_danh_muc_con',
-        'mo_ta'
+        'img'
 
     ];
 
