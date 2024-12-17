@@ -25,6 +25,12 @@ class DanhMucController extends Controller
 
         return response()->json($data);
     }
+    public function getAllDanhMuc()
+    {
+        $data = DanhMuc::with('danhMucCons')->get();
+
+        return response()->json($data);
+    }
 
     /**
      * Store a newly created resource in storage.
