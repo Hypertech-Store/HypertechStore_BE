@@ -29,7 +29,7 @@ class SanPhamController extends Controller
 {
     public function getAllProduct(Request $request): JsonResponse
     {
-        // Lấy query param với giá trị mặc định: page = 1 và number_row = 10
+        // Lấy query param với giá trị mặc định: page = 1 và number_row = 9
         $page = $request->query('page', 1);
         $numberRow = $request->query('number_row', 9);
 
@@ -39,7 +39,7 @@ class SanPhamController extends Controller
         $minPrice = SanPham::min('gia');
         $maxPrice = SanPham::max('gia');
 
-        // Kiểm tra trạng thái "new" và "sale" cho mỗi sản phẩm
+        // Kiểm tra trạng thái "new" và "sale" và lấy hình ảnh sản phẩm
         foreach ($sanPhams as $sanPham) {
             $saleStatus = null;
             $currentDate = Carbon::now()->timezone('Asia/Ho_Chi_Minh');
@@ -75,6 +75,31 @@ class SanPhamController extends Controller
 
             // Thêm trạng thái vào mỗi sản phẩm
             $sanPham->trang_thai = $status;
+
+            // Lấy biến thể sản phẩm và hình ảnh
+            $bienTheSanPhams = $sanPham->bienTheSanPhams()->with('giaTriThuocTinh')->get();
+            $hinhAnhBienTheSanPham = [];
+            foreach ($bienTheSanPhams as $bienThe) {
+                $variantImages = [];
+                foreach ($bienThe->lienKetBienTheVaGiaTri as $lienKet) {
+                    foreach ($lienKet->hinhAnhSanPhams as $hinhAnh) {
+                        $variantImages[] = [
+                            'bien_the_id' => $bienThe->id,
+                            'gia_tri_thuoc_tinh_id' => $lienKet->gia_tri_thuoc_tinh_id,
+                            'ten_gia_tri' => $lienKet->giaTriThuocTinh->ten_gia_tri, // Thêm tên giá trị thuộc tính
+                            'hinh_anh_id' => $hinhAnh->id,
+                            'duong_dan_hinh_anh' => $hinhAnh->duong_dan_hinh_anh
+                        ];
+                    }
+                }
+                $hinhAnhBienTheSanPham[] = [
+                    'bien_the_id' => $bienThe->id,
+                    'hinh_anh' => $variantImages
+                ];
+            }
+
+            // Thêm hình ảnh biến thể vào sản phẩm
+            $sanPham->hinh_anh_san_pham = $hinhAnhBienTheSanPham;
         }
 
         // Trả về dữ liệu dưới dạng JSON
