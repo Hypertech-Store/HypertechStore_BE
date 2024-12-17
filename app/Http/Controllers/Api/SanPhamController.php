@@ -28,88 +28,88 @@ use Illuminate\Support\Facades\Storage;
 class SanPhamController extends Controller
 {
     public function getAllProduct(Request $request): JsonResponse
-{
-    // Lấy query param với giá trị mặc định: page = 1 và number_row = 9
-    $page = $request->query('page', 1);
-    $numberRow = $request->query('number_row', 9);
+    {
+        // Lấy query param với giá trị mặc định: page = 1 và number_row = 9
+        $page = $request->query('page', 1);
+        $numberRow = $request->query('number_row', 9);
 
-    // Lấy dữ liệu với phân trang
-    $sanPhams = SanPham::paginate($numberRow, ['*'], 'page', $page);
+        // Lấy dữ liệu với phân trang
+        $sanPhams = SanPham::paginate($numberRow, ['*'], 'page', $page);
 
-    $minPrice = SanPham::min('gia');
-    $maxPrice = SanPham::max('gia');
+        $minPrice = SanPham::min('gia');
+        $maxPrice = SanPham::max('gia');
 
-    // Kiểm tra trạng thái "new" và "sale" và lấy hình ảnh sản phẩm
-    foreach ($sanPhams as $sanPham) {
-        $saleStatus = null;
-        $currentDate = Carbon::now()->timezone('Asia/Ho_Chi_Minh');
+        // Kiểm tra trạng thái "new" và "sale" và lấy hình ảnh sản phẩm
+        foreach ($sanPhams as $sanPham) {
+            $saleStatus = null;
+            $currentDate = Carbon::now()->timezone('Asia/Ho_Chi_Minh');
 
-        // Kiểm tra trạng thái sale của sản phẩm
-        $sale = SaleSanPham::where('san_pham_id', $sanPham->id)
-            ->where('ngay_bat_dau_sale', '<=', $currentDate)
-            ->where('ngay_ket_thuc_sale', '>=', $currentDate)
-            ->first();
+            // Kiểm tra trạng thái sale của sản phẩm
+            $sale = SaleSanPham::where('san_pham_id', $sanPham->id)
+                ->where('ngay_bat_dau_sale', '<=', $currentDate)
+                ->where('ngay_ket_thuc_sale', '>=', $currentDate)
+                ->first();
 
-        if ($sale) {
-            $saleStatus = $sale->sale_theo_phan_tram;
+            if ($sale) {
+                $saleStatus = $sale->sale_theo_phan_tram;
 
-            // Nếu sản phẩm có sale và được tạo trong vòng 1 tuần
-            $saleStatus = $sale->created_at >= now()->subWeek() ? 'Sản phẩm mới đang sale' : 'Sale';
-        }
-
-        // Kiểm tra xem sản phẩm có phải là sản phẩm mới (thêm trong 1 tuần qua)
-        $isNew = null;
-        if ($sanPham->created_at >= now()->subWeek()) {
-            $isNew = true;
-        }
-
-        // Xử lý trạng thái "new" và "sale" cho sản phẩm
-        $status = null;
-        if ($saleStatus && $isNew) {
-            $status = 'Sản phẩm mới đang sale';  // Cả sale và new
-        } elseif ($saleStatus) {
-            $status = 'Sale';  // Chỉ sale
-        } elseif ($isNew) {
-            $status = 'Sản phẩm mới';   // Chỉ mới
-        }
-
-        // Thêm trạng thái vào mỗi sản phẩm
-        $sanPham->trang_thai = $status;
-
-        // Lấy biến thể sản phẩm và hình ảnh
-        $bienTheSanPhams = $sanPham->bienTheSanPhams()->with('giaTriThuocTinh')->get();
-        $hinhAnhBienTheSanPham = [];
-        foreach ($bienTheSanPhams as $bienThe) {
-            $variantImages = [];
-            foreach ($bienThe->lienKetBienTheVaGiaTri as $lienKet) {
-                foreach ($lienKet->hinhAnhSanPhams as $hinhAnh) {
-                    $variantImages[] = [
-                        'bien_the_id' => $bienThe->id,
-                        'gia_tri_thuoc_tinh_id' => $lienKet->gia_tri_thuoc_tinh_id,
-                        'ten_gia_tri' => $lienKet->giaTriThuocTinh->ten_gia_tri, // Thêm tên giá trị thuộc tính
-                        'hinh_anh_id' => $hinhAnh->id,
-                        'duong_dan_hinh_anh' => $hinhAnh->duong_dan_hinh_anh
-                    ];
-                }
+                // Nếu sản phẩm có sale và được tạo trong vòng 1 tuần
+                $saleStatus = $sale->created_at >= now()->subWeek() ? 'Sản phẩm mới đang sale' : 'Sale';
             }
-            $hinhAnhBienTheSanPham[] = [
-                'bien_the_id' => $bienThe->id,
-                'hinh_anh' => $variantImages
-            ];
+
+            // Kiểm tra xem sản phẩm có phải là sản phẩm mới (thêm trong 1 tuần qua)
+            $isNew = null;
+            if ($sanPham->created_at >= now()->subWeek()) {
+                $isNew = true;
+            }
+
+            // Xử lý trạng thái "new" và "sale" cho sản phẩm
+            $status = null;
+            if ($saleStatus && $isNew) {
+                $status = 'Sản phẩm mới đang sale';  // Cả sale và new
+            } elseif ($saleStatus) {
+                $status = 'Sale';  // Chỉ sale
+            } elseif ($isNew) {
+                $status = 'Sản phẩm mới';   // Chỉ mới
+            }
+
+            // Thêm trạng thái vào mỗi sản phẩm
+            $sanPham->trang_thai = $status;
+
+            // Lấy biến thể sản phẩm và hình ảnh
+            $bienTheSanPhams = $sanPham->bienTheSanPhams()->with('giaTriThuocTinh')->get();
+            $hinhAnhBienTheSanPham = [];
+            foreach ($bienTheSanPhams as $bienThe) {
+                $variantImages = [];
+                foreach ($bienThe->lienKetBienTheVaGiaTri as $lienKet) {
+                    foreach ($lienKet->hinhAnhSanPhams as $hinhAnh) {
+                        $variantImages[] = [
+                            'bien_the_id' => $bienThe->id,
+                            'gia_tri_thuoc_tinh_id' => $lienKet->gia_tri_thuoc_tinh_id,
+                            'ten_gia_tri' => $lienKet->giaTriThuocTinh->ten_gia_tri, // Thêm tên giá trị thuộc tính
+                            'hinh_anh_id' => $hinhAnh->id,
+                            'duong_dan_hinh_anh' => $hinhAnh->duong_dan_hinh_anh
+                        ];
+                    }
+                }
+                $hinhAnhBienTheSanPham[] = [
+                    'bien_the_id' => $bienThe->id,
+                    'hinh_anh' => $variantImages
+                ];
+            }
+
+            // Thêm hình ảnh biến thể vào sản phẩm
+            $sanPham->hinh_anh_san_pham = $hinhAnhBienTheSanPham;
         }
 
-        // Thêm hình ảnh biến thể vào sản phẩm
-        $sanPham->hinh_anh_san_pham = $hinhAnhBienTheSanPham;
+        // Trả về dữ liệu dưới dạng JSON
+        return response()->json([
+            'status' => 'success',
+            'data' => $sanPhams,
+            'min_price' => $minPrice,
+            'max_price' => $maxPrice,
+        ]);
     }
-
-    // Trả về dữ liệu dưới dạng JSON
-    return response()->json([
-        'status' => 'success',
-        'data' => $sanPhams,
-        'min_price' => $minPrice,
-        'max_price' => $maxPrice,
-    ]);
-}
 
 
     public function createProduct(Request $request)
