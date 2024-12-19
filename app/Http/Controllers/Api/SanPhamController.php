@@ -204,9 +204,14 @@ class SanPhamController extends Controller
                     ];
                 }
 
-                // Thêm giá trị vào mảng
-                $groupedAttributes[$giaTri->thuocTinhSanPham->ten_thuoc_tinh]['ten_gia_tri'][] = $giaTri->ten_gia_tri;
-                $groupedAttributes[$giaTri->thuocTinhSanPham->ten_thuoc_tinh]['gia_tri_thuoc_tinh_id'][] = $giaTri->id; // Lưu gia_tri_thuoc_tinh_id
+                // Thêm giá trị vào mảng nếu chưa tồn tại
+                if (!in_array($giaTri->ten_gia_tri, $groupedAttributes[$giaTri->thuocTinhSanPham->ten_thuoc_tinh]['ten_gia_tri'])) {
+                    $groupedAttributes[$giaTri->thuocTinhSanPham->ten_thuoc_tinh]['ten_gia_tri'][] = $giaTri->ten_gia_tri;
+                }
+
+                if (!in_array($giaTri->id, $groupedAttributes[$giaTri->thuocTinhSanPham->ten_thuoc_tinh]['gia_tri_thuoc_tinh_id'])) {
+                    $groupedAttributes[$giaTri->thuocTinhSanPham->ten_thuoc_tinh]['gia_tri_thuoc_tinh_id'][] = $giaTri->id;
+                }
             }
         }
 
