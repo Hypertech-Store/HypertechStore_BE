@@ -27,6 +27,7 @@ class StoreSanPhamVaThongSoRequest extends FormRequest
         return [
             'san_pham_id' => 'required|exists:san_phams,id',
             'thong_so_id' => 'required|exists:thong_sos,id',
+            'mo_ta' => "required|string"
         ];
     }
     protected function failedValidation(Validator $validator)

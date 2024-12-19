@@ -68,6 +68,11 @@ class SanPham extends Model
     {
         return $this->belongsToMany(ThongSo::class, 'san_pham_va_thong_sos', 'san_pham_id', 'thong_so_id');
     }
+    public function sanPhamVaThongSo()
+    {
+        return $this->hasMany(SanPhamVaThongSo::class, 'san_pham_id');
+    }
+
 
 
 }

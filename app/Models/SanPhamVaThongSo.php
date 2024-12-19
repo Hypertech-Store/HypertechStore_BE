@@ -11,6 +11,7 @@ class SanPhamVaThongSo extends Model
     protected $fillable = [
         'san_pham_id',
         'thong_so_id',
+        'mo_ta'
     ];
 
     // Mối quan hệ với bảng san_phams
