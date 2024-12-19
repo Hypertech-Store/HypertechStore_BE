@@ -181,7 +181,16 @@ class SanPhamController extends Controller
     public function getDetail($id)
     {
         // Get the product details along with its related images
-        $sanPham = SanPham::with('thongSos')->find($id);
+        $sanPham = SanPham::with('sanPhamVaThongSo.thongSo')->find($id);
+        $thongSoSanPham = $sanPham->sanPhamVaThongSo->map(function ($sanPhamVaThongSo) {
+            return [
+                'thong_so' => $sanPhamVaThongSo->thongSo->ten_thong_so, // Tên thông số
+                'mo_ta' => $sanPhamVaThongSo->mo_ta, // Mô tả thông số
+            ];
+        });
+
+        $sanPham['thong_so'] = $thongSoSanPham;
+        unset($sanPham->sanPhamVaThongSo);
 
         // Check if the product exists
         if (!$sanPham) {
@@ -204,14 +213,9 @@ class SanPhamController extends Controller
                     ];
                 }
 
-                // Thêm giá trị vào mảng nếu chưa tồn tại
-                if (!in_array($giaTri->ten_gia_tri, $groupedAttributes[$giaTri->thuocTinhSanPham->ten_thuoc_tinh]['ten_gia_tri'])) {
-                    $groupedAttributes[$giaTri->thuocTinhSanPham->ten_thuoc_tinh]['ten_gia_tri'][] = $giaTri->ten_gia_tri;
-                }
-
-                if (!in_array($giaTri->id, $groupedAttributes[$giaTri->thuocTinhSanPham->ten_thuoc_tinh]['gia_tri_thuoc_tinh_id'])) {
-                    $groupedAttributes[$giaTri->thuocTinhSanPham->ten_thuoc_tinh]['gia_tri_thuoc_tinh_id'][] = $giaTri->id;
-                }
+                // Thêm giá trị vào mảng
+                $groupedAttributes[$giaTri->thuocTinhSanPham->ten_thuoc_tinh]['ten_gia_tri'][] = $giaTri->ten_gia_tri;
+                $groupedAttributes[$giaTri->thuocTinhSanPham->ten_thuoc_tinh]['gia_tri_thuoc_tinh_id'][] = $giaTri->id; // Lưu gia_tri_thuoc_tinh_id
             }
         }
 
@@ -256,23 +260,35 @@ class SanPhamController extends Controller
         }
 
         $hinhAnhBienTheSanPham = [];
+        $seenGiaTriThuocTinh = []; // Mảng để theo dõi các gia_tri_thuoc_tinh_id đã gặp trên toàn bộ sản phẩm
+
         foreach ($bienTheSanPhams as $bienThe) {
             $variantImages = [];
+
             foreach ($bienThe->lienKetBienTheVaGiaTri as $lienKet) {
                 foreach ($lienKet->hinhAnhSanPhams as $hinhAnh) {
-                    $variantImages[] = [
-                        'bien_the_id' => $bienThe->id,
-                        'gia_tri_thuoc_tinh_id' => $lienKet->gia_tri_thuoc_tinh_id,
-                        'ten_gia_tri' => $lienKet->giaTriThuocTinh->ten_gia_tri, // Thêm tên giá trị thuộc tính
-                        'hinh_anh_id' => $hinhAnh->id,
-                        'duong_dan_hinh_anh' => $hinhAnh->duong_dan_hinh_anh
-                    ];
+                    // Kiểm tra nếu gia_tri_thuoc_tinh_id đã gặp trong tất cả các sản phẩm
+                    if (!in_array($lienKet->gia_tri_thuoc_tinh_id, $seenGiaTriThuocTinh)) {
+                        $variantImages[] = [
+                            'bien_the_id' => $bienThe->id,
+                            'gia_tri_thuoc_tinh_id' => $lienKet->gia_tri_thuoc_tinh_id,
+                            'ten_gia_tri' => $lienKet->giaTriThuocTinh->ten_gia_tri, // Thêm tên giá trị thuộc tính
+                            'hinh_anh_id' => $hinhAnh->id,
+                            'duong_dan_hinh_anh' => $hinhAnh->duong_dan_hinh_anh
+                        ];
+                        // Đánh dấu gia_tri_thuoc_tinh_id là đã gặp trong toàn bộ sản phẩm
+                        $seenGiaTriThuocTinh[] = $lienKet->gia_tri_thuoc_tinh_id;
+                    }
                 }
             }
-            $hinhAnhBienTheSanPham[] = [
-                'bien_the_id' => $bienThe->id,
-                'hinh_anh' => $variantImages
-            ];
+
+            // Chỉ thêm sản phẩm vào mảng nếu có hình ảnh
+            if (!empty($variantImages)) {
+                $hinhAnhBienTheSanPham[] = [
+                    'bien_the_id' => $bienThe->id,
+                    'hinh_anh' => $variantImages,
+                ];
+            }
         }
 
         // Return product details along with grouped attributes, sale status, and images
