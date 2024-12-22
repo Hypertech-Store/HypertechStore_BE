@@ -11,6 +11,7 @@ use App\Models\BienTheSanPham;
 use App\Models\DanhMuc;
 use App\Models\DanhMucCon; // Import model DanhMucCon
 use App\Models\HinhAnhSanPham;
+use App\Models\LienKetBienTheVaGiaTriThuocTinh;
 use App\Models\SaleSanPham;
 use App\Models\ThongSo;
 use App\Models\ThongSoDienThoai;
@@ -122,61 +123,93 @@ class SanPhamController extends Controller
             'mo_ta' => 'nullable|string',
             'gia' => 'required|numeric|min:0',
             'so_luong_ton_kho' => 'required|integer|min:0',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'luot_xem' => 'integer|min:0',
-            'thong_so' => 'nullable|array',
-            'thong_so.*.id' => 'required|exists:thong_sos,id',
+            'thuoc_tinh' => 'required|array',
+            'thuoc_tinh.*.id' => 'required|exists:thuoc_tinh_san_phams,id',
+            'thuoc_tinh.*.gia_tri' => 'required|array',
+            'thuoc_tinh.*.gia_tri.*' => 'required|exists:gia_tri_thuoc_tinhs,id',
+            'gia_bien_the' => 'nullable|array',
+            'gia_bien_the.*' => 'nullable|numeric|min:0',
         ]);
 
-        // Kiểm tra thông số có thuộc danh mục không
-        if ($request->has('thong_so')) {
-            foreach ($validated['thong_so'] as $thongSo) {
-                $thongSoModel = ThongSo::find($thongSo['id']);
-                if ($thongSoModel->danh_muc_id != $validated['danh_muc_id']) {
-                    return response()->json(['error' => 'Thông số không thuộc danh mục này.'], 400);
-                }
-            }
-        }
-
-        // Lưu thông tin sản phẩm vào database
         if ($request->hasFile('image')) {
-            // Upload hình ảnh và lưu đường dẫn
             $path = $request->file('image')->store('san_phams', 'public');
             Log::info('Đường dẫn hình ảnh:', ['path' => $path]);
-
-            // Tạo sản phẩm với đường dẫn hình ảnh đã lưu
-            $sanPham = SanPham::create([
-                'danh_muc_id' => $validated['danh_muc_id'],
-                'danh_muc_con_id' => $validated['danh_muc_con_id'] ?? null,
-                'ten_san_pham' => $validated['ten_san_pham'],
-                'mo_ta' => $validated['mo_ta'] ?? null,
-                'gia' => $validated['gia'],
-                'so_luong_ton_kho' => $validated['so_luong_ton_kho'],
-                'duong_dan_anh' => $path, // Đảm bảo bạn lưu đường dẫn ảnh
-                'luot_xem' => $validated['luot_xem'] ?? 0,
-            ]);
-        } else {
-            // Trường hợp không có ảnh thì vẫn tạo sản phẩm
-            $sanPham = SanPham::create([
-                'danh_muc_id' => $validated['danh_muc_id'],
-                'danh_muc_con_id' => $validated['danh_muc_con_id'] ?? null,
-                'ten_san_pham' => $validated['ten_san_pham'],
-                'mo_ta' => $validated['mo_ta'] ?? null,
-                'gia' => $validated['gia'],
-                'so_luong_ton_kho' => $validated['so_luong_ton_kho'],
-                'luot_xem' => $validated['luot_xem'] ?? 0,
-            ]);
         }
 
-        // Thêm thông số cho sản phẩm nếu có
-        if ($request->has('thong_so') && isset($sanPham)) {
-            foreach ($validated['thong_so'] as $thongSo) {
-                $sanPham->thongSos()->attach($thongSo['id']);  // Liên kết thông số vào sản phẩm
+        // Tạo sản phẩm chính
+        $sanPham = SanPham::create([
+            'danh_muc_id' => $validated['danh_muc_id'],
+            'danh_muc_con_id' => $validated['danh_muc_con_id'] ?? null,
+            'ten_san_pham' => $validated['ten_san_pham'],
+            'mo_ta' => $validated['mo_ta'] ?? null,
+            'gia' => $validated['gia'],
+            'so_luong_ton_kho' => $validated['so_luong_ton_kho'],
+            'duong_dan_anh' => $path,
+            'luot_xem' => $validated['luot_xem'] ?? 0,
+        ]);
+
+
+        // Lưu thuộc tính và tự động sinh biến thể
+        $thuocTinhValues = [];
+
+        foreach ($validated['thuoc_tinh'] as $thuocTinh) {
+            $giaTriIds = $thuocTinh['gia_tri'];
+            $thuocTinhValues[] = $giaTriIds;
+        }
+
+        // Sinh tất cả các kết hợp của giá trị thuộc tính
+        $combinations = $this->generateCombinations($thuocTinhValues);
+
+        foreach ($combinations as $index => $combination) {
+            // Sử dụng giá biến thể từ request nếu có, mặc định là giá sản phẩm chính
+            $giaBienThe = $validated['gia_bien_the'][$index] ?? $validated['gia'];
+
+            // Tạo biến thể sản phẩm
+            $bienTheSanPham = BienTheSanPham::create([
+                'san_pham_id' => $sanPham->id,
+                'gia' => $giaBienThe,
+                'so_luong_kho' => $validated['so_luong_ton_kho'], // Cần thay đổi nếu mỗi biến thể có số lượng riêng
+            ]);
+
+            // Liên kết các giá trị thuộc tính với biến thể
+            foreach ($combination as $giaTriId) {
+                $giaTriId = (int) $giaTriId;
+                LienKetBienTheVaGiaTriThuocTinh::create([
+                    'bien_the_san_pham_id' => $bienTheSanPham->id,
+                    'gia_tri_thuoc_tinh_id' => $giaTriId,
+                ]);
             }
         }
 
         // Trả về phản hồi
-        return response()->json(['san_pham' => $sanPham], 201);
+        return response()->json([
+            'san_pham' => $sanPham,
+            'so_bien_the' => count($combinations),
+        ], 201);
     }
+
+    /**
+     * Hàm sinh tất cả các tổ hợp từ danh sách giá trị thuộc tính
+     */
+    private function generateCombinations($arrays)
+    {
+        $result = [[]];
+
+        foreach ($arrays as $propertyValues) {
+            $tmp = [];
+            foreach ($result as $resultItem) {
+                foreach ($propertyValues as $propertyValue) {
+                    $tmp[] = array_merge($resultItem, [$propertyValue]);
+                }
+            }
+            $result = $tmp;
+        }
+
+        return $result;
+    }
+
 
     public function getDetail($id)
     {
