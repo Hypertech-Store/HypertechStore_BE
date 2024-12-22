@@ -18,70 +18,93 @@ class GioHangController extends Controller
 {
     // Xem giỏ hàng của khách hàng
     public function viewCart($khach_hang_id)
-{
-    $gioHang = GioHang::where('khach_hang_id', $khach_hang_id)
-        ->with('chiTietGioHangs.sanPham', 'chiTietGioHangs.bienTheSanPham')
-        ->first();
-
-    if (!$gioHang) {
-        return response()->json(['message' => 'Giỏ hàng không tồn tại'], 404);
-    }
-
-    $currentDate = Carbon::now()->timezone('Asia/Ho_Chi_Minh');
-
-    // Duyệt qua các chi tiết giỏ hàng và gắn thông tin sản phẩm vào
-    $gioHang->chiTietGioHangs->each(function ($chiTiet) use ($currentDate) {
-        $sanPham = $chiTiet->sanPham;
-        $bienThe = $chiTiet->bienTheSanPham;
-
-        if ($chiTiet->thuoc_tinh) {
-            $chiTiet->thuoc_tinh = json_decode($chiTiet->thuoc_tinh, true);
-        }
-
-        // Kiểm tra xem sanPham và bienThe có tồn tại hay không
-        if (!$sanPham || !$bienThe) {
-            // Nếu không tồn tại, bỏ qua hoặc trả về thông báo lỗi tùy vào yêu cầu
-            return;
-        }
-
-        // Tìm thông tin sale
-        $sale = SaleSanPham::where('san_pham_id', $sanPham->id)
-            ->where('ngay_bat_dau_sale', '<=', $currentDate)
-            ->where('ngay_ket_thuc_sale', '>=', $currentDate)
+    {
+        // Lấy giỏ hàng của khách hàng
+        $gioHang = GioHang::where('khach_hang_id', $khach_hang_id)
+            ->with('chiTietGioHangs.sanPham', 'chiTietGioHangs.bienTheSanPham', 'chiTietGioHangs.bienTheSanPham.lienKetBienTheVaGiaTri.hinhAnhSanPhams') // Tải thông tin ảnh từ LienKetBienTheVaGiaTri
             ->first();
 
-        $salePercentage = $sale ? $sale->sale_theo_phan_tram : null;
+        if (!$gioHang) {
+            return response()->json(['message' => 'Giỏ hàng không tồn tại'], 404);
+        }
 
-        // Tính giá sau giảm
-        $giaSauSale = $salePercentage
-            ? $sanPham->gia * (1 - $salePercentage / 100)
-            : $sanPham->gia;
+        $currentDate = Carbon::now()->timezone('Asia/Ho_Chi_Minh');
+        $sanPham = []; // Mảng để lưu tổng hợp sản phẩm duy nhất trong giỏ hàng
 
-        // Tính tổng tiền
-        $giaSauSaleThemGiaBienThe = $giaSauSale + $bienThe->gia;
-        $tongTien = $giaSauSaleThemGiaBienThe * $chiTiet->so_luong;
+        // Duyệt qua các chi tiết giỏ hàng và gắn thông tin sản phẩm vào
+        $gioHang->chiTietGioHangs->each(function ($chiTiet) use ($currentDate, &$sanPham) {
+            $sanPhamData = $chiTiet->sanPham;
+            $bienThe = $chiTiet->bienTheSanPham;
 
-        // Kiểm tra trạng thái sản phẩm
-        $isNew = $sanPham->created_at >= now()->subWeek();
-        $saleStatus = $isNew && $salePercentage ? 'Both' : ($isNew ? 'New' : ($salePercentage ? 'Sale' : null));
+            // Nếu không có sản phẩm hoặc biến thể thì bỏ qua
+            if (!$sanPhamData || !$bienThe) {
+                return;
+            }
 
-        // Gắn thêm thông tin chi tiết sản phẩm vào chi tiết giỏ hàng
-        $chiTiet->chi_tiet_san_pham = [
-            'san_pham_id' => $sanPham->id,
-            'bien_the_san_pham_id' => $bienThe->id,
-            'ten_san_pham' => $sanPham->ten_san_pham,
-            'gia_goc' => $sanPham->gia,
-            'gia_sau_sale' => $giaSauSale,
-            'gia_sau_sale_them_gia_bien_the' => $giaSauSaleThemGiaBienThe,
-            'sale_status' => $saleStatus,
-            'tong_tien' => $tongTien,
-        ];
-    });
+            // Nếu có thuộc tính, giải mã thuộc tính
+            if ($chiTiet->thuoc_tinh) {
+                $chiTiet->thuoc_tinh = json_decode($chiTiet->thuoc_tinh, true);
+            }
 
-    return response()->json([
-        'gio_hang' => $gioHang,
-    ], 200);
-}
+            // Lấy ảnh từ lienKetBienTheVaGiaTri và ảnh liên quan đến biến thể
+            $imageLinks = $bienThe->lienKetBienTheVaGiaTri->flatMap(function ($link) {
+                return $link->hinhAnhSanPhams->map(function ($image) {
+                    return $image->duong_dan_hinh_anh;
+                });
+            });
+
+            // Kiểm tra thông tin sale của sản phẩm
+            $sale = SaleSanPham::where('san_pham_id', $sanPhamData->id)
+                ->where('ngay_bat_dau_sale', '<=', $currentDate)
+                ->where('ngay_ket_thuc_sale', '>=', $currentDate)
+                ->first();
+
+            // Tính giá giảm (nếu có)
+            $salePercentage = $sale ? $sale->sale_theo_phan_tram : 0;
+            $giaSauSale = $sanPhamData->gia * (1 - $salePercentage / 100);
+            $giaSauSaleThemGiaBienThe = $giaSauSale + $bienThe->gia;
+
+            // Tính tổng tiền cho chi tiết giỏ hàng
+            $tongTien = $giaSauSaleThemGiaBienThe * $chiTiet->so_luong;
+
+            // Kiểm tra xem sản phẩm có phải là sản phẩm mới không
+            $isNew = $sanPhamData->created_at >= now()->subWeek();
+            $saleStatus = $isNew && $salePercentage ? 'Both' : ($isNew ? 'New' : ($salePercentage ? 'Sale' : null));
+
+            // Gắn thông tin chi tiết sản phẩm vào chi tiết giỏ hàng
+            $chiTiet->chi_tiet_san_pham = [
+                'san_pham_id' => $sanPhamData->id,
+                'bien_the_san_pham_id' => $bienThe->id,
+                'ten_san_pham' => $sanPhamData->ten_san_pham,
+                'gia_goc' => $sanPhamData->gia,
+                'gia_sau_sale' => $giaSauSale,
+                'gia_sau_sale_them_gia_bien_the' => $giaSauSaleThemGiaBienThe,
+                'sale_status' => $saleStatus,
+                'tong_tien' => $tongTien,
+                'images' => $imageLinks->toArray(), // Gắn thông tin ảnh biến thể vào chi tiết sản phẩm
+            ];
+
+            // Tạo khóa duy nhất cho sản phẩm và biến thể
+            $productKey = $sanPhamData->id . '-' . $bienThe->id;
+
+            // Nếu sản phẩm chưa có trong danh sách thì thêm vào
+            if (!array_key_exists($productKey, $sanPham)) {
+                $sanPham[$productKey] = $chiTiet;
+            } else {
+                // Nếu sản phẩm đã có trong danh sách, chỉ tăng số lượng và cập nhật tổng tiền
+                $sanPham[$productKey]->so_luong += $chiTiet->so_luong;
+                $sanPham[$productKey]->chi_tiet_san_pham['tong_tien'] += $tongTien;
+            }
+        });
+
+        // Trả về kết quả dưới dạng JSON
+        return response()->json([
+            'gio_hang' => $gioHang,
+            'total_products' => count($sanPham), // Tổng số sản phẩm duy nhất trong giỏ hàng
+            'products' => array_values($sanPham), // Danh sách sản phẩm duy nhất trong giỏ hàng
+        ], 200);
+    }
+
 
     // Thêm sản phẩm vào giỏ hàng
     public function addProduct(Request $request): JsonResponse

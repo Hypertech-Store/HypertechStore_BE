@@ -182,107 +182,105 @@ class SanPhamController extends Controller
     {
         // Get the product details along with its related images
         $sanPham = SanPham::with('sanPhamVaThongSo.thongSo')->find($id);
+
+        // Format the product specifications
         $thongSoSanPham = $sanPham->sanPhamVaThongSo->map(function ($sanPhamVaThongSo) {
             return [
-                'thong_so' => $sanPhamVaThongSo->thongSo->ten_thong_so, // Tên thông số
-                'mo_ta' => $sanPhamVaThongSo->mo_ta, // Mô tả thông số
+                'thong_so' => $sanPhamVaThongSo->thongSo->ten_thong_so,  // Information name
+                'mo_ta' => $sanPhamVaThongSo->mo_ta, // Description
             ];
         });
 
         $sanPham['thong_so'] = $thongSoSanPham;
-        unset($sanPham->sanPhamVaThongSo);
+        unset($sanPham->sanPhamVaThongSo); // Remove joined data that we no longer need
 
         // Check if the product exists
         if (!$sanPham) {
             return response()->json(['message' => 'Sản phẩm không tồn tại'], 404);
         }
 
+        // Retrieve all variants and their attribute values
         $bienTheSanPhams = $sanPham->bienTheSanPhams()->with('giaTriThuocTinh')->get();
 
-        // Tạo mảng để lưu các thuộc tính chung theo nhóm
+        // Initialize the grouped attributes array
         $groupedAttributes = [];
 
+        // Loop through each product variant
         foreach ($bienTheSanPhams as $bienThe) {
-            // Duyệt qua các giá trị thuộc tính của biến thể sản phẩm
             foreach ($bienThe->giaTriThuocTinh as $giaTri) {
-                // Nếu thuộc tính chưa có trong nhóm, tạo mới mảng với tên thuộc tính làm khóa
-                if (!isset($groupedAttributes[$giaTri->thuocTinhSanPham->ten_thuoc_tinh])) {
-                    $groupedAttributes[$giaTri->thuocTinhSanPham->ten_thuoc_tinh] = [
-                        'ten_gia_tri' => [], // Mảng để chứa các giá trị
-                        'gia_tri_thuoc_tinh_id' => [] // Mảng để chứa các gia_tri_thuoc_tinh_id
+                // Initialize a new attribute group if not present
+                $attributeName = $giaTri->thuocTinhSanPham->ten_thuoc_tinh;
+                if (!isset($groupedAttributes[$attributeName])) {
+                    $groupedAttributes[$attributeName] = [
+                        'ten_gia_tri' => [],
+                        'gia_tri_thuoc_tinh_id' => []
                     ];
                 }
 
-                // Thêm giá trị vào mảng
-                $groupedAttributes[$giaTri->thuocTinhSanPham->ten_thuoc_tinh]['ten_gia_tri'][] = $giaTri->ten_gia_tri;
-                $groupedAttributes[$giaTri->thuocTinhSanPham->ten_thuoc_tinh]['gia_tri_thuoc_tinh_id'][] = $giaTri->id; // Lưu gia_tri_thuoc_tinh_id
+                // Check if the value hasn't been added yet
+                if (!in_array($giaTri->id, $groupedAttributes[$attributeName]['gia_tri_thuoc_tinh_id'])) {
+                    // Add new value to the respective group
+                    $groupedAttributes[$attributeName]['ten_gia_tri'][] = $giaTri->ten_gia_tri;
+                    $groupedAttributes[$attributeName]['gia_tri_thuoc_tinh_id'][] = $giaTri->id;
+                }
             }
         }
 
-        // Lấy danh mục con và danh mục cha
+        // Handle the category and sale details of the product
         $danhMucCon = DanhMucCon::with('danhMuc')->where('id', $sanPham->danh_muc_con_id)->first();
-
-        // Kiểm tra nếu danh mục con tồn tại và lấy tên danh mục con cùng tên danh mục cha
         $tenDanhMucCon = $danhMucCon ? $danhMucCon->ten_danh_muc_con : null;
         $tenDanhMuc = $danhMucCon && $danhMucCon->danhMuc ? $danhMucCon->danhMuc->ten_danh_muc : null;
 
-        // Kiểm tra xem sản phẩm có đang sale không và tính phần trăm giảm giá
+        // Retrieve sale information and calculate the sale status
         $salePercentage = null;
         $saleStatus = null;
 
-        // Lấy thông tin sale của sản phẩm
+        // Sale check logic
         $currentDate = Carbon::now()->timezone('Asia/Ho_Chi_Minh');
         $sale = SaleSanPham::where('san_pham_id', $id)
             ->where('ngay_bat_dau_sale', '<=', $currentDate)
             ->where('ngay_ket_thuc_sale', '>=', $currentDate)
             ->first();
 
-        // Kiểm tra nếu có sale và tính phần trăm giảm giá
+        // Sale percentage calculation and status update
         if ($sale) {
             $salePercentage = $sale->sale_theo_phan_tram;
-            // Kiểm tra nếu sản phẩm đang sale và mới
             $saleStatus = $sale->created_at >= now()->subWeek() ? 'Both' : 'Sale';
         }
 
-        // Kiểm tra xem sản phẩm có phải là sản phẩm mới (thêm trong 1 tuần qua)
-        $isNew = null;
-        if ($sanPham->created_at >= now()->subWeek()) {
-            $isNew = true;
-        }
+        $isNew = $sanPham->created_at >= now()->subWeek() ? true : null;
 
-        // Nếu sản phẩm vừa sale vừa mới
+        // Define sale status for new and sale items
         if ($isNew && $salePercentage) {
-            $saleStatus = 'Both';  // Sản phẩm vừa sale vừa mới
+            $saleStatus = 'Both';
         } elseif (!$salePercentage && $isNew) {
-            $saleStatus = 'New';   // Sản phẩm mới nhưng không sale
+            $saleStatus = 'New';
         } elseif ($salePercentage && !$isNew) {
-            $saleStatus = 'Sale';  // Sản phẩm đang sale nhưng không mới
+            $saleStatus = 'Sale';
         }
 
+        // Prepare variant images with uniqueness check
         $hinhAnhBienTheSanPham = [];
-        $seenGiaTriThuocTinh = []; // Mảng để theo dõi các gia_tri_thuoc_tinh_id đã gặp trên toàn bộ sản phẩm
+        $seenGiaTriThuocTinh = [];
 
         foreach ($bienTheSanPhams as $bienThe) {
             $variantImages = [];
 
             foreach ($bienThe->lienKetBienTheVaGiaTri as $lienKet) {
                 foreach ($lienKet->hinhAnhSanPhams as $hinhAnh) {
-                    // Kiểm tra nếu gia_tri_thuoc_tinh_id đã gặp trong tất cả các sản phẩm
                     if (!in_array($lienKet->gia_tri_thuoc_tinh_id, $seenGiaTriThuocTinh)) {
                         $variantImages[] = [
                             'bien_the_id' => $bienThe->id,
                             'gia_tri_thuoc_tinh_id' => $lienKet->gia_tri_thuoc_tinh_id,
-                            'ten_gia_tri' => $lienKet->giaTriThuocTinh->ten_gia_tri, // Thêm tên giá trị thuộc tính
+                            'ten_gia_tri' => $lienKet->giaTriThuocTinh->ten_gia_tri,
                             'hinh_anh_id' => $hinhAnh->id,
                             'duong_dan_hinh_anh' => $hinhAnh->duong_dan_hinh_anh
                         ];
-                        // Đánh dấu gia_tri_thuoc_tinh_id là đã gặp trong toàn bộ sản phẩm
-                        $seenGiaTriThuocTinh[] = $lienKet->gia_tri_thuoc_tinh_id;
+                        $seenGiaTriThuocTinh[] = $lienKet->gia_tri_thuoc_tinh_id; // Mark the value as seen
                     }
                 }
             }
 
-            // Chỉ thêm sản phẩm vào mảng nếu có hình ảnh
             if (!empty($variantImages)) {
                 $hinhAnhBienTheSanPham[] = [
                     'bien_the_id' => $bienThe->id,
@@ -291,7 +289,7 @@ class SanPhamController extends Controller
             }
         }
 
-        // Return product details along with grouped attributes, sale status, and images
+        // Return final response with product details, grouped attributes, and sale status
         return response()->json([
             'sanPham' => $sanPham,
             'ten_danh_muc' => $tenDanhMuc,
@@ -301,9 +299,10 @@ class SanPhamController extends Controller
             'sale_theo_phan_tram' => $salePercentage,
             'sale' => $sale,
             'trang_thai' => $saleStatus,
-            'hinh_anh_bien_the_san_pham' => $hinhAnhBienTheSanPham, // Add images to the response
+            'hinh_anh_bien_the_san_pham' => $hinhAnhBienTheSanPham
         ], 200);
     }
+
 
 
     // Cập nhật sản phẩm
