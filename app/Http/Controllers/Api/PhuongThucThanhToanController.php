@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class PhuongThucThanhToanController extends Controller
 {
@@ -27,11 +28,19 @@ class PhuongThucThanhToanController extends Controller
      */
     public function store(StorePhuongThucThanhToanRequest $request)
     {
+        $data = $request->all();
 
-        $data = PhuongThucThanhToan::query()->create($request->all());
+        if ($request->hasFile('image')) {
+            // Upload hình ảnh và lưu đường dẫn
+            $path = $request->file('image')->store('phuong_thuc_thanh_toans', 'public');
+            Log::info('Đường dẫn hình ảnh:', ['path' => $path]);
+            $data['anh_phuong_thuc'] = $path;
+            unset($data['image']);
+        }
+        PhuongThucThanhToan::query()->create($data);
 
         return response()->json([
-            'message' => 'Danh mục được tạo thành công!',
+            'message' => 'Phương thức thanh toán được tạo thành công!',
             'data' => $data
         ], Response::HTTP_CREATED);
     }
@@ -45,53 +54,77 @@ class PhuongThucThanhToanController extends Controller
             $data = PhuongThucThanhToan::query()->findOrFail($id);
 
             return response()->json([
-                'message' => 'Chi tiết danh mục id = '.$id,
+                'message' => 'Chi tiết phương thức thanh toán id = ' . $id,
                 'data' => $data
             ]);
         } catch (\Throwable $th) {
-            if($th instanceof ModelNotFoundException){
+            if ($th instanceof ModelNotFoundException) {
                 return response()->json([
-                    'message' => 'Không tìm thấy danh mục id = '.$id,
+                    'message' => 'Không tìm thấy phương thức thanh toán id = ' . $id,
 
                 ], Response::HTTP_NOT_FOUND);
             }
-            Log::error('Lỗi xóa danh mục: ' . $th->getMessage());
+            Log::error('Lỗi xóa phương thức thanh toán: ' . $th->getMessage());
 
             return response()->json([
-                'message' => 'Không tìm thấy danh mục id = '.$id,
+                'message' => 'Không tìm thấy phương thức thanh toán id = ' . $id,
 
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(StorePhuongThucThanhToanRequest $request, string $id)
+    public function update(Request $request, string $id)
     {
         try {
+            // Định nghĩa quy tắc xác thực
+            $request->validate([
+                'ten_phuong_thuc' => 'nullable|string|max:255',
+                'anh_phuong_thuc' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            ]);
+
+            // Lấy đối tượng phương thức thanh toán từ cơ sở dữ liệu
             $data = PhuongThucThanhToan::query()->findOrFail($id);
-            $data->update($request->all());
+
+            // Kiểm tra và xử lý ảnh nếu có
+            if ($request->hasFile('anh_phuong_thuc')) {
+                // Kiểm tra và xóa ảnh cũ nếu có
+                if ($data->anh_phuong_thuc && Storage::exists('public/' . $data->anh_phuong_thuc)) {
+                    Storage::delete('public/' . $data->anh_phuong_thuc);
+                }
+
+                // Lưu ảnh mới
+                $path = $request->file('anh_phuong_thuc')->store('phuong_thuc_thanh_toans', 'public');
+                Log::info('Đường dẫn hình ảnh mới:', ['path' => $path]);
+
+                // Cập nhật đường dẫn ảnh mới vào cơ sở dữ liệu
+                $data->update([
+                    'anh_phuong_thuc' => $path,
+                ]);
+            }
+
+            // Cập nhật các trường còn lại trong request
+            $data->update($request->except('anh_phuong_thuc'));  // Tránh cập nhật lại ảnh nếu không có thay đổi
 
             return response()->json([
-                'message' => 'Cập nhật danh mục id = '.$id,
-                'data' => $data
+                'message' => 'Cập nhật phương thức thanh toán id = ' . $id,
+                'data' => $data,
             ]);
         } catch (ModelNotFoundException $e) {
             return response()->json([
-                'message' => 'Không tìm thấy danh mục id = '.$id,
+                'message' => 'Không tìm thấy phương thức thanh toán id = ' . $id,
             ], Response::HTTP_NOT_FOUND);
-
         } catch (\Exception $e) {
-            Log::error('Lỗi cập nhật danh mục: ' . $e->getMessage());
+            Log::error('Lỗi cập nhật phương thức thanh toán: ' . $e->getMessage());
 
             return response()->json([
-                'message' => 'Có lỗi xảy ra khi cập nhật danh mục',
+                'message' => 'Có lỗi xảy ra khi cập nhật phương thức thanh toán',
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-
     }
+
 
     /**
      * Remove the specified resource from storage.
@@ -104,17 +137,15 @@ class PhuongThucThanhToanController extends Controller
             return response()->json([
                 'message' => 'Xóa thành công',
             ], Response::HTTP_OK);
-
         } catch (ModelNotFoundException $e) {
             return response()->json([
-                'message' => 'Không tìm thấy danh mục id = '.$id,
+                'message' => 'Không tìm thấy phương thức thanh toán id = ' . $id,
             ], Response::HTTP_NOT_FOUND);
-
         } catch (\Exception $e) {
-            Log::error('Lỗi xóa danh mục: ' . $e->getMessage());
+            Log::error('Lỗi xóa phương thức thanh toán: ' . $e->getMessage());
 
             return response()->json([
-                'message' => 'Có lỗi xảy ra khi xóa danh mục',
+                'message' => 'Có lỗi xảy ra khi xóa phương thức thanh toán',
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

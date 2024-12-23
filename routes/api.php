@@ -71,3 +71,7 @@ require __DIR__ . '/QuanTriVienRoutes.php';
 
 require __DIR__ . '/DonHangsRoutes.php';
 
+require __DIR__ . '/PhieuGiamGiaRoutes.php';
+
+require __DIR__ . '/PhieuGiamGiaVaKhachHangRoutes.php';
+

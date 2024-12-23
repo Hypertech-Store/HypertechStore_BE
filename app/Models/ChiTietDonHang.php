@@ -12,6 +12,8 @@ class ChiTietDonHang extends Model
     protected $fillable = [
         'don_hang_id',
         'san_pham_id',
+        'bien_the_san_pham_id',
+        'thuoc_tinh',
         'so_luong',
         'gia',
     ];
@@ -21,8 +23,12 @@ class ChiTietDonHang extends Model
         return $this->belongsTo(DonHang::class, 'don_hang_id');
     }
 
+    public function bienTheSanPham()
+    {
+        return $this->belongsTo(BienTheSanPham::class, 'bien_the_san_pham_id', 'id');
+    }
     public function sanPham()
     {
-        return $this->belongsTo(SanPham::class, 'san_pham_id');
+        return $this->belongsTo(SanPham::class, 'san_pham_id', 'id');
     }
 }

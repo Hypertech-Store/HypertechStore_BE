@@ -11,25 +11,24 @@ class DonHang extends Model
 
     protected $fillable = [
         'khach_hang_id',
+        'phuong_thuc_thanh_toan_id',
         'trang_thai_don_hang',
         'tong_tien',
         'dia_chi_giao_hang',
-        'phuong_thuc_thanh_toan',
-        'created_at',
     ];
 
     public function khachHang()
     {
-        return $this->belongsTo(KhachHang::class, 'ma_khach_hang');
+        return $this->belongsTo(KhachHang::class);
     }
 
     public function chiTietDonHangs()
     {
-        return $this->hasMany(ChiTietDonHang::class, 'ma_don_hang');
+        return $this->hasMany(ChiTietDonHang::class);
     }
 
     public function giaoHangs()
     {
-        return $this->hasMany(GiaoHang::class, 'ma_don_hang');
+        return $this->hasMany(GiaoHang::class);
     }
 }
