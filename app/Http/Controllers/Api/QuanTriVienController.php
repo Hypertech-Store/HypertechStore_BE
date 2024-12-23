@@ -33,8 +33,6 @@ class QuanTriVienController extends Controller
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('quan_tri_viens', 'public');
             Log::info('Đường dẫn hình ảnh:', ['path' => $path]);
-
-
         }
         $quanTriVien = QuanTriVien::create([
             'ten_dang_nhap' => $validated['ten_dang_nhap'],

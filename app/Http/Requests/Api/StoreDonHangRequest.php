@@ -26,10 +26,10 @@ class StoreDonHangRequest extends FormRequest
     {
         return [
             'khach_hang_id' => 'required|exists:khach_hangs,id',
+            'phuong_thuc_thanh_toan_id' => 'required|exists:phuong_thuc_thanh_toans,id',
             'trang_thai_don_hang' => 'required|string|max:255',
             'tong_tien' => 'required|numeric|min:0',
             'dia_chi_giao_hang' => 'required|string|max:255',
-            'phuong_thuc_thanh_toan' => 'required|string|max:255',
         ];
     }
     protected function failedValidation(Validator $validator)

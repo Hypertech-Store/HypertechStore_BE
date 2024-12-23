@@ -11,7 +11,7 @@ class PhuongThucThanhToan extends Model
     public $timestamps = false;
     protected $fillable = [
         'ten_phuong_thuc',
-        'mo_ta',
+        'anh_phuong_thuc',
     ];
 
     public function thanhToans()

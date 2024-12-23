@@ -1,11 +1,16 @@
 <?php
+
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\BienTheSanPham;
 use App\Models\DonHang;
 use App\Models\ChiTietDonHang;
 use App\Models\GioHang;
+use App\Models\PhieuGiamGia;
+use App\Models\PhieuGiamGiaVaKhachHang;
 use App\Models\PhuongThucThanhToan;
+use App\Models\SanPham;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -14,66 +19,147 @@ class DonHangsController extends Controller
     // Tạo đơn hàng
     public function createOrder(Request $request): \Illuminate\Http\JsonResponse
     {
+        // Validate incoming request
         $request->validate([
             'khach_hang_id' => 'required|exists:khach_hangs,id',
-            'dia_chi_giao_hang' => 'required|string',
-            'phuong_thuc_thanh_toan' => 'required|exists:phuong_thuc_thanh_toans,id',
+            'phuong_thuc_thanh_toan_id' => 'required|exists:phuong_thuc_thanh_toans,id',
+            'dia_chi_giao_hang' => 'required|string|max:255',
+            'products' => 'required|array',
+            'products.*.san_pham_id' => 'required|exists:san_phams,id',
+            'products.*.bien_the_san_pham_id' => 'required|exists:bien_the_san_phams,id',
+            'products.*.attributes' => 'required|array',
+            'products.*.so_luong' => 'required|integer|min:1',
+            'products.*.gia' => 'required|numeric|min:0',
         ]);
 
-        // Tạo đơn hàng
+        // Phương thức thanh toán là VNPay (ID 2), xử lý thanh toán
+        if ($request->phuong_thuc_thanh_toan_id == 2) {
+            // Logic thanh toán VNPay (cần tích hợp API của VNPay)
+            $vnpayResponse = $this->handleVnPayPayment($request);
+            $vnpayResponse['success'] = false;
+            // Nếu thanh toán không thành công, trả về lỗi
+            if (!$vnpayResponse['success']) {
+                return response()->json([
+                    'message' => 'Thanh toán VNPay thất bại, vui lòng thử lại!',
+                ], 400);
+            }
+
+            // Nếu thanh toán thành công, tạo đơn hàng
+            return $this->createOrderWithPaymentSuccess($request);
+        }
+
+        // Phương thức thanh toán là các phương thức khác, tạo đơn hàng trực tiếp
+        return $this->createOrderWithPaymentSuccess($request);
+    }
+
+    private function handleVnPayPayment(Request $request)
+    {
+
+        return [
+            'success' => true,
+        ];
+    }
+
+    private function createOrderWithPaymentSuccess(Request $request)
+    {
         $donHang = DonHang::create([
             'khach_hang_id' => $request->khach_hang_id,
-            'trang_thai_don_hang' => 'pending', // or any default status
-            'tong_tien' => 0, // Will calculate later
+            'phuong_thuc_thanh_toan_id' => $request->phuong_thuc_thanh_toan_id,
+            'trang_thai_don_hang' => 'Chờ xử lý',
+            'tong_tien' => 0,
             'dia_chi_giao_hang' => $request->dia_chi_giao_hang,
-            'phuong_thuc_thanh_toan' => $request->phuong_thuc_thanh_toan,
-            'created_at' => Carbon::now(),
         ]);
 
-        // Lấy giỏ hàng của khách hàng
-        $gioHang = GioHang::where('khach_hang_id', $request->khach_hang_id)->first();
-        if (!$gioHang) {
-            return response()->json(['message' => 'Giỏ hàng không tồn tại'], 404);
-        }
-
         $totalAmount = 0;
-        foreach ($gioHang->chiTietGioHangs as $chiTietGioHang) {
-            $chiTietDonHang = ChiTietDonHang::create([
+
+        foreach ($request->products as $product) {
+            $productAttributes = json_encode($product['attributes']);
+
+            $variant = BienTheSanPham::find($product['bien_the_san_pham_id']);
+
+            $productTotal = $product['so_luong'] * $product['gia'];
+            $totalAmount += $productTotal;
+
+            // Create the order details (ChiTietDonHang)
+            ChiTietDonHang::create([
                 'don_hang_id' => $donHang->id,
-                'san_pham_id' => $chiTietGioHang->san_pham_id,
-                'so_luong' => $chiTietGioHang->so_luong,
-                'gia' => $chiTietGioHang->gia,
+                'san_pham_id' => $product['san_pham_id'],
+                'bien_the_san_pham_id' => $product['bien_the_san_pham_id'],
+                'thuoc_tinh' => $productAttributes,
+                'so_luong' => $product['so_luong'],
+                'gia' => $product['gia'],
             ]);
 
-            $totalAmount += $chiTietGioHang->gia * $chiTietGioHang->so_luong;
+            if ($variant) {
+                $variant->decrement('so_luong_kho', $product['so_luong']);
+            }
         }
 
-        // Cập nhật tổng tiền của đơn hàng
-        $donHang->update(['tong_tien' => $totalAmount]);
+        $discountAmount = 0;
 
-        // Xóa giỏ hàng của khách hàng sau khi tạo đơn
-        $gioHang->chiTietGioHangs()->delete();
-        $gioHang->delete();
+        // Kiểm tra mã giảm giá (nếu có)
+        if ($request->has('ma_giam_gia')) {
+            $phieuGiamGia = PhieuGiamGia::where('ma_giam_gia', $request->ma_giam_gia)
+                ->whereDate('ngay_bat_dau', '<=', now())
+                ->whereDate('ngay_ket_thuc', '>=', now())
+                ->first();
 
+            if ($phieuGiamGia) {
+                // Kiểm tra điều kiện áp dụng mã giảm giá
+                if ($phieuGiamGia->gia_tri_don_hang_toi_thieu <= $totalAmount) {
+                    if ($phieuGiamGia->loai_giam_gia === 'theo phần trăm') {
+                        $discountAmount = $totalAmount * ($phieuGiamGia->gia_tri_giam_gia / 100);
+                    } elseif ($phieuGiamGia->loai_giam_gia === 'theo số tiền nhất định') {
+                        $discountAmount = $phieuGiamGia->gia_tri_giam_gia;
+                    }
+
+                    // Áp dụng giảm giá, giới hạn giảm giá không âm
+                    $discountAmount = min($discountAmount, $totalAmount);
+
+                    // Giảm số lượt sử dụng của mã giảm giá
+                    $phieuGiamGia->decrement('so_luot_su_dung');
+
+                    // Lưu thông tin mã giảm giá vào bảng liên kết
+                    PhieuGiamGiaVaKhachHang::create([
+                        'phieu_giam_gia_id' => $phieuGiamGia->id,
+                        'khach_hang_id' => $request->khach_hang_id,
+                        'don_hang_id' => $donHang->id,
+                    ]);
+                }
+            }
+        }
+
+        // Cập nhật tổng tiền đơn hàng (sau khi áp dụng giảm giá)
+        $donHang->update(['tong_tien' => $totalAmount - $discountAmount]);
+
+        // Return success response
         return response()->json([
             'message' => 'Đơn hàng đã được tạo thành công',
             'don_hang' => $donHang,
+            'tong_tien' => $totalAmount - $discountAmount,
+            'giam_gia' => $discountAmount,
         ], 200);
     }
 
-    // Xem đơn hàng của khách hàng
-    public function viewOrder($don_hang_id): \Illuminate\Http\JsonResponse
-    {
-        $donHang = DonHang::with('khachHang', 'chiTietDonHangs.sanPham')->find($don_hang_id);
 
-        if (!$donHang) {
-            return response()->json(['message' => 'Đơn hàng không tồn tại'], 404);
+    public function viewOrder($khach_hang_id): \Illuminate\Http\JsonResponse
+    {
+        // Lấy tất cả đơn hàng của khách hàng cùng với chi tiết đơn hàng và sản phẩm
+        $donHangs = DonHang::with(['chiTietDonHangs.sanPham'])
+            ->where('khach_hang_id', $khach_hang_id) // Lọc đơn hàng theo khách hàng
+            ->get();
+
+        // Kiểm tra nếu không có đơn hàng nào của khách hàng
+        if ($donHangs->isEmpty()) {
+            return response()->json(['message' => 'Không có đơn hàng nào của khách hàng này'], 404);
         }
 
+        // Trả về dữ liệu các đơn hàng của khách hàng
         return response()->json([
-            'don_hang' => $donHang,
+            'don_hangs' => $donHangs,
         ], 200);
     }
+
 
     // Cập nhật trạng thái đơn hàng
     public function updateOrderStatus(Request $request, $don_hang_id)

@@ -27,7 +27,7 @@ class KhachHangController extends Controller
             'email' => 'required|email',
             'mat_khau' => 'required|min:8',
         ]);
-        
+
         // Tìm người dùng theo email
         $khachHang = KhachHang::where('email', $request->email)->first();
 
