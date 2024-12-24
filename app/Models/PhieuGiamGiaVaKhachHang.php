@@ -12,6 +12,7 @@ class PhieuGiamGiaVaKhachHang extends Model
         'phieu_giam_gia_id',
         'khach_hang_id',
         'don_hang_id',
+        'hinh_thuc_van_chuyen_id'
     ];
 
     public function phieuGiamGia()
@@ -28,4 +29,5 @@ class PhieuGiamGiaVaKhachHang extends Model
     {
         return $this->belongsTo(DonHang::class);
     }
+
 }

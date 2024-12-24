@@ -65,8 +65,9 @@ class DonHangsController extends Controller
         $donHang = DonHang::create([
             'khach_hang_id' => $request->khach_hang_id,
             'phuong_thuc_thanh_toan_id' => $request->phuong_thuc_thanh_toan_id,
+            'hinh_thuc_van_chuyen_id' => $request->hinh_thuc_van_chuyen_id,
             'trang_thai_don_hang' => 'Chờ xử lý',
-            'tong_tien' => 0,
+            'tong_tien' => $request->tong_tien,
             'dia_chi_giao_hang' => $request->dia_chi_giao_hang,
         ]);
 
@@ -105,39 +106,22 @@ class DonHangsController extends Controller
                 ->first();
 
             if ($phieuGiamGia) {
-                // Kiểm tra điều kiện áp dụng mã giảm giá
-                if ($phieuGiamGia->gia_tri_don_hang_toi_thieu <= $totalAmount) {
-                    if ($phieuGiamGia->loai_giam_gia === 'theo phần trăm') {
-                        $discountAmount = $totalAmount * ($phieuGiamGia->gia_tri_giam_gia / 100);
-                    } elseif ($phieuGiamGia->loai_giam_gia === 'theo số tiền nhất định') {
-                        $discountAmount = $phieuGiamGia->gia_tri_giam_gia;
-                    }
+                // Giảm số lượt sử dụng của mã giảm giá
+                $phieuGiamGia->decrement('so_luot_su_dung');
 
-                    // Áp dụng giảm giá, giới hạn giảm giá không âm
-                    $discountAmount = min($discountAmount, $totalAmount);
-
-                    // Giảm số lượt sử dụng của mã giảm giá
-                    $phieuGiamGia->decrement('so_luot_su_dung');
-
-                    // Lưu thông tin mã giảm giá vào bảng liên kết
-                    PhieuGiamGiaVaKhachHang::create([
-                        'phieu_giam_gia_id' => $phieuGiamGia->id,
-                        'khach_hang_id' => $request->khach_hang_id,
-                        'don_hang_id' => $donHang->id,
-                    ]);
-                }
+                // Lưu thông tin mã giảm giá vào bảng liên kết
+                PhieuGiamGiaVaKhachHang::create([
+                    'phieu_giam_gia_id' => $phieuGiamGia->id,
+                    'khach_hang_id' => $request->khach_hang_id,
+                    'don_hang_id' => $donHang->id,
+                ]);
             }
         }
-
-        // Cập nhật tổng tiền đơn hàng (sau khi áp dụng giảm giá)
-        $donHang->update(['tong_tien' => $totalAmount - $discountAmount]);
 
         // Return success response
         return response()->json([
             'message' => 'Đơn hàng đã được tạo thành công',
             'don_hang' => $donHang,
-            'tong_tien' => $totalAmount - $discountAmount,
-            'giam_gia' => $discountAmount,
         ], 200);
     }
 

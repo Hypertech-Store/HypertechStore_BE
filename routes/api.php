@@ -75,3 +75,5 @@ require __DIR__ . '/PhieuGiamGiaRoutes.php';
 
 require __DIR__ . '/PhieuGiamGiaVaKhachHangRoutes.php';
 
+require __DIR__ . '/HinhThucVanChuyenRoutes.php';
+
