@@ -14,7 +14,7 @@ class GiaTriThuocTinhController extends Controller
 {
     public function index()
     {
-        $data = GiaTriThuocTinh::query()->get();
+        $data = GiaTriThuocTinh::with('thuocTinhSanPham')->get();
 
         return response()->json($data);
     }
