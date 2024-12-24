@@ -115,4 +115,10 @@ class ThuocTinhSanPhamController extends Controller
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+    public function layGiaTriThuocTinhTheoThuocTinh()
+    {
+        $data = ThuocTinhSanPham::with('giaTriThuocTinh')->get();
+
+        return response()->json($data);
+    }
 }

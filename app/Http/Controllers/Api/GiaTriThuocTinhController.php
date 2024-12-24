@@ -14,7 +14,7 @@ class GiaTriThuocTinhController extends Controller
 {
     public function index()
     {
-        $data = GiaTriThuocTinh::with('thuocTinhSanPham')->get();
+        $data = GiaTriThuocTinh::query()->get();
 
         return response()->json($data);
     }
@@ -42,24 +42,23 @@ class GiaTriThuocTinhController extends Controller
             $data = GiaTriThuocTinh::query()->findOrFail($id);
 
             return response()->json([
-                'message' => 'Chi tiết giá trị thuộc tính  id = '.$id,
+                'message' => 'Chi tiết giá trị thuộc tính  id = ' . $id,
                 'data' => $data
             ]);
         } catch (\Throwable $th) {
-            if($th instanceof ModelNotFoundException){
+            if ($th instanceof ModelNotFoundException) {
                 return response()->json([
-                    'message' => 'Không tìm thấy giá trị thuộc tính  id = '.$id,
+                    'message' => 'Không tìm thấy giá trị thuộc tính  id = ' . $id,
 
                 ], Response::HTTP_NOT_FOUND);
             }
             Log::error('Lỗi xóa giá trị thuộc tính : ' . $th->getMessage());
 
             return response()->json([
-                'message' => 'Không tìm thấy giá trị thuộc tính  id = '.$id,
+                'message' => 'Không tìm thấy giá trị thuộc tính  id = ' . $id,
 
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-
     }
 
     /**
@@ -72,14 +71,13 @@ class GiaTriThuocTinhController extends Controller
             $data->update($request->all());
 
             return response()->json([
-                'message' => 'Cập nhật giá trị thuộc tính  id = '.$id,
+                'message' => 'Cập nhật giá trị thuộc tính  id = ' . $id,
                 'data' => $data
             ]);
         } catch (ModelNotFoundException $e) {
             return response()->json([
-                'message' => 'Không tìm thấy giá trị thuộc tính  id = '.$id,
+                'message' => 'Không tìm thấy giá trị thuộc tính  id = ' . $id,
             ], Response::HTTP_NOT_FOUND);
-
         } catch (\Exception $e) {
             Log::error('Lỗi cập nhật giá trị thuộc tính : ' . $e->getMessage());
 
@@ -87,7 +85,6 @@ class GiaTriThuocTinhController extends Controller
                 'message' => 'Có lỗi xảy ra khi cập nhật giá trị thuộc tính ',
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-
     }
 
     /**
@@ -101,12 +98,10 @@ class GiaTriThuocTinhController extends Controller
             return response()->json([
                 'message' => 'Xóa thành công',
             ], Response::HTTP_OK);
-
         } catch (ModelNotFoundException $e) {
             return response()->json([
-                'message' => 'Không tìm thấy giá trị thuộc tính  id = '.$id,
+                'message' => 'Không tìm thấy giá trị thuộc tính  id = ' . $id,
             ], Response::HTTP_NOT_FOUND);
-
         } catch (\Exception $e) {
             Log::error('Lỗi xóa giá trị thuộc tính : ' . $e->getMessage());
 
@@ -114,5 +109,10 @@ class GiaTriThuocTinhController extends Controller
                 'message' => 'Có lỗi xảy ra khi xóa giá trị thuộc tính ',
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
+    public function layGiaTriThuocTinhTheoThuocTinh()
+    {
+        $data = GiaTriThuocTinh::with('thuocTinhSanPham')->get();
+        return response()->json($data);
     }
 }
