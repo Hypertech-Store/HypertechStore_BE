@@ -113,6 +113,7 @@ class GiaTriThuocTinhController extends Controller
     public function layGiaTriThuocTinhTheoThuocTinh()
     {
         $data = GiaTriThuocTinh::with('thuocTinhSanPham')->get();
+
         return response()->json($data);
     }
 }
