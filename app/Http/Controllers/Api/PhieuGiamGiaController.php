@@ -15,7 +15,11 @@ class PhieuGiamGiaController extends Controller
      */
     public function index()
     {
-        //
+        $phieuGiamGias = PhieuGiamGia::all();
+
+        return response()->json([
+            'data' => $phieuGiamGias,
+        ], 200);
     }
 
     /**
@@ -33,7 +37,6 @@ class PhieuGiamGiaController extends Controller
         $phieuGiamGia = PhieuGiamGia::create($validated);
 
         return response()->json([
-            'success' => true,
             'message' => 'Phiếu giảm giá đã được tạo thành công.',
             'data' => $phieuGiamGia,
         ], 201);
@@ -43,22 +46,81 @@ class PhieuGiamGiaController extends Controller
      */
     public function show(string $id)
     {
-        //
+        // Tìm phiếu giảm giá theo ID
+        $phieuGiamGia = PhieuGiamGia::find($id);
+
+        // Kiểm tra nếu không tìm thấy
+        if (!$phieuGiamGia) {
+            return response()->json([
+                'message' => 'Phiếu giảm giá không tồn tại.',
+            ], 404);
+        }
+
+        return response()->json([
+            'data' => $phieuGiamGia,
+        ], 200);
     }
+
 
     /**
      * Update the specified resource in storage.
      */
     public function update(Request $request, string $id)
     {
-        //
+        // Tìm phiếu giảm giá cần cập nhật
+        $phieuGiamGia = PhieuGiamGia::find($id);
+
+        if (!$phieuGiamGia) {
+            return response()->json([
+                'message' => 'Phiếu giảm giá không tồn tại.',
+            ], 404);
+        }
+
+        // Cập nhật thông tin phiếu giảm giá
+        $phieuGiamGia->update($request->all());
+
+        return response()->json([
+            'message' => 'Phiếu giảm giá đã được cập nhật thành công.',
+            'data' => $phieuGiamGia,
+        ], 200);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(string $id)
     {
-        //
+        $phieuGiamGia = PhieuGiamGia::find($id);
+
+        if (!$phieuGiamGia) {
+            return response()->json([
+                'message' => 'Phiếu giảm giá không tồn tại.',
+            ], 404);
+        }
+
+        // Xóa phiếu giảm giá
+        $phieuGiamGia->delete();
+
+        return response()->json([
+            'message' => 'Phiếu giảm giá đã được xóa thành công.',
+        ], 200);
+    }
+    public function layPhieuGiamGiaPhuHopVoiDonHang(Request $request)
+    {
+        // Lấy giá trị đơn hàng từ request
+        $orderValue = $request['gia_tri_don_hang'];
+
+        if (!$orderValue) {
+            return response()->json([
+                'message' => 'Vui lòng cung cấp giá trị đơn hàng.',
+            ], 400);
+        }
+
+        // Lấy danh sách phiếu giảm giá phù hợp
+        $data = PhieuGiamGia::where('gia_tri_don_hang_toi_thieu', '<=', $orderValue)
+            ->where('ngay_bat_dau', '<=', now())
+            ->where('ngay_ket_thuc', '>=', now())
+            ->get();
+
+        return response()->json([
+            'data' => $data,
+        ], 200);
     }
 }
