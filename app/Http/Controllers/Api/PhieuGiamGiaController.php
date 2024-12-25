@@ -123,4 +123,25 @@ class PhieuGiamGiaController extends Controller
             'data' => $data,
         ], 200);
     }
+    public function checkPhieuGiamGia(Request $request)
+    {
+        $maGiamGia = $request->input('ma_giam_gia');
+        $magiamgia = PhieuGiamGia::where('ma_giam_gia', $maGiamGia)
+            ->whereDate('ngay_bat_dau', '<=', now())
+            ->whereDate('ngay_ket_thuc', '>=', now())
+            ->first();
+
+        if ($magiamgia) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Mã giảm giá hợp lệ',
+                'data' => $magiamgia,
+            ], 200);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Mã giảm giá không hợp lệ hoặc đã hết hạn',
+        ], 404);
+    }
 }
