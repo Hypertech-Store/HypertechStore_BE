@@ -25,6 +25,7 @@ class StoreDonHangRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'ma_don_hang' => 'nullable|string|max:255',
             'khach_hang_id' => 'required|exists:khach_hangs,id',
             'phuong_thuc_thanh_toan_id' => 'required|exists:phuong_thuc_thanh_toans,id',
             'trang_thai_don_hang' => 'required|string|max:255',
