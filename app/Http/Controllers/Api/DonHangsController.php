@@ -14,6 +14,7 @@ use App\Models\PhuongThucThanhToan;
 use App\Models\SanPham;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class DonHangsController extends Controller
 {
@@ -60,11 +61,21 @@ class DonHangsController extends Controller
             'success' => true,
         ];
     }
+    private function generateUniqueOrderCode($length = 10) {
+        do {
+            // Tạo số ngẫu nhiên hoặc tuần tự
+            $soNgauNhien = mt_rand(100, 9999999); // Tạo số từ 100000 đến 999999
+            // Ghép "DH" với số ngẫu nhiên
+            $maDonHang = 'DH' . $soNgauNhien;
+        } while (DonHang::where('ma_don_hang', $maDonHang)->exists()); // Kiểm tra mã đã tồn tại
 
+        return $maDonHang;
+    }
     private function createOrderWithPaymentSuccess(Request $request)
     {
 
         $donHang = DonHang::create([
+            'ma_don_hang' =>  $this->generateUniqueOrderCode(),
             'khach_hang_id' => $request->khach_hang_id,
             'phuong_thuc_thanh_toan_id' => $request->phuong_thuc_thanh_toan_id,
             'hinh_thuc_van_chuyen_id' => $request->hinh_thuc_van_chuyen_id,

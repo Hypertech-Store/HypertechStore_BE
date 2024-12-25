@@ -10,6 +10,7 @@ class DonHang extends Model
     use HasFactory;
 
     protected $fillable = [
+        'ma_don_hang',
         'khach_hang_id',
         'phuong_thuc_thanh_toan_id',
         'hinh_thuc_van_chuyen_id',
