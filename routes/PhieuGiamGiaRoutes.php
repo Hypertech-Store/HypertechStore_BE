@@ -16,6 +16,7 @@ Route::prefix('phieu-giam-gia')->group(function () {
     Route::delete('/delete/{id}', [PhieuGiamGiaController::class, 'destroy']);
 
     Route::post('/phieu-giam-gia-phu-hop', [PhieuGiamGiaController::class, 'layPhieuGiamGiaPhuHopVoiDonHang']);
+
     Route::post('/check-phieu-giam-gia', [PhieuGiamGiaController::class, 'checkPhieuGiamGia']);
 
 });

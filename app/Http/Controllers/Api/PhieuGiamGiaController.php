@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StorePhieuGiamGiaRequest;
 use App\Models\PhieuGiamGia;
+use App\Models\PhieuGiamGiaVaKhachHang;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -126,22 +127,38 @@ class PhieuGiamGiaController extends Controller
     public function checkPhieuGiamGia(Request $request)
     {
         $maGiamGia = $request->input('ma_giam_gia');
+        $khachHangId = $request->input('khach_hang_id');
+
+        // Kiểm tra mã giảm giá
         $magiamgia = PhieuGiamGia::where('ma_giam_gia', $maGiamGia)
             ->whereDate('ngay_bat_dau', '<=', now())
             ->whereDate('ngay_ket_thuc', '>=', now())
             ->first();
 
-        if ($magiamgia) {
+        if (!$magiamgia) {
             return response()->json([
-                'success' => true,
-                'message' => 'Mã giảm giá hợp lệ',
-                'data' => $magiamgia,
-            ], 200);
+                'success' => false,
+                'message' => 'Mã giảm giá không hợp lệ hoặc đã hết hạn',
+            ], 404);
         }
 
+        // Kiểm tra xem khách hàng đã sử dụng mã này chưa
+        $daSuDung = PhieuGiamGiaVaKhachHang::where('phieu_giam_gia_id', $magiamgia->id)
+            ->where('khach_hang_id', $khachHangId)
+            ->exists();
+
+        if ($daSuDung) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Bạn đã sử dụng mã giảm giá này trước đây',
+            ], 403);
+        }
+
+        // Mã giảm giá hợp lệ và chưa được sử dụng
         return response()->json([
-            'success' => false,
-            'message' => 'Mã giảm giá không hợp lệ hoặc đã hết hạn',
-        ], 404);
+            'success' => true,
+            'message' => 'Mã giảm giá hợp lệ',
+            'data' => $magiamgia,
+        ], 200);
     }
 }
