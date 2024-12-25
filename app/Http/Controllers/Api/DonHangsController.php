@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\BienTheSanPham;
 use App\Models\DonHang;
 use App\Models\ChiTietDonHang;
+use App\Models\ChiTietGioHang;
 use App\Models\GioHang;
 use App\Models\PhieuGiamGia;
 use App\Models\PhieuGiamGiaVaKhachHang;
@@ -62,6 +63,7 @@ class DonHangsController extends Controller
 
     private function createOrderWithPaymentSuccess(Request $request)
     {
+
         $donHang = DonHang::create([
             'khach_hang_id' => $request->khach_hang_id,
             'phuong_thuc_thanh_toan_id' => $request->phuong_thuc_thanh_toan_id,
@@ -117,6 +119,8 @@ class DonHangsController extends Controller
                 ]);
             }
         }
+        $chi_tiet_gio_hang_id = array_column($request->products, 'chi_tiet_gio_hang_id');
+        ChiTietGioHang::whereIn('id', $chi_tiet_gio_hang_id)->delete();
 
         // Return success response
         return response()->json([
