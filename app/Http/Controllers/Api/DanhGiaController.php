@@ -190,7 +190,7 @@ class DanhGiaController extends Controller
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    public function getDanhGiaBySanPhamId($san_pham_id)
+    public function getDanhGiaBySanPhamId(Request $request, $san_pham_id)
     {
         // Kiểm tra sản phẩm có tồn tại không
         $sanPham = SanPham::find($san_pham_id);
@@ -202,15 +202,32 @@ class DanhGiaController extends Controller
             ], 404);
         }
 
-        // Lấy danh sách đánh giá theo sản phẩm ID
+        // Lấy tham số page và number_row từ request (với giá trị mặc định là 1 và 10)
+        $page = $request->query('page', 1);  // Sử dụng query 'page' hoặc mặc định là 1
+        $numberRow = $request->query('number_row', 5);  // Sử dụng query 'number_row' hoặc mặc định là 5
+
+        // Lấy danh sách đánh giá theo sản phẩm ID với phân trang (5 đánh giá mỗi trang)
         $danhGias = DanhGia::where('san_pham_id', $san_pham_id)
             ->with(['chiTietDanhGias', 'khachHang'])
-            ->get();
+            ->paginate($numberRow);
 
+        // Tính tổng số sao và tổng số lượng đánh giá (không bị giới hạn bởi phân trang)
+        $totalStars = DanhGia::where('san_pham_id', $san_pham_id)->sum('danh_gia');
+        $totalReviews = DanhGia::where('san_pham_id', $san_pham_id)->count();
+
+        // Tính điểm sao trung bình
+        $averageStars = $totalReviews > 0 ? round($totalStars / $totalReviews, 2) : 0;
+
+        // Trả về kết quả
         return response()->json([
             'status' => 'success',
             'message' => 'Lấy danh sách đánh giá thành công.',
-            'data' => $danhGias
+            'data' => $danhGias, // Dữ liệu phân trang
+            'summary' => [
+                'tong_sao' => $totalStars,
+                'trung_binh_sao' => $averageStars,
+                'tong_danh_gia' => $totalReviews
+            ]
         ]);
     }
 }
