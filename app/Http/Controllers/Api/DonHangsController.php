@@ -61,7 +61,8 @@ class DonHangsController extends Controller
             'success' => true,
         ];
     }
-    private function generateUniqueOrderCode($length = 10) {
+    private function generateUniqueOrderCode($length = 10)
+    {
         do {
             // Tạo số ngẫu nhiên hoặc tuần tự
             $soNgauNhien = mt_rand(100, 9999999); // Tạo số từ 100000 đến 999999
@@ -73,6 +74,12 @@ class DonHangsController extends Controller
     }
     private function createOrderWithPaymentSuccess(Request $request)
     {
+        $orderCode = $this->generateUniqueOrderCode();
+
+        // Ensure the generated order code is unique by checking the database
+        while (DonHang::where('ma_don_hang', $orderCode)->exists()) {
+            $orderCode = $this->generateUniqueOrderCode();
+        }
 
         $donHang = DonHang::create([
             'ma_don_hang' =>  $this->generateUniqueOrderCode(),
@@ -141,23 +148,36 @@ class DonHangsController extends Controller
     }
 
 
-    public function viewOrder($khach_hang_id): \Illuminate\Http\JsonResponse
-    {
-        // Lấy tất cả đơn hàng của khách hàng cùng với chi tiết đơn hàng và sản phẩm
-        $donHangs = DonHang::with(['chiTietDonHangs.sanPham'])
-            ->where('khach_hang_id', $khach_hang_id) // Lọc đơn hàng theo khách hàng
-            ->get();
+    public function viewOrder(Request $request, $khach_hang_id): \Illuminate\Http\JsonResponse
+{
+    $page = $request->query('page', 1);  // Get 'page' from the query, default to 1
+    $numberRow = $request->query('number_row', 5); // Get 'number_row' from the query, default to 5
 
-        // Kiểm tra nếu không có đơn hàng nào của khách hàng
-        if ($donHangs->isEmpty()) {
-            return response()->json(['message' => 'Không có đơn hàng nào của khách hàng này'], 404);
-        }
+    $donHangs = DonHang::with(['chiTietDonHangs.sanPham', 'phuongThucThanhToan'])
+        ->where('khach_hang_id', $khach_hang_id)
+        ->paginate($numberRow, ['*'], 'page', $page);
 
-        // Trả về dữ liệu các đơn hàng của khách hàng
-        return response()->json([
-            'don_hangs' => $donHangs,
-        ], 200);
+    // Check if there are no orders
+    if ($donHangs->isEmpty()) {
+        return response()->json(['message' => 'Không có đơn hàng nào của khách hàng này'], 404);
     }
+
+    // Convert thuoc_tinh to JSON
+    $donHangs->getCollection()->transform(function ($donHang) {
+        $donHang->chiTietDonHangs->each(function ($chiTietDonHang) {
+            $chiTietDonHang->thuoc_tinh = json_decode($chiTietDonHang->thuoc_tinh);
+        });
+        return $donHang;
+    });
+
+    return response()->json([
+        'don_hangs' => $donHangs,
+        'current_page' => $donHangs->currentPage(),
+        'total_pages' => $donHangs->lastPage(),
+    ], 200);
+}
+
+
 
 
     // Cập nhật trạng thái đơn hàng
