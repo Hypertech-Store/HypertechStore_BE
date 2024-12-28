@@ -14,7 +14,7 @@ class DonHang extends Model
         'khach_hang_id',
         'phuong_thuc_thanh_toan_id',
         'hinh_thuc_van_chuyen_id',
-        'trang_thai_don_hang',
+        'trang_thai_don_hang_id',
         'tong_tien',
         'dia_chi_giao_hang',
     ];
@@ -23,7 +23,6 @@ class DonHang extends Model
     {
         return $this->belongsTo(KhachHang::class);
     }
-
     public function chiTietDonHangs()
     {
         return $this->hasMany(ChiTietDonHang::class);
@@ -40,5 +39,9 @@ class DonHang extends Model
     public function hinhThucVanChuyen()
     {
         return $this->belongsTo(HinhThucVanChuyen::class, 'hinh_thuc_van_chuyen_id');
+    }
+    public function trangThaiDonHang()
+    {
+        return $this->belongsTo(TrangThaiDonHang::class, 'trang_thai_don_hang_id');
     }
 }
