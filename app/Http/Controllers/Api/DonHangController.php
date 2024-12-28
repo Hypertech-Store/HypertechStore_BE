@@ -27,7 +27,7 @@ class DonHangController extends Controller
             $perPage = 5;
 
             // Lấy danh sách đơn hàng với các quan hệ liên quan
-            $data = DonHang::with(['chiTietDonHangs.sanPham', 'phuongThucThanhToan'])
+            $data = DonHang::with(['chiTietDonHangs.sanPham', 'phuongThucThanhToan', 'trangThaiDonHang'])
                 ->paginate($perPage);
 
             // Kiểm tra nếu không có dữ liệu
@@ -37,16 +37,36 @@ class DonHangController extends Controller
                 ], 404);
             }
 
+
+            // Định dạng lại từng mục trong danh sách
+            $formattedItems = $data->items(); // Lấy danh sách hiện tại của các item
+            foreach ($formattedItems as &$donHang) {
+                $donHang['trang_thai_don_hang'] = $donHang['trangThaiDonHang']['ten_trang_thai'] ?? 'Không xác định';
+                $donHang['trang_thai_don_hang_id'] = $donHang['trangThaiDonHang']['id'] ?? null; // Lấy id trạng thái đơn hàng
+                unset($donHang['trangThaiDonHang']);
+            }
+
+            // Định nghĩa lại phân trang thủ công
+            $formattedData = [
+                'current_page' => $data->currentPage(),
+                'last_page' => $data->lastPage(),
+                'per_page' => $data->perPage(),
+                'total' => $data->total(),
+                'data' => $formattedItems, // Gán danh sách mới định dạng lại
+            ];
+
             // Trả về dữ liệu đã phân trang
-            return response()->json($data);
+            return response()->json($formattedData, 200);
         } catch (\Exception $e) {
             // Trả về lỗi nếu xảy ra ngoại lệ
             return response()->json([
                 'message' => 'Đã xảy ra lỗi trong quá trình truy vấn.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
+
+
 
 
     /**
