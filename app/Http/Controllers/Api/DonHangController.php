@@ -20,26 +20,34 @@ class DonHangController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index($khachHangId)
+    public function index(Request $request)
     {
         try {
-            $data = DonHang::query()->where('khach_hang_id', $khachHangId)->get();
+            // Số lượng đơn hàng mỗi trang
+            $perPage = 5;
 
+            // Lấy danh sách đơn hàng với các quan hệ liên quan
+            $data = DonHang::with(['chiTietDonHangs.sanPham', 'phuongThucThanhToan'])
+                ->paginate($perPage);
+
+            // Kiểm tra nếu không có dữ liệu
             if ($data->isEmpty()) {
                 return response()->json([
-                    'message' => 'Không tìm thấy đơn hàng cho khách hàng này.'
+                    'message' => 'Không tìm thấy đơn hàng nào.'
                 ], 404);
             }
 
+            // Trả về dữ liệu đã phân trang
             return response()->json($data);
-
         } catch (\Exception $e) {
+            // Trả về lỗi nếu xảy ra ngoại lệ
             return response()->json([
                 'message' => 'Đã xảy ra lỗi trong quá trình truy vấn.',
                 'error' => $e->getMessage()
             ], 500);
         }
     }
+
 
     /**
      * Store a newly created resource in storage.
@@ -64,24 +72,23 @@ class DonHangController extends Controller
             $data = DonHang::query()->findOrFail($id);
 
             return response()->json([
-                'message' => 'Chi tiết đơn hàng id = '.$id,
+                'message' => 'Chi tiết đơn hàng id = ' . $id,
                 'data' => $data
             ]);
         } catch (\Throwable $th) {
-            if($th instanceof ModelNotFoundException){
+            if ($th instanceof ModelNotFoundException) {
                 return response()->json([
-                    'message' => 'Không tìm thấy đơn hàng id = '.$id,
+                    'message' => 'Không tìm thấy đơn hàng id = ' . $id,
 
                 ], Response::HTTP_NOT_FOUND);
             }
             Log::error('Lỗi xóa đơn hàng: ' . $th->getMessage());
 
             return response()->json([
-                'message' => 'Không tìm thấy đơn hàng id = '.$id,
+                'message' => 'Không tìm thấy đơn hàng id = ' . $id,
 
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-
     }
 
     /**
@@ -117,7 +124,6 @@ class DonHangController extends Controller
                 'message' => 'Có lỗi xảy ra khi cập nhật đơn hàng',
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-
     }
 
     /**
@@ -131,12 +137,10 @@ class DonHangController extends Controller
             return response()->json([
                 'message' => 'Xóa thành công',
             ], Response::HTTP_OK);
-
         } catch (ModelNotFoundException $e) {
             return response()->json([
-                'message' => 'Không tìm thấy đơn hàng id = '.$id,
+                'message' => 'Không tìm thấy đơn hàng id = ' . $id,
             ], Response::HTTP_NOT_FOUND);
-
         } catch (\Exception $e) {
             Log::error('Lỗi xóa đơn hàng: ' . $e->getMessage());
 
@@ -215,5 +219,4 @@ class DonHangController extends Controller
         // Trả về thông tin đơn hàng đã tạo
         return response()->json(['message' => 'Đơn hàng đã được tạo thành công', 'don_hang' => $donHang], 201);
     }
-
 }
