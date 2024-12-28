@@ -61,17 +61,17 @@ class DonHangsController extends Controller
             'success' => true,
         ];
     }
+
     private function generateUniqueOrderCode($length = 10)
     {
         do {
-            // Tạo số ngẫu nhiên hoặc tuần tự
-            $soNgauNhien = mt_rand(100, 9999999); // Tạo số từ 100000 đến 999999
-            // Ghép "DH" với số ngẫu nhiên
-            $maDonHang = 'DH' . $soNgauNhien;
+            // Tạo mã đơn hàng ngẫu nhiên
+            $maDonHang = strtoupper(substr(bin2hex(random_bytes($length)), 0, $length));
         } while (DonHang::where('ma_don_hang', $maDonHang)->exists()); // Kiểm tra mã đã tồn tại
 
         return $maDonHang;
     }
+
     private function createOrderWithPaymentSuccess(Request $request)
     {
         $orderCode = $this->generateUniqueOrderCode();
@@ -149,34 +149,33 @@ class DonHangsController extends Controller
 
 
     public function viewOrder(Request $request, $khach_hang_id): \Illuminate\Http\JsonResponse
-{
-    $page = $request->query('page', 1);  // Get 'page' from the query, default to 1
-    $numberRow = $request->query('number_row', 5); // Get 'number_row' from the query, default to 5
+    {
+        $page = $request->query('page', 1);  // Get 'page' from the query, default to 1
+        $numberRow = $request->query('number_row', 5); // Get 'number_row' from the query, default to 5
 
-    $donHangs = DonHang::with(['chiTietDonHangs.sanPham', 'phuongThucThanhToan'])
-        ->where('khach_hang_id', $khach_hang_id)
-        ->paginate($numberRow, ['*'], 'page', $page);
+        $donHangs = DonHang::with(['chiTietDonHangs.sanPham', 'phuongThucThanhToan'])
+            ->where('khach_hang_id', $khach_hang_id)
+            ->paginate($numberRow, ['*'], 'page', $page);
 
-    // Check if there are no orders
-    if ($donHangs->isEmpty()) {
-        return response()->json(['message' => 'Không có đơn hàng nào của khách hàng này'], 404);
-    }
+        // Check if there are no orders
+        if ($donHangs->isEmpty()) {
+            return response()->json(['message' => 'Không có đơn hàng nào của khách hàng này'], 404);
+        }
 
-    // Convert thuoc_tinh to JSON
-    $donHangs->getCollection()->transform(function ($donHang) {
-        $donHang->chiTietDonHangs->each(function ($chiTietDonHang) {
-            $chiTietDonHang->thuoc_tinh = json_decode($chiTietDonHang->thuoc_tinh);
+        // Convert thuoc_tinh to JSON
+        $donHangs->getCollection()->transform(function ($donHang) {
+            $donHang->chiTietDonHangs->each(function ($chiTietDonHang) {
+                $chiTietDonHang->thuoc_tinh = json_decode($chiTietDonHang->thuoc_tinh);
+            });
+            return $donHang;
         });
-        return $donHang;
-    });
 
-    return response()->json([
-        'don_hangs' => $donHangs,
-        'current_page' => $donHangs->currentPage(),
-        'total_pages' => $donHangs->lastPage(),
-    ], 200);
-}
-
+        return response()->json([
+            'don_hangs' => $donHangs,
+            'current_page' => $donHangs->currentPage(),
+            'total_pages' => $donHangs->lastPage(),
+        ], 200);
+    }
 
 
 
