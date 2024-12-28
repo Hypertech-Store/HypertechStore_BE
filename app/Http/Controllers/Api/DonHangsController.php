@@ -86,7 +86,7 @@ class DonHangsController extends Controller
             'khach_hang_id' => $request->khach_hang_id,
             'phuong_thuc_thanh_toan_id' => $request->phuong_thuc_thanh_toan_id,
             'hinh_thuc_van_chuyen_id' => $request->hinh_thuc_van_chuyen_id,
-            'trang_thai_don_hang' => 'Chờ xử lý',
+            'trang_thai_don_hang' => 1,
             'tong_tien' => $request->tong_tien,
             'dia_chi_giao_hang' => $request->dia_chi_giao_hang,
         ]);
@@ -153,7 +153,7 @@ class DonHangsController extends Controller
         $page = $request->query('page', 1);  // Get 'page' from the query, default to 1
         $numberRow = $request->query('number_row', 5); // Get 'number_row' from the query, default to 5
 
-        $donHangs = DonHang::with(['chiTietDonHangs.sanPham', 'phuongThucThanhToan'])
+        $donHangs = DonHang::with(['chiTietDonHangs.sanPham', 'phuongThucThanhToan', 'trangThaiDonHang'])
             ->where('khach_hang_id', $khach_hang_id)
             ->paginate($numberRow, ['*'], 'page', $page);
 
@@ -182,17 +182,24 @@ class DonHangsController extends Controller
     // Cập nhật trạng thái đơn hàng
     public function updateOrderStatus(Request $request, $don_hang_id)
     {
+        // Xác thực dữ liệu đầu vào
         $request->validate([
-            'trang_thai_don_hang' => 'required|string',
+            'trang_thai_don_hang_id' => 'required|exists:trang_thai_don_hangs,id',
         ]);
 
+        // Tìm đơn hàng theo ID
         $donHang = DonHang::find($don_hang_id);
+
+        // Kiểm tra xem đơn hàng có tồn tại không
         if (!$donHang) {
             return response()->json(['message' => 'Đơn hàng không tồn tại'], 404);
         }
 
-        $donHang->update(['trang_thai_don_hang' => $request->trang_thai_don_hang]);
+        // Cập nhật trạng thái đơn hàng
+        $donHang->trang_thai_don_hang_id = $request->trang_thai_don_hang_id;
+        $donHang->save(); // Lưu thay đổi
 
+        // Trả về thông báo thành công và dữ liệu đơn hàng đã cập nhật
         return response()->json([
             'message' => 'Cập nhật trạng thái đơn hàng thành công',
             'don_hang' => $donHang,
