@@ -10,6 +10,7 @@ use App\Models\SanPham;
 use App\Models\BienTheSanPham;
 use App\Models\DanhMuc;
 use App\Models\DanhMucCon; // Import model DanhMucCon
+use App\Models\GiaTriThuocTinh;
 use App\Models\HinhAnhSanPham;
 use App\Models\LienKetBienTheVaGiaTriThuocTinh;
 use App\Models\SaleSanPham;
@@ -176,10 +177,20 @@ class SanPhamController extends Controller
             // Liên kết các giá trị thuộc tính với biến thể
             foreach ($combination as $giaTriId) {
                 $giaTriId = (int) $giaTriId;
-                LienKetBienTheVaGiaTriThuocTinh::create([
+                $lien_ket = LienKetBienTheVaGiaTriThuocTinh::create([
                     'bien_the_san_pham_id' => $bienTheSanPham->id,
                     'gia_tri_thuoc_tinh_id' => $giaTriId,
                 ]);
+
+                // Kiểm tra nếu gia_tri_thuoc_tinh_id là thuộc tính màu sắc (thuoc_tinh_id = 1)
+                $giaTri = GiaTriThuocTinh::find($giaTriId); // Lấy giá trị thuộc tính
+                if ($giaTri && $giaTri->thuoc_tinh_san_pham_id == 1) { // Kiểm tra thuộc tính màu sắc
+                    // Tạo HinhAnhSanPham với duong_dan_hinh_anh = null
+                    HinhAnhSanPham::create([
+                        'lien_ket_bien_the_va_gia_tri_thuoc_tinh_id' => $lien_ket->id,
+                        'duong_dan_hinh_anh' => null,
+                    ]);
+                }
             }
         }
 
