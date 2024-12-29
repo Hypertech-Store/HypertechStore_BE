@@ -17,7 +17,7 @@ class ThongSoController extends Controller
      */
     public function index()
     {
-        $data = ThongSo::query()->get();
+        $data = ThongSo::with('danhMuc')->paginate(10);
 
         return response()->json($data);
     }

@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\ThongSo;
+use App\Http\Controllers\Api\ThongSoController;
 use Illuminate\Support\Facades\Route;
 
-Route::apiResource('thong-so', ThongSo::class);
+Route::apiResource('thong-so', ThongSoController::class);

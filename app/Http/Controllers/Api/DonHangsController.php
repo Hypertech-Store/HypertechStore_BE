@@ -62,27 +62,10 @@ class DonHangsController extends Controller
         ];
     }
 
-    private function generateUniqueOrderCode($length = 10)
-    {
-        do {
-            // Tạo mã đơn hàng ngẫu nhiên
-            $maDonHang = strtoupper(substr(bin2hex(random_bytes($length)), 0, $length));
-        } while (DonHang::where('ma_don_hang', $maDonHang)->exists()); // Kiểm tra mã đã tồn tại
-
-        return $maDonHang;
-    }
-
     private function createOrderWithPaymentSuccess(Request $request)
     {
-        $orderCode = $this->generateUniqueOrderCode();
-
-        // Ensure the generated order code is unique by checking the database
-        while (DonHang::where('ma_don_hang', $orderCode)->exists()) {
-            $orderCode = $this->generateUniqueOrderCode();
-        }
-
         $donHang = DonHang::create([
-            'ma_don_hang' =>  $this->generateUniqueOrderCode(),
+            'ma_don_hang' => $request->ma_don_hang,
             'khach_hang_id' => $request->khach_hang_id,
             'phuong_thuc_thanh_toan_id' => $request->phuong_thuc_thanh_toan_id,
             'hinh_thuc_van_chuyen_id' => $request->hinh_thuc_van_chuyen_id,
