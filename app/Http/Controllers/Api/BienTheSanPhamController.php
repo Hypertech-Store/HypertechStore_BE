@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreBienTheSanPhamRequest;
 use App\Models\BienTheSanPham;
 use App\Models\GiaTriThuocTinh;
+use App\Models\HinhAnhSanPham;
 use App\Models\LienKetBienTheVaGiaTriThuocTinh;
 use App\Models\ThuocTinhSanPham;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -14,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class BienTheSanPhamController extends Controller
 {
@@ -22,10 +24,44 @@ class BienTheSanPhamController extends Controller
      */
     public function index()
     {
+        // Lấy tất cả các biến thể sản phẩm
         $data = BienTheSanPham::query()->get();
 
-        return response()->json($data);
+        // Duyệt qua từng biến thể sản phẩm để bổ sung thông tin liên quan
+        $result = $data->map(function ($item) {
+            // Lấy tất cả các liên kết của biến thể sản phẩm
+            $lienKetBienThe = LienKetBienTheVaGiaTriThuocTinh::where('bien_the_san_pham_id', $item->id)
+                ->get()
+                ->map(function ($lienKet) {
+                    // Lấy `ten_gia_tri` từ bảng GiaTriThuocTinh
+                    $tenGiaTri = GiaTriThuocTinh::where('id', $lienKet->gia_tri_thuoc_tinh_id)->value('ten_gia_tri');
+
+                    return [
+                        'id' => $lienKet->id,
+                        'gia_tri_thuoc_tinh_id' => $lienKet->gia_tri_thuoc_tinh_id,
+                        'ten_gia_tri' => $tenGiaTri,
+                    ];
+                });
+
+            // Duyệt qua các liên kết và lấy hình ảnh sản phẩm tương ứng
+            $hinhAnhSanPham = $lienKetBienThe->map(function ($lienKet) {
+                return HinhAnhSanPham::where('lien_ket_bien_the_va_gia_tri_thuoc_tinh_id', $lienKet['id'])->get();
+            });
+
+            // Trả về dữ liệu trong một mảng duy nhất
+            return [
+                'bienTheSanPham' => $item,
+                'lienKetBienThe' => $lienKetBienThe,
+                'hinhAnhSanPham' => $hinhAnhSanPham->flatten(), // Đưa các hình ảnh vào một mảng phẳng
+            ];
+        });
+
+        // Trả về dữ liệu dưới dạng JSON
+        return response()->json($result);
     }
+
+
+
 
     /**
      * Store a newly created resource in storage.
@@ -74,12 +110,65 @@ class BienTheSanPhamController extends Controller
     public function update(StoreBienTheSanPhamRequest $request, string $id)
     {
         try {
+            // Tìm biến thể sản phẩm cần cập nhật
             $data = BienTheSanPham::query()->findOrFail($id);
-            $data->update($request->all());
+
+            // Cập nhật biến thể sản phẩm (trừ trường 'image')
+            $data->update($request->except('image'));
+
+            // Lấy tất cả các id liên kết có bien_the_san_pham_id tương ứng
+            $lienKetBienThe = LienKetBienTheVaGiaTriThuocTinh::where('bien_the_san_pham_id', $data->id)->get();
+
+            // Lấy mảng gia_tri_thuoc_tinh_id từ $lienKetBienThe
+            $giaTriThuocTinhIds = $lienKetBienThe->pluck('gia_tri_thuoc_tinh_id')->toArray(); // Trích xuất gia_tri_thuoc_tinh_id thành mảng
+
+            $bienThe = DB::table('bien_the_san_phams as b1')
+                ->join('lien_ket_bien_the_va_gia_tri_thuoc_tinhs as b2', 'b1.id', '=', 'b2.bien_the_san_pham_id')
+                ->select('b1.id as bien_the_san_pham_id', 'b1.san_pham_id', 'b2.gia_tri_thuoc_tinh_id', 'b2.id as lien_ket_bien_the_va_gia_tri_thuoc_tinh_id')
+                ->where('b1.san_pham_id', $data->san_pham_id)
+                ->whereIn('b2.gia_tri_thuoc_tinh_id', $giaTriThuocTinhIds)
+                ->get();
+
+            // Mảng chứa hình ảnh sản phẩm
+            $hinh_anh_san_pham_array = [];
+
+            foreach ($bienThe as $lienKet) {
+                // Lấy danh sách hình ảnh từ liên kết
+                $hinh_anh_san_pham = HinhAnhSanPham::where('lien_ket_bien_the_va_gia_tri_thuoc_tinh_id', $lienKet->lien_ket_bien_the_va_gia_tri_thuoc_tinh_id)->get();
+
+                if ($request->hasFile('image')) {
+                    // Lặp qua từng hình ảnh để cập nhật nếu có
+                    foreach ($hinh_anh_san_pham as $image) {
+                        // Xóa hình ảnh cũ nếu có
+                        if ($image->duong_dan_hinh_anh && Storage::exists('public/' . $image->duong_dan_hinh_anh)) {
+                            Storage::delete('public/' . $image->duong_dan_hinh_anh);
+                        }
+
+                        // Lưu hình ảnh mới và cập nhật đường dẫn
+                        $path = $request->file('image')->store('hinh_anh_san_phams', 'public');
+                        Log::info('Đường dẫn hình ảnh mới:', ['path' => $path]);
+
+                        // Cập nhật đường dẫn hình ảnh cho từng hình ảnh
+                        $image->update([
+                            'duong_dan_hinh_anh' => $path,
+                        ]);
+
+                        // Thêm vào mảng hình ảnh
+                        $hinh_anh_san_pham_array[] = $image; // Thêm hình ảnh vào mảng
+                    }
+                } else {
+                    // Nếu không có ảnh mới, thêm tất cả hình ảnh cũ vào mảng
+                    $hinh_anh_san_pham_array = array_merge($hinh_anh_san_pham_array, $hinh_anh_san_pham->toArray());
+                }
+            }
 
             return response()->json([
                 'message' => 'Cập nhật biến thể sản phẩm id = ' . $id,
-                'data' => $data
+                'data' => $data,
+                'lien_ket' => $lienKetBienThe,
+                'hinh_anh_san_pham' => $hinh_anh_san_pham_array,
+                'bienThe' => $bienThe,
+                'gia_tri' => $giaTriThuocTinhIds
             ]);
         } catch (ModelNotFoundException $e) {
             return response()->json([
@@ -93,6 +182,7 @@ class BienTheSanPhamController extends Controller
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
 
     /**
      * Remove the specified resource from storage.
@@ -170,5 +260,4 @@ class BienTheSanPhamController extends Controller
             'mang_gia_tri_thuoc_tinh' => $tenGiaTriThuocTins
         ], 200);
     }
-
 }
