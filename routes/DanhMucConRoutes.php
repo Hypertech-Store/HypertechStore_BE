@@ -11,7 +11,7 @@ Route::prefix('danh-muc-con')->group(function() {
     // Route::post('/create/', [DanhMucConController::class, 'store']);
 
     // // Hiển thị chi tiết một danh mục con
-    // Route::get('/detail/{id}', [DanhMucConController::class, 'show']);
+    Route::get('/detail/{id}', [DanhMucConController::class, 'show']);
 
     // // Cập nhật danh mục con
     // Route::put('/update/{id}', [DanhMucConController::class, 'update']);
