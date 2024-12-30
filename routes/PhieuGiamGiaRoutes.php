@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('phieu-giam-gia')->group(function () {
 
-    Route::get('/{phieu-giam-gia-id}', [PhieuGiamGiaController::class, 'index']);
+    Route::get('/', [PhieuGiamGiaController::class, 'index']);
 
     Route::post('/create', [PhieuGiamGiaController::class, 'store']);
 
