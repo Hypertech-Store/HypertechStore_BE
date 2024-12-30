@@ -16,7 +16,7 @@ class PhieuGiamGiaController extends Controller
      */
     public function index()
     {
-        $phieuGiamGias = PhieuGiamGia::all();
+        $phieuGiamGias = PhieuGiamGia::query()->paginate(10);
 
         return response()->json([
             'data' => $phieuGiamGias,

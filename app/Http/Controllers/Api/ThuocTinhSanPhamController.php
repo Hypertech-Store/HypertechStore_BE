@@ -14,7 +14,7 @@ class ThuocTinhSanPhamController extends Controller
 {
     public function index()
     {
-        $data = ThuocTinhSanPham::query()->get();
+        $data = ThuocTinhSanPham::query()->paginate(10);
 
         return response()->json($data);
     }
