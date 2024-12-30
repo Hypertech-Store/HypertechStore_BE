@@ -15,9 +15,9 @@ class PaymentController extends Controller
             ]);
 
         $vnp_Url = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
-        $vnp_Returnurl = "http://localhost:5173/thanh-toan";
-        $vnp_TmnCode = "RG33NYQY"; // Mã website tại VNPAY
-        $vnp_HashSecret = "O876ZTZE7JGSUWKNUM4F6RKV25YJMCJT"; // Chuỗi bí mật
+        $vnp_Returnurl = "http://localhost:5173/thanh-toan";  // Điều chỉnh URL trả về
+        $vnp_TmnCode = "3ZBLYQ7U";  // Mã website tại VNPAY
+        $vnp_HashSecret = "9KEKQO6MDK6SYQROCD5GYSN9NBSOJH27"; // Chuỗi bí mật từ VNPAY
 
         $vnp_TxnRef = $validatedData['ma_don_hang'];
         $vnp_OrderInfo = "Thanh toán hóa đơn";
