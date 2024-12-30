@@ -27,12 +27,11 @@ class StorePhieuGiamGiaRequest extends FormRequest
         return [
             'ma_giam_gia' => 'nullable|string|max:50|unique:phieu_giam_gias,ma_giam_gia',
             'mo_ta' => 'nullable|string',
-            'loai_giam_gia' => 'required|in:theo phần trăm,theo số tiền nhất định',
+            'loai_giam_gia' => 'required|string|max:255',
             'gia_tri_giam_gia' => 'required|numeric|min:0',
             'ngay_bat_dau' => 'required|date',
             'ngay_ket_thuc' => 'required|date|after_or_equal:ngay_bat_dau',
             'gia_tri_don_hang_toi_thieu' => 'nullable|numeric|min:0',
-            'so_luong_san_pham_toi_thieu' => 'nullable|integer|min:1',
             'so_luot_su_dung' => 'nullable|integer|min:0',
         ];
     }
