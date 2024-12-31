@@ -17,7 +17,7 @@ class HinhThucVanChuyenController extends Controller
     public function index()
     {
 
-        $data = HinhThucVanChuyen::query()->get();
+        $data = HinhThucVanChuyen::query()->paginate(10);
 
         return response()->json($data);
     }
