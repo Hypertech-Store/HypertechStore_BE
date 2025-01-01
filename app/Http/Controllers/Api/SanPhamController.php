@@ -113,6 +113,18 @@ class SanPhamController extends Controller
         ]);
     }
 
+    public function getAllSanPham(): JsonResponse
+    {
+        // Lấy dữ liệu với phân trang
+        $sanPhams = SanPham::query()->get();
+
+        // Trả về dữ liệu dưới dạng JSON
+        return response()->json([
+            'status' => 'success',
+            'data' => $sanPhams,
+        ]);
+    }
+
 
     public function createProduct(Request $request)
     {

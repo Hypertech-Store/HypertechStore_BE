@@ -132,4 +132,13 @@ class HinhThucVanChuyenController extends Controller
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+    public function allHinhThucVanChuyen()
+    {
+
+        $data = HinhThucVanChuyen::query()->get();
+
+        return response()->json($data);
+    }
+
 }
