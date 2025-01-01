@@ -12,12 +12,28 @@ use Illuminate\Support\Facades\Log;
 
 class GiaTriThuocTinhController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $data = GiaTriThuocTinh::query()->get();
+        // Lấy số lượng bản ghi mỗi trang từ tham số hoặc mặc định là 5
+        $perPage = $request->get('per_page', 5); // Mặc định mỗi trang có 5 mục
+
+        $data = GiaTriThuocTinh::query()
+            ->with('ThuocTinhSanPham:id,ten_thuoc_tinh') // Lấy các trường id và ten_thuoc_tinh
+            ->paginate($perPage) // Phân trang
+            ->onEachSide(1); // Hiển thị 1 trang ở hai bên trang hiện tại (tuỳ chọn)
+
+        // Xử lý dữ liệu
+        $data->getCollection()->transform(function ($item) {
+            // Lấy thông tin `ten_thuoc_tinh` và đẩy vào dữ liệu chính
+            $item->ten_thuoc_tinh = $item->ThuocTinhSanPham->ten_thuoc_tinh;
+            unset($item->ThuocTinhSanPham); // Loại bỏ đối tượng 'ThuocTinhSanPham' khỏi kết quả
+            return $item;
+        });
 
         return response()->json($data);
     }
+
+
 
     /**
      * Store a newly created resource in storage.

@@ -16,9 +16,8 @@ class GiaTriThuocTinh extends Model
     // Quan hệ n-1 với bảng ThuocTinhSanPham
     public function thuocTinhSanPham()
     {
-        return $this->belongsTo(ThuocTinhSanPham::class);
+        return $this->belongsTo(ThuocTinhSanPham::class, 'thuoc_tinh_san_pham_id'); // Kiểm tra lại tên trường khóa ngoại
     }
-
     public function lienKetBienTheVaGiaTri()
     {
         return $this->hasMany(LienKetBienTheVaGiaTriThuocTinh::class);
