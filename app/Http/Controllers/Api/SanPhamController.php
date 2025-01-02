@@ -125,6 +125,19 @@ class SanPhamController extends Controller
         ]);
     }
 
+    public function getSanPhamChuaSale(): JsonResponse
+    {
+        // Lấy các sản phẩm chưa sale (không có liên kết với saleSanPhams)
+        $sanPhamsChuaSale = SanPham::doesntHave('saleSanPhams')->get();
+
+        // Trả về dữ liệu dưới dạng JSON
+        return response()->json([
+            'status' => 'success',
+            'data' => $sanPhamsChuaSale,
+        ]);
+    }
+
+
 
     public function createProduct(Request $request)
     {
@@ -182,8 +195,8 @@ class SanPhamController extends Controller
             // Tạo biến thể sản phẩm
             $bienTheSanPham = BienTheSanPham::create([
                 'san_pham_id' => $sanPham->id,
-                'gia' => $giaBienThe,
-                'so_luong_kho' => $validated['so_luong_ton_kho'], // Cần thay đổi nếu mỗi biến thể có số lượng riêng
+                'gia' => 0,
+                'so_luong_kho' => 0, // Cần thay đổi nếu mỗi biến thể có số lượng riêng
             ]);
 
             // Liên kết các giá trị thuộc tính với biến thể

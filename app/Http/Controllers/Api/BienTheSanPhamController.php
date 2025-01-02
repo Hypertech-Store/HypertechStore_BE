@@ -60,6 +60,54 @@ class BienTheSanPhamController extends Controller
         return response()->json($result);
     }
 
+    public function getBienThePaginate()
+    {
+        // Lấy tất cả các biến thể sản phẩm kèm các liên kết và giá trị liên quan
+        $data = BienTheSanPham::with("sanPham")
+            ->paginate(10);
+
+        // Duyệt qua từng biến thể sản phẩm để bổ sung thông tin cần thiết
+        $result = $data->map(function ($item) {
+            // Lấy tất cả các liên kết của biến thể sản phẩm
+            $lienKetBienThe = LienKetBienTheVaGiaTriThuocTinh::where('bien_the_san_pham_id', $item->id)
+                ->get()
+                ->map(function ($lienKet) {
+                    // Lấy `ten_gia_tri` từ bảng GiaTriThuocTinh
+                    $tenGiaTri = GiaTriThuocTinh::where('id', $lienKet->gia_tri_thuoc_tinh_id)->value('ten_gia_tri');
+
+                    return [
+                        'id' => $lienKet->id,
+                        'gia_tri_thuoc_tinh_id' => $lienKet->gia_tri_thuoc_tinh_id,
+                        'ten_gia_tri' => $tenGiaTri,
+                    ];
+                });
+
+            // Duyệt qua các liên kết và lấy hình ảnh sản phẩm tương ứng
+            $hinhAnhSanPham = $lienKetBienThe->map(function ($lienKet) {
+                return HinhAnhSanPham::where('lien_ket_bien_the_va_gia_tri_thuoc_tinh_id', $lienKet['id'])->get();
+            });
+
+            // Trả về dữ liệu trong một mảng duy nhất
+            return [
+                'bienTheSanPham' => $item,
+                'lienKetBienThe' => $lienKetBienThe,
+                'hinhAnhSanPham' => $hinhAnhSanPham->flatten(), // Đưa các hình ảnh vào một mảng phẳng
+            ];
+        });
+        // Trả về dữ liệu với thông tin phân trang đầy đủ
+        return response()->json([
+            'data' => $result,
+            'pagination' => [
+                'current_page' => $data->currentPage(),
+                'last_page' => $data->lastPage(),
+                'per_page' => $data->perPage(),
+                'total' => $data->total(),
+            ],
+        ]);
+    }
+
+
+
 
 
 
@@ -189,24 +237,48 @@ class BienTheSanPhamController extends Controller
      */
     public function destroy(string $id)
     {
-
         try {
-            BienTheSanPham::destroy($id);
+            // Tìm biến thể sản phẩm cần xóa
+            $bienTheSanPham = BienTheSanPham::findOrFail($id);
+
+            // Lấy danh sách liên kết biến thể sản phẩm
+            $lienKetBienTheVaGiaTri = $bienTheSanPham->lienKetBienTheVaGiaTri;
+
+            // Nếu có liên kết biến thể sản phẩm, xóa các hình ảnh liên quan
+            if ($lienKetBienTheVaGiaTri) {
+                // Kiểm tra nếu lienKetBienTheVaGiaTri là một tập hợp
+                if ($lienKetBienTheVaGiaTri instanceof \Illuminate\Database\Eloquent\Collection) {
+                    // Duyệt qua tất cả các phần tử trong Collection
+                    foreach ($lienKetBienTheVaGiaTri as $item) {
+                        // Xóa các hình ảnh liên quan đến lienKetBienTheVaGiaTri_id
+                        $item->hinhAnhSanPhams()->delete();
+                    }
+                } else {
+                    // Nếu chỉ là một đối tượng duy nhất
+                    $lienKetBienTheVaGiaTri->hinhAnhSanPhams()->delete();
+                }
+            }
+
+            // Xóa các bản ghi liên quan trong bảng lienKetBienTheVaGiaTri
+            $bienTheSanPham->lienKetBienTheVaGiaTri()->delete();
+
+            // Xóa biến thể sản phẩm chính
+            $bienTheSanPham->delete();
+
             return response()->json([
                 'message' => 'Xóa thành công',
             ], Response::HTTP_OK);
-        } catch (ModelNotFoundException $e) {
-            return response()->json([
-                'message' => 'Không tìm thấy biến thể sản phẩm id = ' . $id,
-            ], Response::HTTP_NOT_FOUND);
         } catch (\Exception $e) {
+            // Ghi log chi tiết lỗi
             Log::error('Lỗi xóa biến thể sản phẩm: ' . $e->getMessage());
 
             return response()->json([
-                'message' => 'Có lỗi xảy ra khi xóa biến thể sản phẩm',
+                'message' => 'Có lỗi xảy ra khi xóa biến thể sản phẩm: ' . $e->getMessage(),
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+
     public function getBienTheBySanPhamId($san_pham_id): JsonResponse
     {
         $data = BienTheSanPham::where('san_pham_id', $san_pham_id)->get();

@@ -18,13 +18,28 @@ class SaleSanPhamController extends Controller
             'san_pham_id' => 'required|exists:san_phams,id',
             'sale_theo_phan_tram' => 'required|numeric|min:0|max:100',
             'ngay_bat_dau_sale' => 'required|date',
-            'ngay_ket_thuc_sale' => 'required|date|after:start_date',
+            'ngay_ket_thuc_sale' => 'required|date|after:ngay_bat_dau_sale',
         ]);
 
-        // Lấy sản phẩm từ ID
-        $sanPham = SanPham::find($request->san_pham_id);
+        // Kiểm tra nếu sản phẩm đã có sale đang hoạt động
+        $existingSale = SaleSanPham::where('san_pham_id', $request->san_pham_id)
+            ->where(function ($query) use ($request) {
+                $query->whereBetween('ngay_bat_dau_sale', [$request->ngay_bat_dau_sale, $request->ngay_ket_thuc_sale])
+                    ->orWhereBetween('ngay_ket_thuc_sale', [$request->ngay_bat_dau_sale, $request->ngay_ket_thuc_sale])
+                    ->orWhere(function ($query) use ($request) {
+                        $query->where('ngay_bat_dau_sale', '<=', $request->ngay_bat_dau_sale)
+                            ->where('ngay_ket_thuc_sale', '>=', $request->ngay_ket_thuc_sale);
+                    });
+            })
+            ->exists();
 
-        // Tạo bản ghi mới cho PriceSale
+        if ($existingSale) {
+            return response()->json([
+                'error' => 'Sản phẩm đã có chương trình sale đang hoạt động. Không thể thêm thêm chương trình sale.',
+            ], Response::HTTP_BAD_REQUEST);
+        }
+
+        // Tạo bản ghi mới cho SaleSanPham
         $sale_san_pham = SaleSanPham::create([
             'san_pham_id' => $request->san_pham_id,
             'sale_theo_phan_tram' => $request->sale_theo_phan_tram,
@@ -32,14 +47,17 @@ class SaleSanPhamController extends Controller
             'ngay_ket_thuc_sale' => $request->ngay_ket_thuc_sale,
         ]);
 
+        // Lấy thông tin chi tiết kèm quan hệ sanPham
+        $sale_san_pham_new = SaleSanPham::with('sanPham')->find($sale_san_pham->id);
+
         return response()->json([
             'success' => 'Sản phẩm sale đã được thêm thành công.',
             'data' => [
-                'sale_san_pham' => $sale_san_pham,
+                'sale_san_pham' => $sale_san_pham_new,
             ]
-
         ], Response::HTTP_CREATED);
     }
+
     public function getSaleSanPhams(Request $request)
     {
         // Lấy ngày hiện tại với thời gian đầy đủ (Ngày giờ hiện tại ở Việt Nam)
