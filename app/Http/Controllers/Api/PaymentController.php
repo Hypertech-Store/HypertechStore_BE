@@ -3,6 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\BienTheSanPham;
+use App\Models\ChiTietDonHang;
+use App\Models\ChiTietGioHang;
+use App\Models\DonHang;
+use App\Models\PhieuGiamGia;
+use App\Models\PhieuGiamGiaVaKhachHang;
 use Illuminate\Http\Request;
 
 class PaymentController extends Controller
@@ -83,30 +89,102 @@ class PaymentController extends Controller
         }
     }
 
-    public function handleCallback(Request $request): \Illuminate\Http\JsonResponse
+    public function handleVnPayCallback(Request $request): \Illuminate\Http\JsonResponse
     {
-        $vnp_HashSecret = env('VPPAY_HASHSECRET');
-        $inputData = $request->all();
+        $responseCode = $request->query('vnp_ResponseCode');
+        $transactionStatus = $request->query('vnp_TransactionStatus');
+        $orderCode = $request->query('ma_don_hang');
+        $customerId = $request->query('customer_id');
+        $amount = $request->query('vnp_Amount') / 100;
 
-        $vnp_SecureHash = $inputData['vnp_SecureHash'] ?? '';
+        if ($responseCode === '00' && $transactionStatus === '00') {
+            // Lấy thông tin đơn hàng từ frontend
+            $orderData = [
+                'ma_don_hang' => $orderCode,
+                'khach_hang_id' => $customerId,
+                'phuong_thuc_thanh_toan_id' => 2, // VNPay
+                'tong_tien' => $amount,
+                'trang_thai_don_hang' => 1, // Đã thanh toán
+            ];
 
-        // Loại bỏ `vnp_SecureHash` để tạo lại checksum
-        unset($inputData['vnp_SecureHash'], $inputData['vnp_SecureHashType']);
+            // Tạo đơn hàng
+            $order = $this->createOrderWithPaymentSuccess($orderData);
 
-        ksort($inputData);
-        $hashData = urldecode(http_build_query($inputData));
-        $generatedHash = hash_hmac('sha512', $hashData, $vnp_HashSecret);
-
-        if ($generatedHash !== $vnp_SecureHash) {
-            return response()->json(['message' => 'Invalid signature'], 400);
+            return response()->json([
+                'message' => 'Thanh toán thành công',
+                'don_hang' => $order,
+            ], 200);
         }
 
-        if ($inputData['vnp_ResponseCode'] === '00') {
-            // Thanh toán thành công
-            // Cập nhật trạng thái đơn hàng tại đây
-            return response()->json(['message' => 'Payment successful', 'data' => $inputData]);
-        } else {
-            return response()->json(['message' => 'Payment failed', 'data' => $inputData], 400);
+        return response()->json([
+            'message' => 'Thanh toán thất bại',
+        ], 400);
+    }
+
+
+    // Hàm tạo đơn hàng (cập nhật từ logic hiện tại)
+    private function createOrderWithPaymentSuccess(array $orderData): \Illuminate\Http\JsonResponse
+    {
+        $donHang = DonHang::create([
+            'ma_don_hang' => $orderData['ma_don_hang'],
+            'khach_hang_id' => $orderData['khach_hang_id'],
+            'phuong_thuc_thanh_toan_id' => $orderData['phuong_thuc_thanh_toan_id'],
+            'hinh_thuc_van_chuyen_id' => $orderData['hinh_thuc_van_chuyen_id'],
+            'trang_thai_don_hang' => 1, // Đang xử lý
+            'tong_tien' => $orderData['tong_tien'],
+            'dia_chi_giao_hang' => $orderData['dia_chi_giao_hang'],
+        ]);
+
+        $totalAmount = 0;
+
+        foreach ($orderData['products'] as $product) {
+            $productAttributes = json_encode($product['attributes']);
+
+            $variant = BienTheSanPham::find($product['bien_the_san_pham_id']);
+
+            $productTotal = $product['so_luong'] * $product['gia'];
+            $totalAmount += $productTotal;
+
+            // Thêm chi tiết đơn hàng
+            ChiTietDonHang::create([
+                'don_hang_id' => $donHang->id,
+                'san_pham_id' => $product['san_pham_id'],
+                'bien_the_san_pham_id' => $product['bien_the_san_pham_id'],
+                'thuoc_tinh' => $productAttributes,
+                'so_luong' => $product['so_luong'],
+                'gia' => $product['gia'],
+            ]);
+
+            if ($variant) {
+                $variant->decrement('so_luong_kho', $product['so_luong']);
+            }
         }
+
+        // Xử lý mã giảm giá (nếu có)
+        if (isset($orderData['ma_giam_gia'])) {
+            $phieuGiamGia = PhieuGiamGia::where('ma_giam_gia', $orderData['ma_giam_gia'])
+                ->whereDate('ngay_bat_dau', '<=', now())
+                ->whereDate('ngay_ket_thuc', '>=', now())
+                ->first();
+
+            if ($phieuGiamGia) {
+                $phieuGiamGia->decrement('so_luot_su_dung');
+
+                PhieuGiamGiaVaKhachHang::create([
+                    'phieu_giam_gia_id' => $phieuGiamGia->id,
+                    'khach_hang_id' => $orderData['khach_hang_id'],
+                    'don_hang_id' => $donHang->id,
+                ]);
+            }
+        }
+
+        // Xóa sản phẩm khỏi giỏ hàng
+        $chiTietGioHangIds = array_column($orderData['products'], 'chi_tiet_gio_hang_id');
+        ChiTietGioHang::whereIn('id', $chiTietGioHangIds)->delete();
+
+        return response()->json([
+            'message' => 'Đơn hàng đã được tạo thành công',
+            'don_hang' => $donHang,
+        ], 200);
     }
 }
