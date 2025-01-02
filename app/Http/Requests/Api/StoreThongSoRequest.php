@@ -22,12 +22,14 @@ class StoreThongSoRequest extends FormRequest
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
-    public function rules(): array
+    public function rules()
     {
         return [
-            'danh_muc_id' => 'required|exists:danh_mucs,id', // Phải tồn tại trong bảng `danh_mucs`
-            'ten_thong_so' => 'required|string|max:255', // Bắt buộc, là chuỗi, tối đa 255 ký tự
-            'mo_ta' => 'nullable|string',
+            // Kiểm tra thong_so_list là mảng
+            'thong_so_list' => 'required|array',
+            'thong_so_list.*.danh_muc_id' => 'required|exists:danh_mucs,id', // Kiểm tra danh_muc_id có tồn tại trong bảng categories
+            'thong_so_list.*.ten_thong_so' => 'required|string|max:255', // Kiểm tra ten_thong_so không rỗng và là chuỗi
+            'thong_so_list.*.mo_ta' => 'nullable|string', // Mô tả có thể trống
         ];
     }
     protected function failedValidation(Validator $validator)

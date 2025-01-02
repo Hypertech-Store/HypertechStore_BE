@@ -42,24 +42,23 @@ class ThuocTinhSanPhamController extends Controller
             $data = ThuocTinhSanPham::query()->findOrFail($id);
 
             return response()->json([
-                'message' => 'Chi tiết thuộc tính sản phẩm id = '.$id,
+                'message' => 'Chi tiết thuộc tính sản phẩm id = ' . $id,
                 'data' => $data
             ]);
         } catch (\Throwable $th) {
-            if($th instanceof ModelNotFoundException){
+            if ($th instanceof ModelNotFoundException) {
                 return response()->json([
-                    'message' => 'Không tìm thấy thuộc tính sản phẩm id = '.$id,
+                    'message' => 'Không tìm thấy thuộc tính sản phẩm id = ' . $id,
 
                 ], Response::HTTP_NOT_FOUND);
             }
             Log::error('Lỗi xóa thuộc tính sản phẩm: ' . $th->getMessage());
 
             return response()->json([
-                'message' => 'Không tìm thấy thuộc tính sản phẩm id = '.$id,
+                'message' => 'Không tìm thấy thuộc tính sản phẩm id = ' . $id,
 
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-
     }
 
     /**
@@ -72,14 +71,13 @@ class ThuocTinhSanPhamController extends Controller
             $data->update($request->all());
 
             return response()->json([
-                'message' => 'Cập nhật thuộc tính sản phẩm id = '.$id,
+                'message' => 'Cập nhật thuộc tính sản phẩm id = ' . $id,
                 'data' => $data
             ]);
         } catch (ModelNotFoundException $e) {
             return response()->json([
-                'message' => 'Không tìm thấy thuộc tính sản phẩm id = '.$id,
+                'message' => 'Không tìm thấy thuộc tính sản phẩm id = ' . $id,
             ], Response::HTTP_NOT_FOUND);
-
         } catch (\Exception $e) {
             Log::error('Lỗi cập nhật thuộc tính sản phẩm: ' . $e->getMessage());
 
@@ -87,7 +85,6 @@ class ThuocTinhSanPhamController extends Controller
                 'message' => 'Có lỗi xảy ra khi cập nhật thuộc tính sản phẩm',
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-
     }
 
     /**
@@ -101,12 +98,10 @@ class ThuocTinhSanPhamController extends Controller
             return response()->json([
                 'message' => 'Xóa thành công',
             ], Response::HTTP_OK);
-
         } catch (ModelNotFoundException $e) {
             return response()->json([
-                'message' => 'Không tìm thấy thuộc tính sản phẩm id = '.$id,
+                'message' => 'Không tìm thấy thuộc tính sản phẩm id = ' . $id,
             ], Response::HTTP_NOT_FOUND);
-
         } catch (\Exception $e) {
             Log::error('Lỗi xóa thuộc tính sản phẩm: ' . $e->getMessage());
 

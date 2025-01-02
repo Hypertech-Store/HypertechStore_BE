@@ -33,7 +33,7 @@ class SanPhamController extends Controller
     {
         // Lấy query param với giá trị mặc định: page = 1 và number_row = 9
         $page = $request->query('page', 1);
-        $numberRow = $request->query('number_row', 9);
+        $numberRow = $request->query('number_row', 10);
 
         // Lấy dữ liệu với phân trang
         $sanPhams = SanPham::paginate($numberRow, ['*'], 'page', $page);
