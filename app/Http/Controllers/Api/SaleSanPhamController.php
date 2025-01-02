@@ -46,6 +46,29 @@ class SaleSanPhamController extends Controller
         $currentDate = Carbon::now()->timezone('Asia/Ho_Chi_Minh');
 
         // Lấy các sản phẩm sale còn hiệu lực (Sale hiện tại còn hiệu lực nếu ngày bắt đầu nhỏ hơn hoặc bằng hiện tại, và ngày kết thúc lớn hơn hoặc bằng hiện tại)
+        $saleSanPhams = SaleSanPham::where('ngay_bat_dau_sale', '<=', $currentDate)
+            ->where('ngay_ket_thuc_sale', '>=', $currentDate)
+            ->get();
+
+        // Kiểm tra nếu không có sản phẩm nào đang trong chương trình sale
+        if ($saleSanPhams->isEmpty()) {
+            return response()->json([
+                'message' => 'Không có sản phẩm nào đang trong chương trình sale.',
+                'data' => [],  // Trả về mảng rỗng nếu không có sản phẩm
+            ], Response::HTTP_OK);
+        }
+
+        return response()->json([
+            'message' => 'Danh sách sản phẩm sale',
+            'data' => $saleSanPhams, // Trả về dữ liệu sản phẩm sale
+        ], Response::HTTP_OK);
+    }
+    public function getSaleSanPhamPaginate(Request $request)
+    {
+        // Lấy ngày hiện tại với thời gian đầy đủ (Ngày giờ hiện tại ở Việt Nam)
+        $currentDate = Carbon::now()->timezone('Asia/Ho_Chi_Minh');
+
+        // Lấy các sản phẩm sale còn hiệu lực (Sale hiện tại còn hiệu lực nếu ngày bắt đầu nhỏ hơn hoặc bằng hiện tại, và ngày kết thúc lớn hơn hoặc bằng hiện tại)
         $saleSanPhams = SaleSanPham::query()
             ->with('sanPham')  // Tải thông tin sản phẩm liên quan
             ->paginate(10);
@@ -63,6 +86,7 @@ class SaleSanPhamController extends Controller
             'data' => $saleSanPhams, // Trả về dữ liệu sản phẩm sale
         ], Response::HTTP_OK);
     }
+
     public function editSaleSanPham(Request $request, $sale_san_pham_id)
     {
         // Xác thực dữ liệu đầu vào
