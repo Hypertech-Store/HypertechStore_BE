@@ -48,6 +48,7 @@ class SaleSanPhamController extends Controller
         // Lấy các sản phẩm sale còn hiệu lực (Sale hiện tại còn hiệu lực nếu ngày bắt đầu nhỏ hơn hoặc bằng hiện tại, và ngày kết thúc lớn hơn hoặc bằng hiện tại)
         $saleSanPhams = SaleSanPham::where('ngay_bat_dau_sale', '<=', $currentDate)
             ->where('ngay_ket_thuc_sale', '>=', $currentDate)
+            ->with('sanPham')
             ->get();
 
         // Kiểm tra nếu không có sản phẩm nào đang trong chương trình sale
