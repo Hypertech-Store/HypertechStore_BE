@@ -25,10 +25,26 @@ class SanPhamVaThongSoController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreSanPhamVaThongSoRequest $request)
+    public function store(Request $request)
     {
+        // Lấy san_pham_id từ request
+        $sanPhamId = $request->input('san_pham_id');
 
-        $data = SanPhamVaThongSo::query()->create($request->all());
+        // Lấy mảng thông số từ request
+        $thongSoArray = $request->input('thong_so');
+
+        // Xử lý mảng thông số và tạo các bản ghi mới
+        $data = [];
+        foreach ($thongSoArray as $thongSo) {
+            $data[] = [
+                'san_pham_id' => $sanPhamId,
+                'thong_so_id' => $thongSo['thong_so_id'],
+                'mo_ta' => $thongSo['mo_ta'],
+            ];
+        }
+
+        // Chèn tất cả bản ghi vào bảng
+        SanPhamVaThongSo::created($data);
 
         return response()->json([
             'message' => 'Sản phẩm và thông số được tạo thành công!',
