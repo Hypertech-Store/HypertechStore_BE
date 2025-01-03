@@ -96,11 +96,7 @@ class SanPhamVaThongSoController extends Controller
 
             return response()->json([
                 'message' => 'Chi tiết sản phẩm và thông số được lấy thành công.',
-                'data' => [
-                    'ten_danh_muc_con' => $data->ten_danh_muc_con,
-                    'ten_danh_muc' => optional($data->danhMuc)->ten_danh_muc ?? 'Danh mục không tồn tại',
-                ]
-
+                'data' => $data
             ]);
         } catch (ModelNotFoundException $th) {
             Log::warning("Không tìm thấy sản phẩm và thông số id = {$id}");
