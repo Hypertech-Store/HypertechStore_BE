@@ -92,7 +92,7 @@ class SanPhamVaThongSoController extends Controller
     {
         try {
             // Lấy thông tin sản phẩm và thông số cùng với tên danh mục
-            $data = SanPhamVaThongSo::with('danhMuc')->findOrFail($id);
+            $data = SanPhamVaThongSo::with('sanPham')->findOrFail($id);
 
             return response()->json([
                 'message' => 'Chi tiết sản phẩm và thông số được lấy thành công.',
@@ -100,6 +100,7 @@ class SanPhamVaThongSoController extends Controller
                     'ten_danh_muc_con' => $data->ten_danh_muc_con,
                     'ten_danh_muc' => optional($data->danhMuc)->ten_danh_muc ?? 'Danh mục không tồn tại',
                 ]
+
             ]);
         } catch (ModelNotFoundException $th) {
             Log::warning("Không tìm thấy sản phẩm và thông số id = {$id}");
