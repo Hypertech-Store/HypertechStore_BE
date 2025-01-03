@@ -91,12 +91,21 @@ class SanPhamVaThongSoController extends Controller
     public function show(string $id)
     {
         try {
-            // Lấy thông tin sản phẩm và thông số cùng với tên danh mục
-            $data = SanPhamVaThongSo::with('sanPham')->findOrFail($id);
+            // Lấy thông tin sản phẩm và thông số, bao gồm cả tên sản phẩm và tên thông số
+            $data = SanPhamVaThongSo::with(['sanPham', 'thongSo'])->findOrFail($id);
 
+            // Trả về dữ liệu đã lấy, bao gồm cả thông tin sản phẩm và thông số
             return response()->json([
                 'message' => 'Chi tiết sản phẩm và thông số được lấy thành công.',
-                'data' => $data
+                'data' => [
+                    'id' => $data->id,
+                    'san_pham_id' => $data->san_pham_id,
+                    'ten_san_pham' => $data->sanPham->ten_san_pham, // Thêm tên sản phẩm
+                    'thong_so_id' => $data->thong_so_id,
+                    'ten_thong_so' => $data->thongSo->ten_thong_so, // Thêm tên thông số
+                    'mo_ta' => $data->mo_ta,
+                    // Các thông tin khác từ data
+                ]
             ]);
         } catch (ModelNotFoundException $th) {
             Log::warning("Không tìm thấy sản phẩm và thông số id = {$id}");
@@ -121,12 +130,34 @@ class SanPhamVaThongSoController extends Controller
     public function update(StoreSanPhamVaThongSoRequest $request, string $id)
     {
         try {
-            $data = SanPhamVaThongSo::query()->findOrFail($id);
-            $data->update($request->all());
+            // Tìm dữ liệu sản phẩm và thông số theo ID
+            $data = SanPhamVaThongSo::findOrFail($id);
 
+            // Lấy thông số ID từ yêu cầu
+            $thong_so_id = $request->input('thong_so_id');
+
+            // Cập nhật thông số nếu có
+            if ($thong_so_id) {
+                $data->thong_so_id = $thong_so_id;
+            }
+
+            // Cập nhật các trường dữ liệu khác như mô tả, sản phẩm ID
+            $data->update([
+                'san_pham_id' => $request->input('san_pham_id'),
+                'mo_ta' => $request->input('mo_ta'),
+            ]);
+
+            // Trả về dữ liệu sau khi cập nhật, bao gồm tên sản phẩm, tên thông số và thong_so_id
             return response()->json([
                 'message' => 'Cập nhật sản phẩm và thông số id = ' . $id,
-                'data' => $data
+                'data' => [
+                    'id' => $data->id,
+                    'san_pham_id' => $data->san_pham_id,
+                    'ten_san_pham' => $data->sanPham->ten_san_pham, // Lấy tên sản phẩm
+                    'thong_so_id' => $data->thong_so_id, // Lấy thong_so_id
+                    'ten_thong_so' => $data->thongSo->ten_thong_so, // Lấy tên thông số
+                    'mo_ta' => $data->mo_ta,
+                ]
             ]);
         } catch (ModelNotFoundException $e) {
             return response()->json([
