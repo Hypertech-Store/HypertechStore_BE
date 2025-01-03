@@ -292,26 +292,6 @@ class SanPhamController extends Controller
 
         // Nếu có thay đổi về thuộc tính, tiến hành cập nhật thuộc tính và biến thể
         if ($request->has('thuoc_tinh')) {
-            // Xóa tất cả các liên kết thuộc tính cũ
-            $sanPham->bienTheSanPhams()->each(function ($bienThe) {
-                $lienKetBienTheVaGiaTri = $bienThe->lienKetBienTheVaGiaTri;
-                if ($lienKetBienTheVaGiaTri) {
-                    // Kiểm tra nếu lienKetBienTheVaGiaTri là một tập hợp
-                    if ($lienKetBienTheVaGiaTri instanceof \Illuminate\Database\Eloquent\Collection) {
-                        // Duyệt qua tất cả các phần tử trong Collection
-                        foreach ($lienKetBienTheVaGiaTri as $item) {
-                            // Xóa các hình ảnh liên quan đến lienKetBienTheVaGiaTri_id
-                            $item->hinhAnhSanPhams()->delete();
-                        }
-                    } else {
-                        // Nếu chỉ là một đối tượng duy nhất
-                        $lienKetBienTheVaGiaTri->bienTheSanPham()->delete();
-                    }
-                }
-                $bienThe->lienKetBienTheVaGiaTri()->delete();
-                $bienThe->delete();
-            });
-
             // Lưu thuộc tính mới và tự động sinh biến thể
             $thuocTinhValues = [];
             foreach ($validated['thuoc_tinh'] as $thuocTinh) {
@@ -319,11 +299,27 @@ class SanPhamController extends Controller
                 $thuocTinhValues[] = $giaTriIds;
             }
 
-            // Sinh tất cả các kết hợp của giá trị thuộc tính
-            $combinations = $this->generateCombinations($thuocTinhValues);
+            // Lấy các biến thể hiện có
+            $existingCombinations = $sanPham->bienTheSanPhams()
+                ->with('lienKetBienTheVaGiaTri')
+                ->get()
+                ->map(function ($bienThe) {
+                    return $bienThe->lienKetBienTheVaGiaTri->pluck('gia_tri_thuoc_tinh_id')->sort()->values()->toArray();
+                })
+                ->toArray();
 
-            foreach ($combinations as $index => $combination) {
-                $giaBienThe = $validated['gia_bien_the'][$index] ?? $validated['gia'];
+            // Sinh tất cả các kết hợp của giá trị thuộc tính
+            $newCombinations = $this->generateCombinations($thuocTinhValues);
+
+            foreach ($newCombinations as $index => $combination) {
+                $sortedCombination = collect($combination)->sort()->values()->toArray();
+
+                // Kiểm tra nếu tổ hợp này đã tồn tại
+                if (in_array($sortedCombination, $existingCombinations)) {
+                    continue; // Bỏ qua nếu đã tồn tại
+                }
+
+                $giaBienThe = $validated['gia_bien_the'][$index] ?? $sanPham->gia;
 
                 // Tạo biến thể sản phẩm
                 $bienTheSanPham = BienTheSanPham::create([
@@ -333,7 +329,7 @@ class SanPhamController extends Controller
                 ]);
 
                 // Liên kết các giá trị thuộc tính với biến thể
-                foreach ($combination as $giaTriId) {
+                foreach ($sortedCombination as $giaTriId) {
                     $giaTriId = (int) $giaTriId;
                     $lien_ket = LienKetBienTheVaGiaTriThuocTinh::create([
                         'bien_the_san_pham_id' => $bienTheSanPham->id,
