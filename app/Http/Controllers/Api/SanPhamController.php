@@ -246,6 +246,117 @@ class SanPhamController extends Controller
         return $result;
     }
 
+    public function updateProduct(Request $request, $id)
+    {
+        $sanPham = SanPham::find($id);
+
+        if (!$sanPham) {
+            return response()->json(['message' => 'Sản phẩm không tồn tại'], 404);
+        }
+
+        $validated = $request->validate([
+            'danh_muc_id' => 'nullable|exists:danh_mucs,id',
+            'danh_muc_con_id' => 'nullable|exists:danh_muc_cons,id',
+            'ten_san_pham' => 'nullable|string|max:255',
+            'mo_ta' => 'nullable|string',
+            'gia' => 'nullable|numeric|min:0',
+            'so_luong_ton_kho' => 'nullable|integer|min:0',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'luot_xem' => 'nullable|integer|min:0',
+            'thuoc_tinh' => 'nullable|array',
+            'thuoc_tinh.*.id' => 'nullable|exists:thuoc_tinh_san_phams,id',
+            'thuoc_tinh.*.gia_tri' => 'nullable|array',
+            'thuoc_tinh.*.gia_tri.*' => 'nullable|exists:gia_tri_thuoc_tinhs,id',
+            'gia_bien_the' => 'nullable|array',
+            'gia_bien_the.*' => 'nullable|numeric|min:0',
+        ]);
+
+        // Lưu danh mục cũ để kiểm tra
+        $oldDanhMucId = $sanPham->danh_muc_id;
+
+        // Nếu có ảnh mới, lưu ảnh và cập nhật đường dẫn
+        if ($request->hasFile('image')) {
+            if ($sanPham->duong_dan_anh && Storage::exists('public/' . $sanPham->duong_dan_anh)) {
+                Storage::delete('public/' . $sanPham->duong_dan_anh);
+            }
+
+            $path = $request->file('image')->store('san_phams', 'public');
+            $validated['duong_dan_anh'] = $path;
+        } else {
+            // Nếu không có ảnh mới, giữ nguyên ảnh cũ
+            $validated['duong_dan_anh'] = $sanPham->duong_dan_anh;
+        }
+
+        // Cập nhật dữ liệu cho sản phẩm chính
+        $sanPham->update($validated);
+
+        // Nếu có thay đổi về thuộc tính, tiến hành cập nhật thuộc tính và biến thể
+        if ($request->has('thuoc_tinh')) {
+            // Xóa tất cả các liên kết thuộc tính cũ
+            $sanPham->bienTheSanPhams()->each(function ($bienThe) {
+                $lienKetBienTheVaGiaTri = $bienThe->lienKetBienTheVaGiaTri;
+                if ($lienKetBienTheVaGiaTri) {
+                    // Kiểm tra nếu lienKetBienTheVaGiaTri là một tập hợp
+                    if ($lienKetBienTheVaGiaTri instanceof \Illuminate\Database\Eloquent\Collection) {
+                        // Duyệt qua tất cả các phần tử trong Collection
+                        foreach ($lienKetBienTheVaGiaTri as $item) {
+                            // Xóa các hình ảnh liên quan đến lienKetBienTheVaGiaTri_id
+                            $item->hinhAnhSanPhams()->delete();
+                        }
+                    } else {
+                        // Nếu chỉ là một đối tượng duy nhất
+                        $lienKetBienTheVaGiaTri->bienTheSanPham()->delete();
+                    }
+                }
+                $bienThe->lienKetBienTheVaGiaTri()->delete();
+                $bienThe->delete();
+            });
+
+            // Lưu thuộc tính mới và tự động sinh biến thể
+            $thuocTinhValues = [];
+            foreach ($validated['thuoc_tinh'] as $thuocTinh) {
+                $giaTriIds = $thuocTinh['gia_tri'] ?? [];
+                $thuocTinhValues[] = $giaTriIds;
+            }
+
+            // Sinh tất cả các kết hợp của giá trị thuộc tính
+            $combinations = $this->generateCombinations($thuocTinhValues);
+
+            foreach ($combinations as $index => $combination) {
+                $giaBienThe = $validated['gia_bien_the'][$index] ?? $validated['gia'];
+
+                // Tạo biến thể sản phẩm
+                $bienTheSanPham = BienTheSanPham::create([
+                    'san_pham_id' => $sanPham->id,
+                    'gia' => 0,
+                    'so_luong_kho' => 0, // Cần thay đổi nếu mỗi biến thể có số lượng riêng
+                ]);
+
+                // Liên kết các giá trị thuộc tính với biến thể
+                foreach ($combination as $giaTriId) {
+                    $giaTriId = (int) $giaTriId;
+                    $lien_ket = LienKetBienTheVaGiaTriThuocTinh::create([
+                        'bien_the_san_pham_id' => $bienTheSanPham->id,
+                        'gia_tri_thuoc_tinh_id' => $giaTriId,
+                    ]);
+
+                    // Kiểm tra nếu gia_tri_thuoc_tinh_id là thuộc tính màu sắc (thuoc_tinh_id = 1)
+                    $giaTri = GiaTriThuocTinh::find($giaTriId);
+                    if ($giaTri && $giaTri->thuoc_tinh_san_pham_id == 1) {
+                        // Tạo HinhAnhSanPham với duong_dan_hinh_anh = null
+                        HinhAnhSanPham::create([
+                            'lien_ket_bien_the_va_gia_tri_thuoc_tinh_id' => $lien_ket->id,
+                            'duong_dan_hinh_anh' => null,
+                        ]);
+                    }
+                }
+            }
+        }
+
+        return response()->json($sanPham, 200);
+    }
+
+
 
     public function getDetail($id)
     {
@@ -373,30 +484,6 @@ class SanPhamController extends Controller
     }
 
 
-
-    // Cập nhật sản phẩm
-    // public function updateProduct(Request $request, $id)
-    // {
-    //     $sanPham = SanPham::find($id);
-    //     if (!$sanPham) {
-    //         return response()->json(['message' => 'Sản phẩm không tồn tại'], 404);
-    //     }
-
-    //     $request->validate([
-    //         'danh_muc_id' => 'required|exists:danh_mucs,id',
-    //         'danh_muc_con_id' => 'nullable|exists:danh_muc_cons,id',
-    //         'ten_san_pham' => 'required|string|max:255',
-    //         'mo_ta' => 'nullable|string',
-    //         'gia' => 'required|numeric|min:0',
-    //         'so_luong_ton_kho' => 'required|integer|min:0',
-    //         'duong_dan_anh' => 'nullable|string',
-    //         'luot_xem' => 'integer|min:0',
-    //     ]);
-
-    //     $sanPham->update($request->all());
-    //     return response()->json($sanPham, 200);
-    // }
-
     // Xóa sản phẩm
     public function deleteProduct($id)
     {
@@ -495,64 +582,5 @@ class SanPhamController extends Controller
 
         // Trả về view với danh sách sản phẩm
         return response()->json($sanPhams);
-    }
-
-    public function updateProduct(Request $request, $id)
-    {
-        $sanPham = SanPham::find($id);
-
-        if (!$sanPham) {
-            return response()->json(['message' => 'Sản phẩm không tồn tại'], 404);
-        }
-
-        $validated = $request->validate([
-            'danh_muc_id' => 'nullable|exists:danh_mucs,id',
-            'danh_muc_con_id' => 'nullable|exists:danh_muc_cons,id',
-            'ten_san_pham' => 'nullable|string|max:255',
-            'mo_ta' => 'nullable|string',
-            'gia' => 'nullable|numeric|min:0',
-            'so_luong_ton_kho' => 'nullable|integer|min:0',
-            'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-            'luot_xem' => 'nullable|integer|min:0',
-        ]);
-
-        // Lưu danh mục cũ để kiểm tra
-        $oldDanhMucId = $sanPham->danh_muc_id;
-
-        // Nếu có ảnh mới, lưu ảnh và cập nhật đường dẫn
-        if ($request->hasFile('image')) {
-            if ($sanPham->duong_dan_anh && Storage::exists('public/' . $sanPham->duong_dan_anh)) {
-                Storage::delete('public/' . $sanPham->duong_dan_anh);
-            }
-
-            $path = $request->file('image')->store('san_phams', 'public');
-            $validated['duong_dan_anh'] = $path;
-        } else {
-            // Nếu không có ảnh mới, giữ nguyên ảnh cũ
-            $validated['duong_dan_anh'] = $sanPham->duong_dan_anh;
-        }
-
-        // Kết hợp dữ liệu cũ và dữ liệu mới
-        $updatedData = array_merge($sanPham->toArray(), $validated);
-
-        // Cập nhật dữ liệu
-        $sanPham->update($updatedData);
-
-        return response()->json($sanPham, 201);
-    }
-
-    public function deleteOldTechnicalSpecs($oldDanhMucId, $sanPhamId)
-    {
-        switch ($oldDanhMucId) {
-            case 1: // Máy tính
-                ThongSoMayTinh::where('san_pham_id', $sanPhamId)->delete();
-                break;
-            case 2: // Điện thoại
-                ThongSoDienThoai::where('san_pham_id', $sanPhamId)->delete();
-                break;
-            case 3: // Đồng hồ
-                ThongSoDongHo::where('san_pham_id', $sanPhamId)->delete();
-                break;
-        }
     }
 }

@@ -59,14 +59,11 @@ class SanPhamVaThongSoController extends Controller
     {
         try {
             // Lấy thông tin sản phẩm và thông số cùng với tên danh mục
-            $data = SanPhamVaThongSo::with('danhMuc')->findOrFail($id);
+            $data = SanPhamVaThongSo::with('sanPham')->findOrFail($id);
 
             return response()->json([
                 'message' => 'Chi tiết sản phẩm và thông số id = ' . $id,
-                'data' => [
-                    'ten_danh_muc_con' => $data->ten_danh_muc_con,
-                    'ten_danh_muc' => $data->danhMuc->ten_danh_muc ?? 'Danh mục không tồn tại',
-                ]
+                'data' => $data
             ]);
         } catch (ModelNotFoundException $th) {
             return response()->json([
