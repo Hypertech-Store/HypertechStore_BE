@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreBienTheSanPhamRequest;
 use App\Models\BienTheSanPham;
+use App\Models\ChiTietDonHang;
 use App\Models\GiaTriThuocTinh;
 use App\Models\HinhAnhSanPham;
 use App\Models\LienKetBienTheVaGiaTriThuocTinh;
@@ -241,20 +242,24 @@ class BienTheSanPhamController extends Controller
             // Tìm biến thể sản phẩm cần xóa
             $bienTheSanPham = BienTheSanPham::findOrFail($id);
 
+            // Kiểm tra nếu biến thể này đã được sử dụng trong chi tiết đơn hàng
+            $chiTietDonHang = ChiTietDonHang::where('bien_the_san_pham_id', $id)->exists();
+            if ($chiTietDonHang) {
+                return response()->json([
+                    'message' => 'Không thể xóa vì biến thể sản phẩm đã được sử dụng trong đơn hàng.',
+                ], Response::HTTP_BAD_REQUEST);
+            }
+
             // Lấy danh sách liên kết biến thể sản phẩm
             $lienKetBienTheVaGiaTri = $bienTheSanPham->lienKetBienTheVaGiaTri;
 
             // Nếu có liên kết biến thể sản phẩm, xóa các hình ảnh liên quan
             if ($lienKetBienTheVaGiaTri) {
-                // Kiểm tra nếu lienKetBienTheVaGiaTri là một tập hợp
                 if ($lienKetBienTheVaGiaTri instanceof \Illuminate\Database\Eloquent\Collection) {
-                    // Duyệt qua tất cả các phần tử trong Collection
                     foreach ($lienKetBienTheVaGiaTri as $item) {
-                        // Xóa các hình ảnh liên quan đến lienKetBienTheVaGiaTri_id
                         $item->hinhAnhSanPhams()->delete();
                     }
                 } else {
-                    // Nếu chỉ là một đối tượng duy nhất
                     $lienKetBienTheVaGiaTri->hinhAnhSanPhams()->delete();
                 }
             }

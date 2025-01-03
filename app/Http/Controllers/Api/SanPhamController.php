@@ -151,10 +151,10 @@ class SanPhamController extends Controller
             'so_luong_ton_kho' => 'required|integer|min:0',
             'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'luot_xem' => 'integer|min:0',
-            'thuoc_tinh' => 'required|array',
-            'thuoc_tinh.*.id' => 'required|exists:thuoc_tinh_san_phams,id',
-            'thuoc_tinh.*.gia_tri' => 'required|array',
-            'thuoc_tinh.*.gia_tri.*' => 'required|exists:gia_tri_thuoc_tinhs,id',
+            'thuoc_tinh' => 'nullable|array',
+            'thuoc_tinh.*.id' => 'nullable|exists:thuoc_tinh_san_phams,id',
+            'thuoc_tinh.*.gia_tri' => 'nullable|array',
+            'thuoc_tinh.*.gia_tri.*' => 'nullable|exists:gia_tri_thuoc_tinhs,id',
             'gia_bien_the' => 'nullable|array',
             'gia_bien_the.*' => 'nullable|numeric|min:0',
         ]);
@@ -271,35 +271,25 @@ class SanPhamController extends Controller
             'gia_bien_the.*' => 'nullable|numeric|min:0',
         ]);
 
-        // Lưu danh mục cũ để kiểm tra
-        $oldDanhMucId = $sanPham->danh_muc_id;
-
-        // Nếu có ảnh mới, lưu ảnh và cập nhật đường dẫn
+        // Xử lý ảnh mới
         if ($request->hasFile('image')) {
             if ($sanPham->duong_dan_anh && Storage::exists('public/' . $sanPham->duong_dan_anh)) {
                 Storage::delete('public/' . $sanPham->duong_dan_anh);
             }
-
             $path = $request->file('image')->store('san_phams', 'public');
             $validated['duong_dan_anh'] = $path;
-        } else {
-            // Nếu không có ảnh mới, giữ nguyên ảnh cũ
-            $validated['duong_dan_anh'] = $sanPham->duong_dan_anh;
         }
 
-        // Cập nhật dữ liệu cho sản phẩm chính
         $sanPham->update($validated);
 
-        // Nếu có thay đổi về thuộc tính, tiến hành cập nhật thuộc tính và biến thể
+        // Cập nhật thuộc tính và biến thể
         if ($request->has('thuoc_tinh')) {
-            // Lưu thuộc tính mới và tự động sinh biến thể
             $thuocTinhValues = [];
             foreach ($validated['thuoc_tinh'] as $thuocTinh) {
                 $giaTriIds = $thuocTinh['gia_tri'] ?? [];
                 $thuocTinhValues[] = $giaTriIds;
             }
 
-            // Lấy các biến thể hiện có
             $existingCombinations = $sanPham->bienTheSanPhams()
                 ->with('lienKetBienTheVaGiaTri')
                 ->get()
@@ -308,27 +298,21 @@ class SanPhamController extends Controller
                 })
                 ->toArray();
 
-            // Sinh tất cả các kết hợp của giá trị thuộc tính
             $newCombinations = $this->generateCombinations($thuocTinhValues);
 
             foreach ($newCombinations as $index => $combination) {
                 $sortedCombination = collect($combination)->sort()->values()->toArray();
-
-                // Kiểm tra nếu tổ hợp này đã tồn tại
                 if (in_array($sortedCombination, $existingCombinations)) {
-                    continue; // Bỏ qua nếu đã tồn tại
+                    continue;
                 }
 
                 $giaBienThe = $validated['gia_bien_the'][$index] ?? $sanPham->gia;
-
-                // Tạo biến thể sản phẩm
                 $bienTheSanPham = BienTheSanPham::create([
                     'san_pham_id' => $sanPham->id,
-                    'gia' => 0,
-                    'so_luong_kho' => 0, // Cần thay đổi nếu mỗi biến thể có số lượng riêng
+                    'gia' => $giaBienThe,
+                    'so_luong_kho' => 0,
                 ]);
 
-                // Liên kết các giá trị thuộc tính với biến thể
                 foreach ($sortedCombination as $giaTriId) {
                     $giaTriId = (int) $giaTriId;
                     $lien_ket = LienKetBienTheVaGiaTriThuocTinh::create([
@@ -336,10 +320,8 @@ class SanPhamController extends Controller
                         'gia_tri_thuoc_tinh_id' => $giaTriId,
                     ]);
 
-                    // Kiểm tra nếu gia_tri_thuoc_tinh_id là thuộc tính màu sắc (thuoc_tinh_id = 1)
                     $giaTri = GiaTriThuocTinh::find($giaTriId);
                     if ($giaTri && $giaTri->thuoc_tinh_san_pham_id == 1) {
-                        // Tạo HinhAnhSanPham với duong_dan_hinh_anh = null
                         HinhAnhSanPham::create([
                             'lien_ket_bien_the_va_gia_tri_thuoc_tinh_id' => $lien_ket->id,
                             'duong_dan_hinh_anh' => null,
@@ -347,9 +329,40 @@ class SanPhamController extends Controller
                     }
                 }
             }
+
+            foreach ($existingCombinations as $existingCombination) {
+                if (!in_array($existingCombination, $newCombinations)) {
+                    $bienThe = $sanPham->bienTheSanPhams()
+                        ->whereHas('lienKetBienTheVaGiaTri', function ($query) use ($existingCombination) {
+                            $query->whereIn('gia_tri_thuoc_tinh_id', $existingCombination);
+                        })
+                        ->first();
+
+                    if ($bienThe) {
+                        // Xóa hình ảnh liên quan
+                        HinhAnhSanPham::whereIn(
+                            'lien_ket_bien_the_va_gia_tri_thuoc_tinh_id',
+                            $bienThe->lienKetBienTheVaGiaTri->pluck('id')
+                        )->delete();
+
+                        // Xóa liên kết thuộc tính
+                        $bienThe->lienKetBienTheVaGiaTri()->delete();
+
+                        // Xóa biến thể
+                        $bienThe->delete();
+                    }
+                }
+            }
+
+
         }
 
-        return response()->json($sanPham, 200);
+        return response()->json([
+            'data' => $sanPham,
+            'newCombinations' => $newCombinations,
+            'existingCombinations' => $existingCombinations
+
+        ], 200);
     }
 
 
