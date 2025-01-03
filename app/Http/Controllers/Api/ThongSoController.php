@@ -15,10 +15,22 @@ class ThongSoController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $data = ThongSo::with('danhMuc')->paginate(10);
+        // Check if 'danh_muc_id' is provided in the query parameters
+        $danhMucId = $request->query('danh_muc_id');
 
+        // If danh_muc_id exists, filter by it
+        if ($danhMucId) {
+            $data = ThongSo::where('danh_muc_id', $danhMucId)
+                ->with('danhMuc')
+                ->paginate(10);
+        } else {
+            // If no danh_muc_id provided, just get all the data
+            $data = ThongSo::with('danhMuc')->paginate(10);
+        }
+
+        // Return the filtered data as a JSON response
         return response()->json($data);
     }
 
