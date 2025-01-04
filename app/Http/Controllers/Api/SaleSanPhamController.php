@@ -106,6 +106,25 @@ class SaleSanPhamController extends Controller
         ], Response::HTTP_OK);
     }
 
+    public function detailsProductSale($sale_san_pham_id)
+    {
+        // Tìm bản ghi giảm giá theo ID, kèm theo thông tin sản phẩm liên quan
+        $saleSanPham = SaleSanPham::with('sanPham')->find($sale_san_pham_id);
+
+        // Kiểm tra nếu bản ghi không tồn tại
+        if (!$saleSanPham) {
+            return response()->json([
+                'message' => 'Không tìm thấy thông tin giảm giá của sản phẩm.',
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        return response()->json([
+            'message' => 'Thông tin chi tiết giảm giá.',
+            'data' => $saleSanPham,
+        ], Response::HTTP_OK);
+    }
+
+
     public function editSaleSanPham(Request $request, $sale_san_pham_id)
     {
         // Xác thực dữ liệu đầu vào
