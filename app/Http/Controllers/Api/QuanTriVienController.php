@@ -22,7 +22,7 @@ class QuanTriVienController extends Controller
             'ho_ten' => 'required|string|max:255',
             'email' => 'required|email|unique:quan_tri_viens,email',
             'role' => 'required|int',
-            'trang_thai' => 'nullable|int',
+            'trang_thai' => 'boolean',
             'image' => 'required|image|mimes:jpg,jpeg,png|max:2048',
             'dia_chi' => 'nullable|string|max:255',
             'so_dien_thoai' => 'nullable|string|max:15',
@@ -57,51 +57,73 @@ class QuanTriVienController extends Controller
     public function update(Request $request, $id): \Illuminate\Http\JsonResponse
     {
         try {
+            // Lấy quản trị viên từ database
             $data = QuanTriVien::findOrFail($id);
 
+            // Xác thực yêu cầu
             $validated = $request->validate([
                 'ten_dang_nhap' => 'string|unique:quan_tri_viens,ten_dang_nhap,' . $id,
-                'mat_khau' => 'string|min:6|nullable',
                 'ho_ten' => 'string|max:255|nullable',
                 'email' => 'email|unique:quan_tri_viens,email,' . $id,
                 'role' => 'int|nullable',
-                'trang_thai' => 'nullable|int',
+                'trang_thai' => 'boolean|nullable',
                 'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
                 'dia_chi' => 'nullable|string|max:255',
                 'so_dien_thoai' => 'nullable|string|max:15',
             ]);
 
-            // Mã hóa mật khẩu nếu có
-            if (!empty($validated['mat_khau'])) {
-                $validated['mat_khau'] = Hash::make($validated['mat_khau']);
-            }
-
             // Nếu có ảnh mới, lưu ảnh và cập nhật đường dẫn
             if ($request->hasFile('image')) {
+                // Xóa ảnh cũ nếu có
                 if ($data->anh_nguoi_dung && Storage::exists('public/' . $data->anh_nguoi_dung)) {
                     Storage::delete('public/' . $data->anh_nguoi_dung);
                 }
 
+                // Lưu ảnh mới vào thư mục public
                 $path = $request->file('image')->store('quan_tri_viens', 'public');
+
+                // Cập nhật ảnh trong mảng validated
                 $validated['anh_nguoi_dung'] = $path;
             } else {
                 // Nếu không có ảnh mới, giữ nguyên ảnh cũ
                 $validated['anh_nguoi_dung'] = $data->anh_nguoi_dung;
             }
 
-            // Kết hợp dữ liệu cũ và dữ liệu mới
+            // Kết hợp dữ liệu đã xác thực với dữ liệu cũ và cập nhật
             $updatedData = array_merge($data->toArray(), $validated);
 
-            // Cập nhật dữ liệu
-            $data->update($updatedData);
+            // Cập nhật dữ liệu vào cơ sở dữ liệu
+            $result = $data->update($updatedData);
 
-            return response()->json($data, 200);
+            if ($result) {
+                // Lấy lại dữ liệu đã cập nhật
+                $data->refresh();
 
+                // Trả về thông tin đã cập nhật
+                return response()->json([
+                    'id' => $data->id,
+                    'ho_ten' => $data->ho_ten,
+                    'ten_dang_nhap' => $data->ten_dang_nhap,
+                    'email' => $data->email,
+                    'so_dien_thoai' => $data->so_dien_thoai,
+                    'role' => $data->role,
+                    'trang_thai' => $data->trang_thai,
+                    'dia_chi' => $data->dia_chi,
+                    'anh_nguoi_dung' => url('storage/' . $data->anh_nguoi_dung), // Đảm bảo trả về đường dẫn đúng
+                ], 200);
+            } else {
+                return response()->json(['message' => 'Không thể cập nhật dữ liệu'], 400);
+            }
         } catch (\Exception $e) {
+            // Log lỗi nếu có vấn đề xảy ra
             Log::error('Lỗi cập nhật quản trị viên: ' . $e->getMessage());
+
+            // Trả về thông báo lỗi
             return response()->json(['message' => 'Có lỗi xảy ra khi cập nhật quản trị viên'], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
+
 
 
     // Xóa quản trị viên
