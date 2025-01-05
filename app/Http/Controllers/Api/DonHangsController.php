@@ -33,23 +33,6 @@ class DonHangsController extends Controller
             'products.*.so_luong' => 'required|integer|min:1',
             'products.*.gia' => 'required|numeric|min:0',
         ]);
-
-        // Phương thức thanh toán là VNPay (ID 2), xử lý thanh toán
-        if ($request->phuong_thuc_thanh_toan_id == 2) {
-            // Logic thanh toán VNPay (cần tích hợp API của VNPay)
-            $vnpayResponse = $this->handleVnPayPayment($request);
-            $vnpayResponse['success'] = false;
-            // Nếu thanh toán không thành công, trả về lỗi
-            if (!$vnpayResponse['success']) {
-                return response()->json([
-                    'message' => 'Thanh toán VNPay thất bại, vui lòng thử lại!',
-                ], 400);
-            }
-
-            // Nếu thanh toán thành công, tạo đơn hàng
-            return $this->createOrderWithPaymentSuccess($request);
-        }
-
         // Phương thức thanh toán là các phương thức khác, tạo đơn hàng trực tiếp
         return $this->createOrderWithPaymentSuccess($request);
     }
