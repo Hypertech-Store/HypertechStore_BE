@@ -8,6 +8,7 @@ use App\Models\ChiTietDanhGia;
 use App\Models\ChiTietDonHang;
 use App\Models\DanhGia;
 use App\Models\DonHang;
+use App\Models\KhachHang;
 use App\Models\SanPham;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
@@ -21,13 +22,19 @@ class DanhGiaController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $data = DanhGia::query()
-            ->with('chiTietDanhGias')
-            ->get();
+        $page = $request->query('page', 1);
+        $numberRow = $request->query('number_row', 10);
 
-        return response()->json($data);
+        $danhGias = DanhGia::with(['sanPham', 'chiTietDanhGias', 'khachHang'])
+            ->paginate($numberRow);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Lấy danh sách đánh giá thành công.',
+            'data' => $danhGias
+        ]);
     }
 
     /**
@@ -148,7 +155,7 @@ class DanhGiaController extends Controller
         try {
             $data = DanhGia::query()->findOrFail($id);
             $data->update([
-                'trang_thai' => $request->input('trang_thai'), // Hoặc $request->trang_thai
+                'trang_thai' => $request->input('trang_thai'),
             ]);
             return response()->json([
                 'message' => 'Cập nhật đánh giá id = ' . $id,
@@ -249,4 +256,31 @@ class DanhGiaController extends Controller
             ]
         ]);
     }
+
+    public function getDanhGiaByKhachHangId(Request $request, $khach_hang_id)
+    {
+        // Kiểm tra khách hàng có tồn tại không
+        $khachHang = KhachHang::find($khach_hang_id);
+
+        if (!$khachHang) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Khách hàng không tồn tại.'
+            ], 404);
+        }
+
+        $page = $request->query('page', 1);
+        $numberRow = $request->query('number_row', 10);
+
+        $danhGias = DanhGia::where('khach_hang_id', $khach_hang_id)
+            ->with(['sanPham', 'chiTietDanhGias'])
+            ->paginate($numberRow);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Lấy danh sách đánh giá thành công.',
+            'data' => $danhGias
+        ]);
+    }
+
 }

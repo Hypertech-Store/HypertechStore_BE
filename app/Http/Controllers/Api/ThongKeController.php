@@ -164,6 +164,8 @@ class ThongKeController extends Controller
         $difference = $totalCurrent - $totalPrevious;
         $percentageChange = $totalPrevious > 0 ? (($difference / $totalPrevious) * 100) : ($totalCurrent > 0 ? 100 : 0);
 
+        $tongKhachHang = KhachHang::count();
+
         return response()->json([
             'today' => $today->toDateString(),
             'seven_days_ago' => $sevenDaysAgo->toDateString(),
@@ -172,7 +174,7 @@ class ThongKeController extends Controller
             'current_fourteen_days_data' => $filledCurrentFourteenDaysData,
             'previous_fourteen_days_data' => $filledPreviousFourteenDaysData,
             'ti_le_chenh_lech' => $percentageChange,
-            'tong_khach_hang_moi' => $totalCurrent,
+            'tong_khach_hang' => $tongKhachHang,
         ]);
     }
 
