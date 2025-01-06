@@ -10,6 +10,7 @@ use App\Models\SanPham;
 use App\Models\BienTheSanPham;
 use App\Models\DanhMuc;
 use App\Models\DanhMucCon; // Import model DanhMucCon
+use App\Models\DonHang;
 use App\Models\GiaTriThuocTinh;
 use App\Models\HinhAnhSanPham;
 use App\Models\LienKetBienTheVaGiaTriThuocTinh;
@@ -450,7 +451,6 @@ class SanPhamController extends Controller
     }
 
 
-
     public function getDetail($id)
     {
         // Get the product details along with its related images
@@ -675,5 +675,23 @@ class SanPhamController extends Controller
 
         // Trả về view với danh sách sản phẩm
         return response()->json($sanPhams);
+    }
+
+    public function kiemTraSanPhamDaMua(Request $request, $sanPhamId)
+    {
+        $khachHangId = $request->input('khach_hang_id');
+
+        // Kiểm tra nếu khách hàng đã mua sản phẩm với trạng thái đơn hàng thành công
+        $daMuaSanPham = DonHang::where('khach_hang_id', $khachHangId)
+            ->where('trang_thai_don_hang_id', 5) // Trạng thái thành công
+            ->whereHas('chiTietDonHangs', function ($query) use ($sanPhamId) {
+                $query->where('san_pham_id', $sanPhamId);
+            })
+            ->exists();
+
+        return response()->json([
+            'status' => 'success',
+            'da_mua' => $daMuaSanPham,
+        ]);
     }
 }

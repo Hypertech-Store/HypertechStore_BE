@@ -14,6 +14,7 @@ class DanhGia extends Model
         'khach_hang_id',
         'danh_gia',
         'binh_luan',
+        'trang_thai',
     ];
 
     public function sanPham()
