@@ -46,6 +46,7 @@ class DanhGiaController extends Controller
         ]);
 
         try {
+            // Kiểm tra xem khách hàng đã mua sản phẩm chưa
             $daMua = ChiTietDonHang::query()
                 ->join('don_hangs', 'chi_tiet_don_hangs.don_hang_id', '=', 'don_hangs.id')
                 ->where('don_hangs.khach_hang_id', $request->khach_hang_id)
@@ -59,7 +60,18 @@ class DanhGiaController extends Controller
                 ], 403);
             }
 
-            // Tạo đánh giá
+            // Kiểm tra xem khách hàng đã đánh giá sản phẩm này chưa
+            $existingReview = DanhGia::query()
+                ->where('khach_hang_id', $request->khach_hang_id)
+                ->where('san_pham_id', $request->san_pham_id)
+                ->first();
+
+            if ($existingReview) {
+                // Nếu đã có đánh giá, xóa đánh giá cũ
+                $existingReview->delete();
+            }
+
+            // Tạo đánh giá mới
             $danhGia = DanhGia::create([
                 'san_pham_id' => $request->san_pham_id,
                 'khach_hang_id' => $request->khach_hang_id,
@@ -69,9 +81,7 @@ class DanhGiaController extends Controller
             ]);
 
             // Lưu hình ảnh nếu có
-
             if ($request->hasFile('image') && is_array($request->file('image'))) {
-
                 $imagePaths = [];
 
                 // Duyệt qua từng tệp hình ảnh và lưu vào thư mục
@@ -100,6 +110,7 @@ class DanhGiaController extends Controller
             ], 500);
         }
     }
+
 
     /**
      * Display the specified resource.
@@ -238,6 +249,4 @@ class DanhGiaController extends Controller
             ]
         ]);
     }
-
-
 }

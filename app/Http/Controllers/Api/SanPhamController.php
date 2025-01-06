@@ -438,8 +438,6 @@ class SanPhamController extends Controller
                     }
                 }
             }
-
-
         }
 
         return response()->json([
@@ -449,6 +447,7 @@ class SanPhamController extends Controller
 
         ], 200);
     }
+
 
 
     public function getDetail($id)
@@ -676,22 +675,38 @@ class SanPhamController extends Controller
         // Trả về view với danh sách sản phẩm
         return response()->json($sanPhams);
     }
-
     public function kiemTraSanPhamDaMua(Request $request, $sanPhamId)
     {
         $khachHangId = $request->input('khach_hang_id');
 
-        // Kiểm tra nếu khách hàng đã mua sản phẩm với trạng thái đơn hàng thành công
+        // Kiểm tra nếu khách hàng đã mua sản phẩm với trạng thái đơn hàng thành công và không quá 3 ngày kể từ lần cập nhật
         $daMuaSanPham = DonHang::where('khach_hang_id', $khachHangId)
             ->where('trang_thai_don_hang_id', 5) // Trạng thái thành công
             ->whereHas('chiTietDonHangs', function ($query) use ($sanPhamId) {
                 $query->where('san_pham_id', $sanPhamId);
             })
+            ->where(function ($query) {
+                // Kiểm tra nếu đơn hàng được cập nhật trong vòng 3 ngày
+                $query->whereRaw('DATEDIFF(NOW(), updated_at) <= 3');
+            })
             ->exists();
+
+        // Nếu có bất kỳ điều kiện nào không thỏa mãn, trả về false
+        if (!$daMuaSanPham) {
+            return response()->json([
+                'status' => 'success',
+                'da_mua' => false,
+                'message' => 'Không thể đánh giá sản phẩm vì đơn hàng không thành công hoặc đã quá 3 ngày.',
+                'data' => $daMuaSanPham
+            ]);
+        }
 
         return response()->json([
             'status' => 'success',
-            'da_mua' => $daMuaSanPham,
+            'da_mua' => true,
+            'message' => 'Khách hàng có thể đánh giá sản phẩm.',
+            'data' => $daMuaSanPham
         ]);
     }
+
 }
