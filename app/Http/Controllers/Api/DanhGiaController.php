@@ -7,6 +7,7 @@ use App\Http\Requests\Api\StoreDanhGiaRequest;
 use App\Models\ChiTietDanhGia;
 use App\Models\ChiTietDonHang;
 use App\Models\DanhGia;
+use App\Models\DonHang;
 use App\Models\SanPham;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
@@ -64,6 +65,7 @@ class DanhGiaController extends Controller
                 'khach_hang_id' => $request->khach_hang_id,
                 'danh_gia' => $request->danh_gia,
                 'binh_luan' => $request->binh_luan,
+                'trang_thai' => 0
             ]);
 
             // Lưu hình ảnh nếu có
@@ -130,12 +132,13 @@ class DanhGiaController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(StoreDanhGiaRequest $request, string $id)
+    public function update(Request $request, string $id)
     {
         try {
             $data = DanhGia::query()->findOrFail($id);
-            $data->update($request->all());
-
+            $data->update([
+                'trang_thai' => $request->input('trang_thai'), // Hoặc $request->trang_thai
+            ]);
             return response()->json([
                 'message' => 'Cập nhật đánh giá id = ' . $id,
                 'data' => $data
@@ -202,18 +205,23 @@ class DanhGiaController extends Controller
             ], 404);
         }
 
-        // Lấy tham số page và number_row từ request (với giá trị mặc định là 1 và 10)
-        $page = $request->query('page', 1);  // Sử dụng query 'page' hoặc mặc định là 1
-        $numberRow = $request->query('number_row', 5);  // Sử dụng query 'number_row' hoặc mặc định là 5
+        // Lấy tham số page và number_row từ request (với giá trị mặc định là 1 và 5)
+        $page = $request->query('page', 1);
+        $numberRow = $request->query('number_row', 5);
 
-        // Lấy danh sách đánh giá theo sản phẩm ID với phân trang (5 đánh giá mỗi trang)
+        // Lấy danh sách đánh giá theo sản phẩm ID và trạng thái với phân trang
         $danhGias = DanhGia::where('san_pham_id', $san_pham_id)
+            ->where('trang_thai', 1) // Chỉ lấy đánh giá có trang_thai = 1
             ->with(['chiTietDanhGias', 'khachHang'])
             ->paginate($numberRow);
 
-        // Tính tổng số sao và tổng số lượng đánh giá (không bị giới hạn bởi phân trang)
-        $totalStars = DanhGia::where('san_pham_id', $san_pham_id)->sum('danh_gia');
-        $totalReviews = DanhGia::where('san_pham_id', $san_pham_id)->count();
+        // Tính tổng số sao và tổng số lượng đánh giá (chỉ các đánh giá có trang_thai = 1)
+        $totalStars = DanhGia::where('san_pham_id', $san_pham_id)
+            ->where('trang_thai', 1) // Chỉ tính tổng sao của đánh giá có trang_thai = 1
+            ->sum('danh_gia');
+        $totalReviews = DanhGia::where('san_pham_id', $san_pham_id)
+            ->where('trang_thai', 1) // Chỉ đếm đánh giá có trang_thai = 1
+            ->count();
 
         // Tính điểm sao trung bình
         $averageStars = $totalReviews > 0 ? round($totalStars / $totalReviews, 2) : 0;
@@ -230,4 +238,6 @@ class DanhGiaController extends Controller
             ]
         ]);
     }
+
+
 }

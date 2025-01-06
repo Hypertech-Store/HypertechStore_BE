@@ -21,4 +21,6 @@ Route::prefix('san-pham')->group(function () {
 
     Route::get('/allSanPham', [SanPhamController::class, 'getAllSanPham']);
     Route::get('/san-pham-chua-sale', [SanPhamController::class, 'getSanPhamChuaSale']);
+
+    Route::post('/kiem-tra-mua-san-pham/{sanPhamId}', [SanPhamController::class, 'kiemTraSanPhamDaMua']);
 });

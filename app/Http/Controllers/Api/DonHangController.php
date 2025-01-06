@@ -117,27 +117,30 @@ class DonHangController extends Controller
     public function update(Request $request, string $id)
     {
         try {
+            // Tìm đơn hàng theo ID
             $data = DonHang::query()->findOrFail($id);
 
-            $updatedData = [];
-            if ($request->has('trang_thai_don_hang')) {
-                $updatedData['trang_thai_don_hang'] = $request->input('trang_thai_don_hang');
-            }
+            // Xác thực dữ liệu đầu vào
+            $request->validate([
+                'trang_thai_don_hang_id' => 'required|exists:trang_thai_don_hangs,id',
+            ]);
 
-            if (!empty($updatedData)) {
-                $data->update($updatedData);
-            }
+            // Chỉ cập nhật trạng thái đơn hàng
+            $data->trang_thai_don_hang_id = $request->trang_thai_don_hang_id;
+            $data->save();
 
-
+            // Trả về phản hồi thành công
             return response()->json([
                 'message' => 'Cập nhật trạng thái đơn hàng id = ' . $id,
                 'data' => $data
             ]);
         } catch (ModelNotFoundException $e) {
+            // Nếu không tìm thấy đơn hàng
             return response()->json([
                 'message' => 'Không tìm thấy đơn hàng id = ' . $id,
             ], Response::HTTP_NOT_FOUND);
         } catch (\Exception $e) {
+            // Xử lý lỗi khác
             Log::error('Lỗi cập nhật đơn hàng: ' . $e->getMessage());
 
             return response()->json([
@@ -145,6 +148,7 @@ class DonHangController extends Controller
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
 
     /**
      * Remove the specified resource from storage.
