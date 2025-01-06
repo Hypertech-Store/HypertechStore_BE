@@ -82,3 +82,5 @@ require __DIR__ . '/PaymentRoutes.php';
 require __DIR__ . '/ThongKeRoutes.php';
 
 require __DIR__ . '/SendMailRoutes.php';
+
+require __DIR__ . '/TrangThaiDonHangRoutes.php';
