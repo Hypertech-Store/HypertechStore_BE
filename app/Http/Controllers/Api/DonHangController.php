@@ -26,8 +26,14 @@ class DonHangController extends Controller
             // Số lượng đơn hàng mỗi trang
             $perPage = 5;
 
-            // Lấy danh sách đơn hàng với các quan hệ liên quan
-            $data = DonHang::with(['chiTietDonHangs.sanPham', 'phuongThucThanhToan', 'trangThaiDonHang'])
+            // Lấy danh sách đơn hàng với các quan hệ liên quan (bao gồm khách hàng và hình thức vận chuyển)
+            $data = DonHang::with([
+                'chiTietDonHangs.sanPham',
+                'phuongThucThanhToan',
+                'trangThaiDonHang',
+                'khachHang', // Eager load the related 'khach_hang' model
+                'hinhThucVanChuyen' // Eager load the related 'hinh_thuc_van_chuyen' model
+            ])
                 ->paginate($perPage);
 
             // Kiểm tra nếu không có dữ liệu
@@ -37,13 +43,21 @@ class DonHangController extends Controller
                 ], 404);
             }
 
-
             // Định dạng lại từng mục trong danh sách
             $formattedItems = $data->items(); // Lấy danh sách hiện tại của các item
             foreach ($formattedItems as &$donHang) {
+                // Lấy tên khách hàng từ quan hệ 'khachHang' và gán vào 'ho_ten', nếu không có thì gán NULL
+                $donHang['ho_ten'] = $donHang['khachHang']['ho_ten'] ?? 'Chưa cập nhật'; // Hoặc bạn có thể gán rỗng: ''
+                unset($donHang['khachHang']); // Xóa quan hệ 'khachHang' sau khi đã lấy tên
+
+                // Lấy thông tin trạng thái đơn hàng
                 $donHang['trang_thai_don_hang'] = $donHang['trangThaiDonHang']['ten_trang_thai'] ?? 'Không xác định';
                 $donHang['trang_thai_don_hang_id'] = $donHang['trangThaiDonHang']['id'] ?? null; // Lấy id trạng thái đơn hàng
-                unset($donHang['trangThaiDonHang']);
+                unset($donHang['trangThaiDonHang']); // Xóa quan hệ 'trangThaiDonHang'
+
+                // Lấy tên hình thức vận chuyển từ quan hệ 'hinhThucVanChuyen' và gán vào 'ten_van_chuyen', nếu không có thì gán NULL
+                $donHang['ten_van_chuyen'] = $donHang['hinhThucVanChuyen']['ten_van_chuyen'] ?? NULL; // Hoặc bạn có thể gán rỗng: ''
+                unset($donHang['hinhThucVanChuyen']); // Xóa quan hệ 'hinhThucVanChuyen' sau khi đã lấy tên
             }
 
             // Định nghĩa lại phân trang thủ công
@@ -65,8 +79,6 @@ class DonHangController extends Controller
             ], 500);
         }
     }
-
-
 
 
     /**

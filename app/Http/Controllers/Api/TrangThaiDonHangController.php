@@ -9,10 +9,37 @@ use Illuminate\Http\Response;
 
 class TrangThaiDonHangController extends Controller
 {
-    public function index()
+    public function getAll()
     {
         $trangThaiDonHangs = TrangThaiDonHang::all();
         return response()->json($trangThaiDonHangs);
+    }
+
+
+    public function index(Request $request)
+    {
+        try {
+            // Số lượng bản ghi mỗi trang
+            $perPage = 5; // Example: you can change it as needed or make it dynamic with $request
+
+            // Lấy tất cả trạng thái đơn hàng với phân trang
+            $trangThaiDonHangs = TrangThaiDonHang::paginate($perPage);
+
+            // Trả về kết quả phân trang, bao gồm dữ liệu và thông tin phân trang
+            return response()->json([
+                'current_page' => $trangThaiDonHangs->currentPage(),
+                'last_page' => $trangThaiDonHangs->lastPage(),
+                'per_page' => $trangThaiDonHangs->perPage(),
+                'total' => $trangThaiDonHangs->total(),
+                'data' => $trangThaiDonHangs->items(), // Dữ liệu trạng thái đơn hàng
+            ]);
+        } catch (\Exception $e) {
+            // Trả về lỗi nếu có sự cố
+            return response()->json([
+                'message' => 'Đã xảy ra lỗi trong quá trình truy vấn.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**
