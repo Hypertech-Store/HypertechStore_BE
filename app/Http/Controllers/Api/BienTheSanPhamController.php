@@ -61,11 +61,15 @@ class BienTheSanPhamController extends Controller
         return response()->json($result);
     }
 
-    public function getBienThePaginate()
+    public function getBienThePaginate(Request $request)
     {
-        // Lấy tất cả các biến thể sản phẩm kèm các liên kết và giá trị liên quan
-        $data = BienTheSanPham::with("sanPham")
-            ->paginate(10);
+        // Get the current page and number of rows per page from the request (with default values)
+        $page = $request->query('page', 1);
+        $numberRow = $request->query('number_row', 10);
+
+        // Get paginated data with eager loading for the 'sanPham' relationship
+        $data = BienTheSanPham::with('sanPham')
+            ->paginate($numberRow);
 
         // Duyệt qua từng biến thể sản phẩm để bổ sung thông tin cần thiết
         $result = $data->map(function ($item) {
@@ -83,34 +87,27 @@ class BienTheSanPhamController extends Controller
                     ];
                 });
 
-            // Duyệt qua các liên kết và lấy hình ảnh sản phẩm tương ứng
-            $hinhAnhSanPham = $lienKetBienThe->map(function ($lienKet) {
-                return HinhAnhSanPham::where('lien_ket_bien_the_va_gia_tri_thuoc_tinh_id', $lienKet['id'])->get();
-            });
+            // Eager load all images associated with the links
+            $hinhAnhSanPham = HinhAnhSanPham::whereIn('lien_ket_bien_the_va_gia_tri_thuoc_tinh_id', $lienKetBienThe->pluck('id'))
+                ->get();
 
             // Trả về dữ liệu trong một mảng duy nhất
             return [
                 'bienTheSanPham' => $item,
                 'lienKetBienThe' => $lienKetBienThe,
-                'hinhAnhSanPham' => $hinhAnhSanPham->flatten(), // Đưa các hình ảnh vào một mảng phẳng
+                'hinhAnhSanPham' => $hinhAnhSanPham,
             ];
         });
+
         // Trả về dữ liệu với thông tin phân trang đầy đủ
         return response()->json([
             'data' => $result,
-            'pagination' => [
-                'current_page' => $data->currentPage(),
-                'last_page' => $data->lastPage(),
-                'per_page' => $data->perPage(),
-                'total' => $data->total(),
-            ],
+            'current_page' => $data->currentPage(),
+            'last_page' => $data->lastPage(),
+            'total' => $data->total(),
+            'per_page' => $data->perPage(),
         ]);
     }
-
-
-
-
-
 
     /**
      * Store a newly created resource in storage.
@@ -381,5 +378,4 @@ class BienTheSanPhamController extends Controller
             'bien_the_san_pham' => $result,
         ], 200);
     }
-
 }
