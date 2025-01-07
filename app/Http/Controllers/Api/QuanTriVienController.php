@@ -22,14 +22,15 @@ class QuanTriVienController extends Controller
             'ho_ten' => 'required|string|max:255',
             'email' => 'required|email|unique:quan_tri_viens,email',
             'role' => 'required|int',
-            'trang_thai' => 'boolean',
-            'image' => 'required|image|mimes:jpg,jpeg,png|max:2048',
+            'trang_thai' => 'required|int',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'dia_chi' => 'nullable|string|max:255',
             'so_dien_thoai' => 'nullable|string|max:15',
         ]);
 
         $validated['mat_khau'] = Hash::make($validated['mat_khau']);
 
+        $path = "";
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('quan_tri_viens', 'public');
             Log::info('Đường dẫn hình ảnh:', ['path' => $path]);
@@ -41,8 +42,8 @@ class QuanTriVienController extends Controller
             'email' => $validated['email'],
             'role' => $validated['role'],
             'trang_thai' => $validated['trang_thai'],
-            'dia_chi' => $validated['dia_chi'] ?? null,
-            'so_dien_thoai' => $validated['so_dien_thoai'] ?? null,
+            'dia_chi' => $validated['dia_chi'] ?? "",
+            'so_dien_thoai' => $validated['so_dien_thoai'] ?? "",
             'anh_nguoi_dung' => $path,
         ]);
         Log::info('QuanTriVien vừa tạo:', $quanTriVien->toArray());
@@ -62,15 +63,18 @@ class QuanTriVienController extends Controller
 
             // Xác thực yêu cầu
             $validated = $request->validate([
-                'ten_dang_nhap' => 'string|unique:quan_tri_viens,ten_dang_nhap,' . $id,
-                'ho_ten' => 'string|max:255|nullable',
-                'email' => 'email|unique:quan_tri_viens,email,' . $id,
-                'role' => 'int|nullable',
-                'trang_thai' => 'boolean|nullable',
+                'ten_dang_nhap' => 'required|string|unique:quan_tri_viens,ten_dang_nhap,' . $id, // Chỉ kiểm tra unique trừ bản ghi hiện tại
+                'mat_khau' => 'required|string|min:6',
+                'ho_ten' => 'required|string|max:255',
+                'email' => 'required|email|unique:quan_tri_viens,email,' . $id, // Chỉ kiểm tra unique trừ bản ghi hiện tại
+                'role' => 'required|int',
+                'trang_thai' => 'required|int',
                 'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
                 'dia_chi' => 'nullable|string|max:255',
                 'so_dien_thoai' => 'nullable|string|max:15',
             ]);
+
+            $path = "";
 
             // Nếu có ảnh mới, lưu ảnh và cập nhật đường dẫn
             if ($request->hasFile('image')) {
@@ -89,11 +93,18 @@ class QuanTriVienController extends Controller
                 $validated['anh_nguoi_dung'] = $data->anh_nguoi_dung;
             }
 
-            // Kết hợp dữ liệu đã xác thực với dữ liệu cũ và cập nhật
-            $updatedData = array_merge($data->toArray(), $validated);
-
-            // Cập nhật dữ liệu vào cơ sở dữ liệu
-            $result = $data->update($updatedData);
+            // Cập nhật dữ liệu vào cơ sở dữ liệu chỉ một lần
+            $result = $data->update([
+                'ten_dang_nhap' => $validated['ten_dang_nhap'],
+                'mat_khau' => $validated['mat_khau'],
+                'ho_ten' => $validated['ho_ten'],
+                'email' => $validated['email'],
+                'role' => $validated['role'],
+                'trang_thai' => $validated['trang_thai'],
+                'dia_chi' => $validated['dia_chi'] ?? "",
+                'so_dien_thoai' => $validated['so_dien_thoai'] ?? "",
+                'anh_nguoi_dung' => $path,
+            ]);
 
             if ($result) {
                 // Lấy lại dữ liệu đã cập nhật
@@ -109,7 +120,7 @@ class QuanTriVienController extends Controller
                     'role' => $data->role,
                     'trang_thai' => $data->trang_thai,
                     'dia_chi' => $data->dia_chi,
-                    'anh_nguoi_dung' => url('storage/' . $data->anh_nguoi_dung), // Đảm bảo trả về đường dẫn đúng
+                    'anh_nguoi_dung' => $data->anh_nguoi_dung, // Đảm bảo trả về đường dẫn đúng
                 ], 200);
             } else {
                 return response()->json(['message' => 'Không thể cập nhật dữ liệu'], 400);
@@ -151,8 +162,11 @@ class QuanTriVienController extends Controller
 
     public function index(Request $request): \Illuminate\Http\JsonResponse
     {
-        $pageSize = $request->query('per_page', 10); // Số bản ghi mỗi trang, mặc định là 10
-        $quanTriViens = QuanTriVien::paginate($pageSize);
+        $page = $request->query('page', 1);  // Sử dụng query 'page' hoặc mặc định là 1
+        $numberRow = $request->query('number_row', 10);  // Sử dụng query 'number_row' hoặc mặc định là 9
+
+        // Sử dụng paginate với $numberRow làm số bản ghi trên mỗi trang
+        $quanTriViens = QuanTriVien::paginate($numberRow);
 
         return response()->json($quanTriViens, 200);
     }

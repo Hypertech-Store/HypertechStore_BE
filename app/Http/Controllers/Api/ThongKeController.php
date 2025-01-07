@@ -39,13 +39,10 @@ class ThongKeController extends Controller
         $thang = $request->query('month', now()->month); // Mặc định là tháng hiện tại
         $nam = $request->query('year', now()->year); // Mặc định là năm hiện tại
 
-        // Lấy số ngày trong tháng hiện tại
-        $currentMonthDays = \Carbon\Carbon::create($nam, $thang, 1)->daysInMonth;
-
         // Lấy danh sách các ngày trong tháng hiện tại
-        $daysInCurrentMonth = collect(range(1, $currentMonthDays))
+        $daysInCurrentMonth = collect(range(1, now()->month($thang)->year($nam)->daysInMonth()))
             ->map(function ($day) use ($thang, $nam) {
-                return \Carbon\Carbon::create($nam, $thang, $day)->format('Y-m-d');
+                return now()->day($day)->month($thang)->year($nam)->format('Y-m-d');
             });
 
         // Dữ liệu của tháng hiện tại
@@ -69,13 +66,10 @@ class ThongKeController extends Controller
         $previousMonth = $thang - 1 > 0 ? $thang - 1 : 12;
         $previousYear = $thang - 1 > 0 ? $nam : $nam - 1;
 
-        // Lấy số ngày trong tháng trước
-        $previousMonthDays = \Carbon\Carbon::create($previousYear, $previousMonth, 1)->daysInMonth;
-
         // Lấy danh sách các ngày trong tháng trước
-        $daysInPreviousMonth = collect(range(1, $previousMonthDays))
+        $daysInPreviousMonth = collect(range(1, now()->month($previousMonth)->year($previousYear)->daysInMonth()))
             ->map(function ($day) use ($previousMonth, $previousYear) {
-                return \Carbon\Carbon::create($previousYear, $previousMonth, $day)->format('Y-m-d');
+                return now()->day($day)->month($previousMonth)->year($previousYear)->format('Y-m-d');
             });
 
         // Dữ liệu của tháng trước
@@ -98,19 +92,20 @@ class ThongKeController extends Controller
         return response()->json([
             'current_month' => $currentMonthData,
             'previous_month' => $previousMonthData,
-
+            'previousMonth' => $previousMonth,
+            'previousYear' => $previousYear
         ]);
     }
 
 
-
     public function thongKeDonHang7Ngay(Request $request)
     {
-        $today = Carbon::now('Asia/Ho_Chi_Minh');
-        $sevenDaysAgo = $today->copy()->subDays(6);
+        $today = Carbon::now('Asia/Ho_Chi_Minh')->startOfDay(); // Loại bỏ giờ, giữ lại ngày
+        $sevenDaysAgo = $today->copy()->subDays(6); // Ngày bắt đầu 7 ngày trước
 
-        $previousSevenDaysStart = $sevenDaysAgo->copy()->subDays(7);
-        $previousSevenDaysEnd = $sevenDaysAgo->copy()->subDays(1);
+        $previousSevenDaysStart = $sevenDaysAgo->copy()->subDays(7); // Ngày bắt đầu của chu kỳ trước
+        $previousSevenDaysEnd = $sevenDaysAgo->copy()->subDays(1); // Ngày kết thúc của chu kỳ trước
+
 
         $currentSevenDaysRange = $this->generateDateRange($sevenDaysAgo, $today);
         $previousSevenDaysRange = $this->generateDateRange($previousSevenDaysStart, $previousSevenDaysEnd);
@@ -160,6 +155,11 @@ class ThongKeController extends Controller
             'ti_le_hoan_thanh' => round($completionPercentage, 2),
             'ti_le_chua_hoan_thanh' => round($pendingPercentage, 2),
             'tong_don_hang' => $totalOrders,
+            'currentSevenDaysData'=> $currentSevenDaysData,
+            'today' => $today,
+            'sevenDaysAgo'=> $sevenDaysAgo,
+            'previousSevenDaysStart' => $previousSevenDaysStart,
+            'previousSevenDaysEnd' => $previousSevenDaysEnd
         ]);
     }
 
