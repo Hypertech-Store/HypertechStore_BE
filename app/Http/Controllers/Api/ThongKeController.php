@@ -165,7 +165,7 @@ class ThongKeController extends Controller
 
     public function thongKeKhachHangMoi7Ngay(Request $request)
     {
-        $today = Carbon::now('Asia/Ho_Chi_Minh');
+        $today = Carbon::now('Asia/Ho_Chi_Minh')->startOfDay();
         $sevenDaysAgo = $today->copy()->subDays(6);
 
         $previousSevenDaysStart = $sevenDaysAgo->copy()->subDays(7);
