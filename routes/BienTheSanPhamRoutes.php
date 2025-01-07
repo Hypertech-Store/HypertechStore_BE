@@ -8,3 +8,4 @@ Route::get('/san-pham/{san_pham_id}/bien-the', [BienTheSanPhamController::class,
 Route::post('bien-the-san-pham/kiem-tra-bien-the', [BienTheSanPhamController::class, 'getBienTheByAttributes']);
 
 Route::get('/get-bien-the-paginate', [BienTheSanPhamController::class, 'getBienThePaginate']);
+Route::post('/get-gia-bien-the', [BienTheSanPhamController::class, 'getGiaBienThe']);

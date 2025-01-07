@@ -337,4 +337,49 @@ class BienTheSanPhamController extends Controller
             'mang_gia_tri_thuoc_tinh' => $tenGiaTriThuocTins
         ], 200);
     }
+
+    public function getGiaBienThe(Request $request): JsonResponse
+    {
+        $attributes = $request->input('attributes', []); // Lấy mảng thuộc tính từ yêu cầu
+        $idSanPham = $request->input('san_pham_id'); // Lấy ID sản phẩm từ yêu cầu
+
+        // Kiểm tra nếu không có thuộc tính hoặc ID sản phẩm được truyền vào
+        if (empty($attributes) || !$idSanPham) {
+            return response()->json([
+                'message' => 'Không có ID giá trị thuộc tính hoặc ID sản phẩm nào được cung cấp.'
+            ], 400);
+        }
+
+        // Tìm các `bien_the_san_pham_id` khớp với tất cả các `gia_tri_thuoc_tinh_id`
+        $bienTheIds = LienKetBienTheVaGiaTriThuocTinh::whereIn('gia_tri_thuoc_tinh_id', $attributes)
+            ->groupBy('bien_the_san_pham_id')
+            ->havingRaw('COUNT(DISTINCT gia_tri_thuoc_tinh_id) = ?', [count($attributes)])
+            ->pluck('bien_the_san_pham_id');
+
+        // Tìm các biến thể sản phẩm theo danh sách ID đã tìm được
+        $bienTheSanPhams = BienTheSanPham::query()
+            ->whereIn('id', $bienTheIds)
+            ->where('san_pham_id', $idSanPham) // Kiểm tra thêm điều kiện ID sản phẩm
+            ->get();
+
+        // Kiểm tra nếu không tìm thấy kết quả
+        if ($bienTheSanPhams->isEmpty()) {
+            return response()->json([
+                'message' => 'Không có biến thể sản phẩm nào khớp với các giá trị thuộc tính đã chọn và ID sản phẩm.'
+            ], 404);
+        }
+
+        // Trả về danh sách biến thể sản phẩm cùng với giá
+        $result = $bienTheSanPhams->map(function ($bienThe) {
+            return [
+                'id' => $bienThe->id,
+                'gia' => $bienThe->gia, // Giả sử trường `gia` là trường chứa giá của biến thể
+            ];
+        });
+
+        return response()->json([
+            'bien_the_san_pham' => $result,
+        ], 200);
+    }
+
 }
