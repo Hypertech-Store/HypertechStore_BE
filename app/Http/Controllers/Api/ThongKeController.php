@@ -36,13 +36,21 @@ class ThongKeController extends Controller
 
     public function thongKeSanPham(Request $request)
     {
-        $thang = $request->query('month', now()->month); // Mặc định là tháng hiện tại
-        $nam = $request->query('year', now()->year); // Mặc định là năm hiện tại
+        // Set default values for 'month' and 'year' or use the current month/year.
+        $thang = (int)$request->query('month', now()->month); // Mặc định là tháng hiện tại
+        $nam = (int)$request->query('year', now()->year); // Mặc định là năm hiện tại
+
+        // Fetch distinct years from the database to populate the year select
+        $availableYears = ChiTietDonHang::selectRaw('YEAR(created_at) as year')
+            ->groupBy('year')
+            ->orderByDesc('year')
+            ->pluck('year'); // Get a list of years to populate the select
 
         // Lấy danh sách các ngày trong tháng hiện tại
-        $daysInCurrentMonth = collect(range(1, now()->month($thang)->year($nam)->daysInMonth()))
+        $daysInCurrentMonth = collect(range(1, Carbon::createFromDate($nam, $thang, 1)->daysInMonth))
             ->map(function ($day) use ($thang, $nam) {
-                return now()->day($day)->month($thang)->year($nam)->format('Y-m-d');
+                // Create a Carbon instance for the given day, month, and year
+                return Carbon::createFromDate($nam, $thang, $day)->format('Y-m-d');
             });
 
         // Dữ liệu của tháng hiện tại
@@ -63,13 +71,13 @@ class ThongKeController extends Controller
         });
 
         // Xử lý tháng trước
-        $previousMonth = $thang - 1 > 0 ? $thang - 1 : 12;
-        $previousYear = $thang - 1 > 0 ? $nam : $nam - 1;
+        $previousMonth = $thang - 1 <= 0 ? 12 : $thang - 1;
+        $previousYear = $thang - 1 <= 0 ? $nam - 1 : $nam;
 
         // Lấy danh sách các ngày trong tháng trước
-        $daysInPreviousMonth = collect(range(1, now()->month($previousMonth)->year($previousYear)->daysInMonth()))
+        $daysInPreviousMonth = collect(range(1, Carbon::createFromDate($previousYear, $previousMonth, 1)->daysInMonth))
             ->map(function ($day) use ($previousMonth, $previousYear) {
-                return now()->day($day)->month($previousMonth)->year($previousYear)->format('Y-m-d');
+                return Carbon::createFromDate($previousYear, $previousMonth, $day)->format('Y-m-d');
             });
 
         // Dữ liệu của tháng trước
@@ -89,13 +97,19 @@ class ThongKeController extends Controller
             ];
         });
 
+        // Return the JSON response
         return response()->json([
             'current_month' => $currentMonthData,
             'previous_month' => $previousMonthData,
             'previousMonth' => $previousMonth,
-            'previousYear' => $previousYear
+            'previousYear' => $previousYear,
+            'available_years' => $availableYears, // Add available years for select
         ]);
     }
+
+
+
+
 
 
     public function thongKeDonHang7Ngay(Request $request)
@@ -155,9 +169,9 @@ class ThongKeController extends Controller
             'ti_le_hoan_thanh' => round($completionPercentage, 2),
             'ti_le_chua_hoan_thanh' => round($pendingPercentage, 2),
             'tong_don_hang' => $totalOrders,
-            'currentSevenDaysData'=> $currentSevenDaysData,
+            'currentSevenDaysData' => $currentSevenDaysData,
             'today' => $today,
-            'sevenDaysAgo'=> $sevenDaysAgo,
+            'sevenDaysAgo' => $sevenDaysAgo,
             'previousSevenDaysStart' => $previousSevenDaysStart,
             'previousSevenDaysEnd' => $previousSevenDaysEnd
         ]);
