@@ -39,32 +39,70 @@ class ThongKeController extends Controller
         $thang = $request->query('month', now()->month); // Mặc định là tháng hiện tại
         $nam = $request->query('year', now()->year); // Mặc định là năm hiện tại
 
+        // Lấy số ngày trong tháng hiện tại
+        $currentMonthDays = \Carbon\Carbon::create($nam, $thang, 1)->daysInMonth;
+
+        // Lấy danh sách các ngày trong tháng hiện tại
+        $daysInCurrentMonth = collect(range(1, $currentMonthDays))
+            ->map(function ($day) use ($thang, $nam) {
+                return \Carbon\Carbon::create($nam, $thang, $day)->format('Y-m-d');
+            });
+
         // Dữ liệu của tháng hiện tại
         $currentMonthData = ChiTietDonHang::selectRaw('DATE(created_at) as ngay, SUM(so_luong) as tong_san_pham')
             ->whereMonth('created_at', $thang)
             ->whereYear('created_at', $nam)
             ->groupBy('ngay')
             ->orderBy('ngay')
-            ->get();
+            ->get()
+            ->keyBy('ngay');
 
-        // Dữ liệu của tháng trước
+        // Lấp đầy dữ liệu cho tháng hiện tại
+        $currentMonthData = $daysInCurrentMonth->map(function ($day) use ($currentMonthData) {
+            return [
+                'ngay' => $day,
+                'tong_san_pham' => $currentMonthData->get($day)->tong_san_pham ?? 0
+            ];
+        });
+
+        // Xử lý tháng trước
         $previousMonth = $thang - 1 > 0 ? $thang - 1 : 12;
         $previousYear = $thang - 1 > 0 ? $nam : $nam - 1;
 
+        // Lấy số ngày trong tháng trước
+        $previousMonthDays = \Carbon\Carbon::create($previousYear, $previousMonth, 1)->daysInMonth;
+
+        // Lấy danh sách các ngày trong tháng trước
+        $daysInPreviousMonth = collect(range(1, $previousMonthDays))
+            ->map(function ($day) use ($previousMonth, $previousYear) {
+                return \Carbon\Carbon::create($previousYear, $previousMonth, $day)->format('Y-m-d');
+            });
+
+        // Dữ liệu của tháng trước
         $previousMonthData = ChiTietDonHang::selectRaw('DATE(created_at) as ngay, SUM(so_luong) as tong_san_pham')
             ->whereMonth('created_at', $previousMonth)
             ->whereYear('created_at', $previousYear)
             ->groupBy('ngay')
             ->orderBy('ngay')
-            ->get();
+            ->get()
+            ->keyBy('ngay');
+
+        // Lấp đầy dữ liệu cho tháng trước
+        $previousMonthData = $daysInPreviousMonth->map(function ($day) use ($previousMonthData) {
+            return [
+                'ngay' => $day,
+                'tong_san_pham' => $previousMonthData->get($day)->tong_san_pham ?? 0
+            ];
+        });
 
         return response()->json([
             'current_month' => $currentMonthData,
             'previous_month' => $previousMonthData,
-            'previousMonth' => $previousMonth,
-            'previousYear' => $previousYear
+
         ]);
     }
+
+
 
     public function thongKeDonHang7Ngay(Request $request)
     {
