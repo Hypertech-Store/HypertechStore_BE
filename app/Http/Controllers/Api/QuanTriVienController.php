@@ -74,8 +74,6 @@ class QuanTriVienController extends Controller
                 'so_dien_thoai' => 'nullable|string|max:15',
             ]);
 
-            $path = "";
-
             // Nếu có ảnh mới, lưu ảnh và cập nhật đường dẫn
             if ($request->hasFile('image')) {
                 // Xóa ảnh cũ nếu có
