@@ -60,28 +60,49 @@ class SaleSanPhamController extends Controller
 
     public function getSaleSanPhams(Request $request)
     {
-        // Lấy ngày hiện tại với thời gian đầy đủ (Ngày giờ hiện tại ở Việt Nam)
+        // Lấy ngày hiện tại với múi giờ Việt Nam
         $currentDate = Carbon::now()->timezone('Asia/Ho_Chi_Minh');
 
-        // Lấy các sản phẩm sale còn hiệu lực (Sale hiện tại còn hiệu lực nếu ngày bắt đầu nhỏ hơn hoặc bằng hiện tại, và ngày kết thúc lớn hơn hoặc bằng hiện tại)
+        // Lấy các sản phẩm sale còn hiệu lực
         $saleSanPhams = SaleSanPham::where('ngay_bat_dau_sale', '<=', $currentDate)
             ->where('ngay_ket_thuc_sale', '>=', $currentDate)
-            ->with('sanPham')
+            ->with(['sanPham.danhGias' => function ($query) {
+                $query->where('trang_thai', 1); // Chỉ lấy đánh giá có trạng thái = 1
+            }])
             ->get();
+
+        // Xử lý từng sản phẩm để tính điểm trung bình sao và tổng số lượt đánh giá
+        $saleSanPhams->each(function ($sale) {
+            $sanPham = $sale->sanPham; // Sản phẩm liên kết
+
+            if ($sanPham) {
+                $totalStars = $sanPham->danhGias->sum('danh_gia'); // Tổng số sao
+                $totalReviews = $sanPham->danhGias->count(); // Tổng số lượt đánh giá
+
+                // Gắn thuộc tính vào sản phẩm
+                $sanPham->trung_binh_sao = $totalReviews > 0 ? round($totalStars / $totalReviews, 2) : 0;
+                $sanPham->tong_so_danh_gia = $totalReviews;
+
+                // Xóa danh sách đánh giá để không trả về
+                unset($sanPham->danhGias);
+            }
+        });
 
         // Kiểm tra nếu không có sản phẩm nào đang trong chương trình sale
         if ($saleSanPhams->isEmpty()) {
             return response()->json([
                 'message' => 'Không có sản phẩm nào đang trong chương trình sale.',
-                'data' => [],  // Trả về mảng rỗng nếu không có sản phẩm
+                'data' => [],
             ], Response::HTTP_OK);
         }
 
+        // Trả về danh sách sản phẩm sale
         return response()->json([
             'message' => 'Danh sách sản phẩm sale',
-            'data' => $saleSanPhams, // Trả về dữ liệu sản phẩm sale
+            'data' => $saleSanPhams,
         ], Response::HTTP_OK);
     }
+
     public function getSaleSanPhamPaginate(Request $request)
     {
         // Lấy ngày hiện tại với thời gian đầy đủ (Ngày giờ hiện tại ở Việt Nam)
