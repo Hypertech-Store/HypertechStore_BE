@@ -119,20 +119,32 @@ class DonHangsController extends Controller
         $page = $request->query('page', 1);  // Get 'page' from the query, default to 1
         $numberRow = $request->query('number_row', 5); // Get 'number_row' from the query, default to 5
 
-        $donHangs = DonHang::with(['chiTietDonHangs.sanPham', 'phuongThucThanhToan', 'trangThaiDonHang'])
+        // Load thêm 'hinh_thuc_van_chuyen' để lấy ra 'ten_hinh_thuc'
+        $donHangs = DonHang::with([
+            'chiTietDonHangs.sanPham',
+            'phuongThucThanhToan',
+            'trangThaiDonHang',
+            'hinhThucVanChuyen'  // Thêm quan hệ 'hinhThucVanChuyen'
+        ])
             ->where('khach_hang_id', $khach_hang_id)
             ->paginate($numberRow, ['*'], 'page', $page);
 
-        // Check if there are no orders
+        // Kiểm tra nếu không có đơn hàng
         if ($donHangs->isEmpty()) {
             return response()->json(['message' => 'Không có đơn hàng nào của khách hàng này'], 404);
         }
 
-        // Convert thuoc_tinh to JSON
+        // Chuyển đổi thuoc_tinh thành JSON
         $donHangs->getCollection()->transform(function ($donHang) {
             $donHang->chiTietDonHangs->each(function ($chiTietDonHang) {
                 $chiTietDonHang->thuoc_tinh = json_decode($chiTietDonHang->thuoc_tinh);
             });
+
+            // Thêm thông tin 'ten_hinh_thuc' vào kết quả trả về
+            if ($donHang->hinhThucVanChuyen) {
+                $donHang->hinh_thuc_van_chuyen_ten = $donHang->hinhThucVanChuyen->ten_van_chuyen;
+            }
+
             return $donHang;
         });
 
@@ -142,6 +154,38 @@ class DonHangsController extends Controller
             'total_pages' => $donHangs->lastPage(),
         ], 200);
     }
+
+
+
+    public function orderDetails($orderId): \Illuminate\Http\JsonResponse
+    {
+        // Tìm đơn hàng theo orderId và bao gồm thông tin liên quan
+        $donHang = DonHang::with(['chiTietDonHangs.sanPham.danhMuc', 'phuongThucThanhToan', 'trangThaiDonHang'])
+            ->find($orderId);
+
+        // Kiểm tra nếu không tìm thấy đơn hàng
+        if (!$donHang) {
+            return response()->json([
+                'message' => 'Không tìm thấy đơn hàng với id = ' . $orderId,
+            ], 404);
+        }
+
+        // Chuyển đổi thuộc tính sanPham và thay thế 'danh_muc_id' bằng 'ten_danh_muc'
+        $donHang->chiTietDonHangs->each(function ($chiTietDonHang) {
+            // Giải mã thuộc tính 'thuoc_tinh'
+            $chiTietDonHang->thuoc_tinh = json_decode($chiTietDonHang->thuoc_tinh);
+
+            // Thêm thuộc tính ten_danh_muc vào từng sản phẩm
+            $chiTietDonHang->sanPham->ten_danh_muc = $chiTietDonHang->sanPham->danhMuc->ten_danh_muc ?? null;
+        });
+
+        return response()->json([
+            'message' => 'Chi tiết đơn hàng',
+            'data' => $donHang,
+        ], 200);
+    }
+
+
 
 
 

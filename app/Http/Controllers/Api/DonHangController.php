@@ -101,27 +101,39 @@ class DonHangController extends Controller
     public function show(string $id)
     {
         try {
+            // Log thêm thông tin về ID đang được tìm kiếm để kiểm tra
+            Log::info('Đang tìm kiếm đơn hàng với ID: ' . $id);
+
             $data = DonHang::query()->findOrFail($id);
+
+            // Kiểm tra xem liệu có phương thức thanh toán nào được gán cho đơn hàng này không
+            if ($data->phuongThucThanhToan) {
+                $data->phuong_thuc_thanh_toan = $data->phuongThucThanhToan->ten_phuong_thuc;
+            } else {
+                $data->phuongThucThanhToan = null; // Nếu không có phương thức thanh toán
+            }
 
             return response()->json([
                 'message' => 'Chi tiết đơn hàng id = ' . $id,
                 'data' => $data
             ]);
         } catch (\Throwable $th) {
+            // Log thông báo lỗi chi tiết
+            Log::error('Lỗi tìm đơn hàng: ' . $th->getMessage());
+
             if ($th instanceof ModelNotFoundException) {
                 return response()->json([
-                    'message' => 'Không tìm thấy đơn hàng id = ' . $id,
-
+                    'message' => 'Không tìm thấy đơn hàng với id = ' . $id,
                 ], Response::HTTP_NOT_FOUND);
             }
-            Log::error('Lỗi xóa đơn hàng: ' . $th->getMessage());
 
+            // Log lỗi nội bộ
             return response()->json([
-                'message' => 'Không tìm thấy đơn hàng id = ' . $id,
-
+                'message' => 'Có lỗi xảy ra khi tìm kiếm đơn hàng id = ' . $id,
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
 
     /**
      * Update the specified resource in storage.
