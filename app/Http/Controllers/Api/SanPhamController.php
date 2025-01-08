@@ -8,6 +8,7 @@ use App\Http\Requests\Api\StoreThongSoDongHoRequest;
 use App\Http\Requests\Api\StoreThongSoMayTinhRequest;
 use App\Models\SanPham;
 use App\Models\BienTheSanPham;
+use App\Models\DanhGia;
 use App\Models\DanhMuc;
 use App\Models\DanhMucCon; // Import model DanhMucCon
 use App\Models\DonHang;
@@ -604,13 +605,31 @@ class SanPhamController extends Controller
 
     public function getBestSellingProduct()
     {
-        // Tính tổng số lượng bán của mỗi sản phẩm
-        $bestSellingProduct = SanPham::join('chi_tiet_don_hangs', 'san_phams.id', '=', 'chi_tiet_don_hangs.san_pham_id')
-            ->select('san_phams.id', 'san_phams.ten_san_pham', DB::raw('SUM(chi_tiet_don_hangs.so_luong) as total_quantity_sold'))
-            ->groupBy('san_phams.id', 'san_phams.ten_san_pham')
+        // Lấy tất cả các trường từ bảng SanPham và đếm tổng số lượng sản phẩm đã bán
+        $bestSellingProduct = SanPham::with(['danhGias' => function ($query) {
+            $query->where('trang_thai', 1); // Chỉ lấy đánh giá có trạng thái = 1
+        }])
+            ->withCount(['chiTietDonHangs as tong_luot_mua' => function ($query) {
+                $query->select(DB::raw('SUM(so_luong)')); // Tổng số lượng sản phẩm đã bán
+            }])
             ->orderByDesc('total_quantity_sold')
-            ->take(10) // Lấy 10 sản phẩm bán chạy nhất
+            ->take(10)
             ->get();
+
+        // Tính số sao và số lượt đánh giá cho từng sản phẩm
+        $bestSellingProduct->each(function ($product) {
+            $totalStars = $product->danhGias->sum('danh_gia'); // Tổng số sao
+            $totalReviews = $product->danhGias->count(); // Tổng số lượt đánh giá
+
+            // Gắn các thuộc tính vào từng sản phẩm
+            $product->trung_binh_sao = $totalReviews > 0 ? round($totalStars / $totalReviews, 2) : 0; // Điểm trung bình sao
+            $product->tong_so_danh_gia = $totalReviews; // Tổng số lượt đánh giá
+
+            // Xóa trường danhGias để không trả về
+            unset($product->danhGias);
+        });
+
+        // Trả về danh sách sản phẩm với các thông tin bổ sung
         return response()->json($bestSellingProduct);
     }
 
@@ -708,5 +727,4 @@ class SanPhamController extends Controller
             'data' => $daMuaSanPham
         ]);
     }
-
 }
