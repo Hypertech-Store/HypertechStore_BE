@@ -199,6 +199,91 @@ class SanPhamController extends Controller
         ]);
     }
 
+    public function searchProduct(Request $request): JsonResponse
+    {
+        // Lấy từ khóa tìm kiếm từ query param, giá trị mặc định là rỗng
+        $searchTerm = $request->query('keyword', '');
+
+        // Kiểm tra nếu không có từ khóa tìm kiếm
+        if (empty($searchTerm)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Vui lòng nhập từ khóa tìm kiếm.'
+            ], 400);
+        }
+
+        // Lấy số trang và số sản phẩm mỗi trang từ query param, mặc định: page = 1, number_row = 9
+        $page = $request->query('page', 1);
+        $numberRow = $request->query('number_row', 9);
+
+        // Tìm kiếm sản phẩm dựa trên 'ten_san_pham' hoặc 'mo_ta'
+        $query = SanPham::query();
+        $query->where('ten_san_pham', 'LIKE', '%' . $searchTerm . '%')
+            ->orWhere('mo_ta', 'LIKE', '%' . $searchTerm . '%');
+
+        // Phân trang kết quả
+        $sanPhams = $query->paginate($numberRow, ['*'], 'page', $page);
+
+        // Kiểm tra xem có sản phẩm nào không
+        if ($sanPhams->isEmpty()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Không có dữ liệu nào về từ khóa "' . $searchTerm . '"'
+            ], 404);
+        }
+
+        // Lấy giá trị min và max giá của sản phẩm
+        $minPrice = $query->min('gia');
+        $maxPrice = $query->max('gia');
+
+        // Kiểm tra trạng thái "new" và "sale"
+        $currentDate = Carbon::now()->timezone('Asia/Ho_Chi_Minh');
+        foreach ($sanPhams as $sanPham) {
+            $sale = SaleSanPham::where('san_pham_id', $sanPham->id)
+                ->where('ngay_bat_dau_sale', '<=', $currentDate)
+                ->where('ngay_ket_thuc_sale', '>=', $currentDate)
+                ->first();
+
+            $saleStatus = $sale ? 'Sale' : null;
+            $isNew = $sanPham->created_at >= now()->subWeek();
+            $status = $saleStatus && $isNew ? 'Sản phẩm mới đang sale' : ($saleStatus ?: ($isNew ? 'Sản phẩm mới' : null));
+            $sanPham->trang_thai = $status;
+
+            // Xử lý hình ảnh biến thể
+            $bienTheSanPhams = $sanPham->bienTheSanPhams()->with('giaTriThuocTinh')->get();
+            $hinhAnhBienTheSanPham = [];
+            foreach ($bienTheSanPhams as $bienThe) {
+                $variantImages = [];
+                foreach ($bienThe->lienKetBienTheVaGiaTri as $lienKet) {
+                    foreach ($lienKet->hinhAnhSanPhams as $hinhAnh) {
+                        $variantImages[] = [
+                            'bien_the_id' => $bienThe->id,
+                            'gia_tri_thoc_tinh_id' => $lienKet->gia_tri_thuoc_tinh_id,
+                            'ten_gia_tri' => $lienKet->giaTriThuocTinh->ten_gia_tri,
+                            'hinh_anh_id' => $hinhAnh->id,
+                            'duong_dan_hinh_anh' => $hinhAnh->duong_dan_hinh_anh
+                        ];
+                    }
+                }
+                $hinhAnhBienTheSanPham[] = [
+                    'bien_the_id' => $bienThe->id,
+                    'hinh_anh' => $variantImages
+                ];
+            }
+            $sanPham->hinh_anh_san_pham = $hinhAnhBienTheSanPham;
+        }
+
+        // Trả về kết quả JSON
+        return response()->json([
+            'status' => 'success',
+            'data' => $sanPhams,
+            'min_price' => $minPrice,
+            'max_price' => $maxPrice,
+        ]);
+    }
+
+
+
     public function getAllSanPham(): JsonResponse
     {
         // Lấy dữ liệu với phân trang

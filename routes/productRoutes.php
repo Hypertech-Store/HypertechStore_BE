@@ -7,6 +7,8 @@ Route::prefix('san-pham')->group(function () {
     Route::get('/allProductAdmin', [SanPhamController::class, 'getAllProductAdmin']);
     Route::get('/allProductClient', [SanPhamController::class, 'getAllProductClient']);
 
+    Route::get('/search', [SanPhamController::class, 'searchProduct']);
+
     Route::post('/create', [SanPhamController::class, 'createProduct']);
     Route::get('/detail/{id}', [SanPhamController::class, 'getDetail']);
     Route::put('/update/{id}', [SanPhamController::class, 'updateProduct']);
