@@ -61,7 +61,7 @@ class SanPham extends Model
     }
     public function saleSanPhams()
     {
-        return $this->hasMany(SaleSanPham::class);
+        return $this->hasOne(SaleSanPham::class, 'san_pham_id', 'id'); // Quan hệ One-to-One với bảng SaleSanPham
     }
 
     public function thongSos()
@@ -72,7 +72,4 @@ class SanPham extends Model
     {
         return $this->hasMany(SanPhamVaThongSo::class, 'san_pham_id');
     }
-
-
-
 }

@@ -605,33 +605,51 @@ class SanPhamController extends Controller
 
     public function getBestSellingProduct()
     {
-        // Lấy tất cả các trường từ bảng SanPham và đếm tổng số lượng sản phẩm đã bán
+        // Lấy sản phẩm bán chạy với tổng số lượng đã bán và thông tin giảm giá từ bảng SaleSanPham
         $bestSellingProduct = SanPham::with(['danhGias' => function ($query) {
             $query->where('trang_thai', 1); // Chỉ lấy đánh giá có trạng thái = 1
         }])
             ->withCount(['chiTietDonHangs as tong_luot_mua' => function ($query) {
                 $query->select(DB::raw('SUM(so_luong)')); // Tổng số lượng sản phẩm đã bán
             }])
-            ->orderByDesc('total_quantity_sold')
+            ->with(['saleSanPhams' => function ($query) {
+                $query->select('san_pham_id', 'sale_theo_phan_tram'); // Chỉ lấy thông tin giảm giá
+            }])
+            ->orderByDesc('tong_luot_mua') // Sắp xếp theo tổng số lượng đã bán
             ->take(10)
             ->get();
 
-        // Tính số sao và số lượt đánh giá cho từng sản phẩm
+        // Xử lý từng sản phẩm
         $bestSellingProduct->each(function ($product) {
             $totalStars = $product->danhGias->sum('danh_gia'); // Tổng số sao
             $totalReviews = $product->danhGias->count(); // Tổng số lượt đánh giá
 
-            // Gắn các thuộc tính vào từng sản phẩm
+            // Tính số lượng khách hàng duy nhất đánh giá sản phẩm (dựa trên khach_hang_id)
+            $totalUniqueCustomers = $product->danhGias->pluck('khach_hang_id')->unique()->count();
+
+            // Tính điểm trung bình sao và tổng số đánh giá
             $product->trung_binh_sao = $totalReviews > 0 ? round($totalStars / $totalReviews, 2) : 0; // Điểm trung bình sao
             $product->tong_so_danh_gia = $totalReviews; // Tổng số lượt đánh giá
+            $product->tong_khach_hang_danh_gia = $totalUniqueCustomers; // Tổng số khách hàng duy nhất
 
-            // Xóa trường danhGias để không trả về
+            // Kiểm tra sản phẩm có sale không và lấy phần trăm giảm giá
+            if ($product->saleSanPhams) {
+                $product->sale_percentage = $product->saleSanPhams->sale_theo_phan_tram; // Lấy phần trăm giảm giá
+            } else {
+                $product->sale_percentage = 0; // Không có sale
+            }
+
+            // Xóa danhGias và saleSanPham khỏi kết quả trả về
             unset($product->danhGias);
+            unset($product->saleSanPhams);
         });
 
-        // Trả về danh sách sản phẩm với các thông tin bổ sung
+        // Trả về danh sách sản phẩm
         return response()->json($bestSellingProduct);
     }
+
+
+
 
     public function getSanPhamTheoDanhMuc($danhMucId)
     {
