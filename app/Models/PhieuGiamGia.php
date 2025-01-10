@@ -18,6 +18,7 @@ class PhieuGiamGia extends Model
         'ngay_ket_thuc',
         'gia_tri_don_hang_toi_thieu',
         'so_luot_su_dung',
+        'trang_thai'
     ];
 
     public function phieuGiamGiaVaKhachHangs()

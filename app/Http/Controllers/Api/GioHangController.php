@@ -187,18 +187,16 @@ class GioHangController extends Controller
         ], 200);
     }
     // Xóa sản phẩm khỏi giỏ hàng
-    public function removeProduct(Request $request)
+    public function removeProduct($chi_tiet_gio_hang_id)
     {
-        $request->validate([
-            'chi_tiet_gio_hang_id' => 'required|exists:chi_tiet_gio_hangs,id',
-        ]);
-
-        $chiTietGioHang = ChiTietGioHang::find($request->chi_tiet_gio_hang_id);
+        // Kiểm tra xem chi tiết giỏ hàng có tồn tại trong cơ sở dữ liệu hay không
+        $chiTietGioHang = ChiTietGioHang::find($chi_tiet_gio_hang_id);
 
         if (!$chiTietGioHang) {
             return response()->json(['message' => 'Sản phẩm không có trong giỏ hàng'], 404);
         }
 
+        // Tiến hành xóa sản phẩm khỏi giỏ hàng
         $chiTietGioHang->delete();
 
         return response()->json(['message' => 'Xóa sản phẩm khỏi giỏ hàng thành công'], 200);
