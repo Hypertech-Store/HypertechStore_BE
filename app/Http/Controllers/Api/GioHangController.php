@@ -71,6 +71,7 @@ class GioHangController extends Controller
             $productDetails = [
                 'chi_tiet_id' => $chiTiet->id,  // Thêm ID của chi tiết giỏ hàng
                 'san_pham_id' => $sanPhamData->id,
+                'bien_the_san_pham_id' => $bienThe->id, // Thêm bien_the_san_pham_id vào đây
                 'bien_the' => $bienTheValues, // Đưa ten_gia_tri vào bien_the
                 'ten_san_pham' => $sanPhamData->ten_san_pham,
                 'gia_goc' => $sanPhamData->gia,
@@ -93,6 +94,7 @@ class GioHangController extends Controller
             200
         );
     }
+
 
 
 
