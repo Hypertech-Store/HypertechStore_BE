@@ -424,7 +424,7 @@ class SanPhamController extends Controller
             'mo_ta' => 'nullable|string',
             'gia' => 'nullable|numeric|min:0',
             'so_luong_ton_kho' => 'nullable|integer|min:0',
-            'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'image' => 'nullable',
             'luot_xem' => 'nullable|integer|min:0',
             'thuoc_tinh' => 'nullable|array',
             'thuoc_tinh.*.id' => 'nullable|exists:thuoc_tinh_san_phams,id',
