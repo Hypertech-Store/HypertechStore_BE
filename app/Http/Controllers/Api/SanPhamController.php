@@ -449,6 +449,9 @@ class SanPhamController extends Controller
             }
             $path = $request->file('image')->store('san_phams', 'public');
             $validated['duong_dan_anh'] = $path;
+        } else {
+            // Giữ nguyên đường dẫn ảnh cũ nếu không có ảnh mới
+            $validated['duong_dan_anh'] = $sanPham->duong_dan_anh;
         }
 
         $sanPham->update($validated);
@@ -524,6 +527,8 @@ class SanPhamController extends Controller
                     }
                 }
             }
+
+
         }
 
         return response()->json([
