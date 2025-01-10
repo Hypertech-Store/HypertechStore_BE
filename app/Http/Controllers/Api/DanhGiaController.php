@@ -273,7 +273,7 @@ class DanhGiaController extends Controller
         $numberRow = $request->query('number_row', 10);
 
         $danhGias = DanhGia::where('khach_hang_id', $khach_hang_id)
-            ->with(['sanPham', 'chiTietDanhGias'])
+            ->with(['chiTietDanhGias', 'sanPham'])
             ->paginate($numberRow);
 
         return response()->json([
@@ -282,5 +282,4 @@ class DanhGiaController extends Controller
             'data' => $danhGias
         ]);
     }
-
 }
