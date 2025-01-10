@@ -753,10 +753,10 @@ class SanPhamController extends Controller
             'san_phams' => $danhMuc->sanPhams
         ], 200);
     }
-    public function getSanPhamTheoDanhMucCon($danhMucConId)
+    public function getSanPhamTheoDanhMucCon($danhMucConId, Request $request)
     {
         // Tìm danh mục con theo id
-        $danhMucCon = DanhMuc::with('sanPhams')->find($danhMucConId);
+        $danhMucCon = DanhMuc::find($danhMucConId);
 
         if (!$danhMucCon) {
             return response()->json([
@@ -764,12 +764,47 @@ class SanPhamController extends Controller
             ], 404); // Trả về lỗi 404 nếu không tìm thấy danh mục con
         }
 
-        // Trả về các sản phẩm trong danh mục con dưới dạng JSON
+        // Sử dụng phân trang để lấy sản phẩm trong danh mục con
+        $pageSize = $request->input('limit', 9); // Lấy số sản phẩm mỗi trang từ request, mặc định là 9
+        $sanPhams = $danhMucCon->sanPhams()
+            ->with(['danhGias' => function ($query) {
+                $query->where('trang_thai', 1); // Chỉ lấy đánh giá có trạng thái = 1
+            }])
+            ->paginate($pageSize);
+
+        // Xử lý từng sản phẩm
+        $sanPhams->getCollection()->each(function ($product) {
+            $totalStars = $product->danhGias->sum('danh_gia'); // Tổng số sao
+            $totalReviews = $product->danhGias->count(); // Tổng số lượt đánh giá
+
+            // Tính số lượng khách hàng duy nhất đánh giá sản phẩm (dựa trên khach_hang_id)
+            $totalUniqueCustomers = $product->danhGias->pluck('khach_hang_id')->unique()->count();
+
+            // Tính điểm trung bình sao và tổng số đánh giá
+            $product->trung_binh_sao = $totalReviews > 0 ? round($totalStars / $totalReviews, 2) : 0; // Điểm trung bình sao
+            $product->tong_so_danh_gia = $totalReviews; // Tổng số lượt đánh giá
+            $product->tong_khach_hang_danh_gia = $totalUniqueCustomers; // Tổng số khách hàng duy nhất
+
+            // Xóa danh sách đánh giá khỏi kết quả trả về để giảm kích thước dữ liệu
+            unset($product->danhGias);
+        });
+
+        // Trả về dữ liệu JSON bao gồm thông tin phân trang và các thông tin tính toán thêm
         return response()->json([
             'danh_muc_con' => $danhMucCon->ten_danh_muc,
-            'san_phams' => $danhMucCon->sanPhams
-        ], 200); // Trả về sản phẩm dưới dạng JSON
+            'san_phams' => $sanPhams->items(), // Danh sách sản phẩm trên trang hiện tại
+            'current_page' => $sanPhams->currentPage(),
+            'last_page' => $sanPhams->lastPage(),
+            'next_page_url' => $sanPhams->nextPageUrl(),
+            'prev_page_url' => $sanPhams->previousPageUrl(),
+            'path' => $sanPhams->path(),
+            'per_page' => $sanPhams->perPage(),
+            'to' => $sanPhams->lastItem(),
+            'total' => $sanPhams->total(),
+        ], 200);
     }
+
+
 
     public function timKiemSanPham(Request $request)
     {
