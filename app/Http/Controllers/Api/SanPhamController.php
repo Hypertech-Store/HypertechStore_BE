@@ -295,7 +295,6 @@ class SanPhamController extends Controller
             'data' => $sanPhams,
         ]);
     }
-
     public function getSanPhamChuaSale(): JsonResponse
     {
         // Lấy các sản phẩm chưa sale (không có liên kết với saleSanPhams)
@@ -307,9 +306,6 @@ class SanPhamController extends Controller
             'data' => $sanPhamsChuaSale,
         ]);
     }
-
-
-
     public function createProduct(Request $request)
     {
         // Xác thực dữ liệu từ request
@@ -396,10 +392,6 @@ class SanPhamController extends Controller
             'so_bien_the' => count($combinations),
         ], 201);
     }
-
-    /**
-     * Hàm sinh tất cả các tổ hợp từ danh sách giá trị thuộc tính
-     */
     private function generateCombinations($arrays)
     {
         $result = [[]];
@@ -527,8 +519,6 @@ class SanPhamController extends Controller
                     }
                 }
             }
-
-
         }
 
         return response()->json([
@@ -538,9 +528,6 @@ class SanPhamController extends Controller
 
         ], 200);
     }
-
-
-
     public function getDetail($id)
     {
         // Get the product details along with its related images
@@ -665,9 +652,6 @@ class SanPhamController extends Controller
             'hinh_anh_bien_the_san_pham' => $hinhAnhBienTheSanPham
         ], 200);
     }
-
-
-    // Xóa sản phẩm
     public function deleteProduct($id)
     {
         $sanPham = SanPham::find($id);
@@ -737,10 +721,6 @@ class SanPhamController extends Controller
         // Trả về danh sách sản phẩm
         return response()->json($bestSellingProduct);
     }
-
-
-
-
     public function getSanPhamTheoDanhMuc($danhMucId)
     {
 
@@ -778,18 +758,37 @@ class SanPhamController extends Controller
 
     public function timKiemSanPham(Request $request)
     {
-        $query = $request->input('query'); // Lấy từ khóa tìm kiếm
+        $query = SanPham::query();
 
-        if (!$query) {
-            return response()->json(['message' => 'Vui lòng nhập từ khóa tìm kiếm.'], 400);
+        // Đảm bảo gửi tất cả các tham số, nếu không có giá trị thì sẽ dùng giá trị mặc định
+        $searchQuery = $request->query('searchQuery', '');
+        $categoryId = $request->query('categoryId', 0);
+        $subCategoryId = $request->query('subCategoryId', 0);
+
+        $page = $request->query('page', 1);
+        $numberRow = $request->query('number_row', 9);
+
+        // Tìm kiếm theo từ khóa (product name)
+        if ($searchQuery) {
+            $query->where('ten_san_pham', 'like', '%' . $searchQuery . '%');
         }
 
-        $sanPhams = SanPham::where('ten_san_pham', 'like', "%$query%")
-            ->orWhere('mo_ta', 'like', "%$query%")
-            ->get();
+        // Tìm kiếm theo danh mục
+        if ($categoryId) {
+            $query->where('danh_muc_id', $categoryId);
+        }
 
-        return response()->json($sanPhams);
+        // Tìm kiếm theo danh mục con
+        if ($subCategoryId) {
+            $query->where('danh_muc_con_id', $subCategoryId);
+        }
+
+        // Lấy sản phẩm sau khi lọc
+        $products = $query->paginate($numberRow); // Hoặc sử dụng ->get() nếu không phân trang
+
+        return response()->json($products);
     }
+
     public function locSanPhamTheoGia(Request $request)
     {
         // Lấy giá trị min và max từ request, mặc định là 0 cho min và 10000000 cho max
