@@ -165,7 +165,7 @@ class GioHangController extends Controller
         $request->validate([
             'chi_tiet_gio_hang_id' => 'required|exists:chi_tiet_gio_hangs,id',
             'so_luong' => 'required|integer|min:1',
-            'gia_sau_sale_them_gia_bien_the' => 'required|numeric|min:0'
+            'gia' => 'required|numeric|min:0'
         ]);
 
         $chiTietGioHang = ChiTietGioHang::find($request->chi_tiet_gio_hang_id);
@@ -175,7 +175,7 @@ class GioHangController extends Controller
         }
         // // Cập nhật chi tiết giỏ hàng
         $chiTietGioHang->so_luong = $request->so_luong;
-        $chiTietGioHang->gia = $request->gia_sau_sale_them_gia_bien_the * $chiTietGioHang->so_luong;
+        $chiTietGioHang->gia = $request->gia * $chiTietGioHang->so_luong;
         $chiTietGioHang->save();
 
         return response()->json([
