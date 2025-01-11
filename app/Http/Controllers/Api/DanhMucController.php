@@ -56,24 +56,23 @@ class DanhMucController extends Controller
 
 
             return response()->json([
-                'message' => 'Chi tiết danh mục id = '.$id,
+                'message' => 'Chi tiết danh mục id = ' . $id,
                 'data' => $data
             ]);
         } catch (\Throwable $th) {
-            if($th instanceof ModelNotFoundException){
+            if ($th instanceof ModelNotFoundException) {
                 return response()->json([
-                    'message' => 'Không tìm thấy danh mục id = '.$id,
+                    'message' => 'Không tìm thấy danh mục id = ' . $id,
 
                 ], Response::HTTP_NOT_FOUND);
             }
             Log::error('Lỗi xóa danh mục: ' . $th->getMessage());
 
             return response()->json([
-                'message' => 'Không tìm thấy danh mục id = '.$id,
+                'message' => 'Không tìm thấy danh mục id = ' . $id,
 
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-
     }
 
     /**
@@ -86,14 +85,13 @@ class DanhMucController extends Controller
             $data->update($request->all());
 
             return response()->json([
-                'message' => 'Cập nhật danh mục id = '.$id,
+                'message' => 'Cập nhật danh mục id = ' . $id,
                 'data' => $data
             ]);
         } catch (ModelNotFoundException $e) {
             return response()->json([
-                'message' => 'Không tìm thấy danh mục id = '.$id,
+                'message' => 'Không tìm thấy danh mục id = ' . $id,
             ], Response::HTTP_NOT_FOUND);
-
         } catch (\Exception $e) {
             Log::error('Lỗi cập nhật danh mục: ' . $e->getMessage());
 
@@ -101,7 +99,41 @@ class DanhMucController extends Controller
                 'message' => 'Có lỗi xảy ra khi cập nhật danh mục',
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
 
+
+    public function updateStatus(Request $request)
+    {
+        // Xác thực dữ liệu đầu vào
+        $validated = $request->validate([
+            'danh_muc_id' => 'required|integer|exists:danh_mucs,id', // Kiểm tra danh_muc_id tồn tại
+            'trang_thai'    => 'required|boolean', // Giá trị trạng thái phải là 0 hoặc 1
+        ]);
+
+        // Tìm khách hàng theo ID
+        $data = DanhMuc::find($validated['danh_muc_id']);
+
+        if (!$data) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Phương thức vận chuyển không tìm thấy.',
+            ], 404);
+        }
+
+        // Cập nhật trạng thái
+        $data->trang_thai = $validated['trang_thai'];
+        $data->save();
+
+        // Trả về dữ liệu phương thức vận chuyển sau khi cập nhật
+        return response()->json([
+            'success' => true,
+            'message' => 'Cập nhật trạng thái thành công.',
+            'data' => [
+                'danh_muc_id' => $data->id,
+                'trang_thai' => $data->trang_thai,
+                // Thêm bất kỳ trường nào khác bạn cần đưa vào response
+            ],
+        ]);
     }
 
     /**
@@ -115,12 +147,10 @@ class DanhMucController extends Controller
             return response()->json([
                 'message' => 'Xóa thành công',
             ], Response::HTTP_OK);
-
         } catch (ModelNotFoundException $e) {
             return response()->json([
-                'message' => 'Không tìm thấy danh mục id = '.$id,
+                'message' => 'Không tìm thấy danh mục id = ' . $id,
             ], Response::HTTP_NOT_FOUND);
-
         } catch (\Exception $e) {
             Log::error('Lỗi xóa danh mục: ' . $e->getMessage());
 
@@ -129,8 +159,4 @@ class DanhMucController extends Controller
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
-
-
-
 }

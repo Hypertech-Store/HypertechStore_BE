@@ -3,7 +3,7 @@
 use App\Http\Controllers\Api\DanhMucConController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('danh-muc-con')->group(function() {
+Route::prefix('danh-muc-con')->group(function () {
     // Hiển thị danh sách các danh mục con
     Route::get('/find-by-id/{danh_muc_id}', [DanhMucConController::class, 'getSubCategoriesByCategoryId']);
 
@@ -15,7 +15,7 @@ Route::prefix('danh-muc-con')->group(function() {
 
     // // Cập nhật danh mục con
     // Route::put('/update/{id}', [DanhMucConController::class, 'update']);
-
+    Route::put('/trang-thai', [DanhMucConController::class, 'updateStatus']);
     // // Xóa danh mục con
     // Route::delete('/delete/{id}', [DanhMucConController::class, 'destroy']);
 
@@ -23,4 +23,3 @@ Route::prefix('danh-muc-con')->group(function() {
 });
 Route::get('/danh-muc-con/{danh_muc_id}', [DanhMucConController::class, 'getSubCategoriesByCategoryId']);
 Route::apiResource('danh-muc-con', DanhMucConController::class);
-

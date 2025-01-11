@@ -392,6 +392,54 @@ class SanPhamController extends Controller
             'so_bien_the' => count($combinations),
         ], 201);
     }
+
+    public function updateProductStatus(Request $request)
+    {
+        // Xác thực dữ liệu đầu vào
+        $validated = $request->validate([
+            'san_pham_id' => 'required|integer|exists:san_phams,id', // Kiểm tra san_pham_id tồn tại
+            'trang_thai_ton_kho' => 'sometimes|boolean', // Giá trị trạng thái có thể là 0 hoặc 1 nếu được cung cấp
+        ]);
+
+        // Tìm sản phẩm theo ID
+        $sanPham = SanPham::find($validated['san_pham_id']);
+
+        if (!$sanPham) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Sản phẩm không tồn tại.',
+            ], 404);
+        }
+
+        // Kiểm tra số lượng tồn kho và cập nhật trạng thái tồn kho
+        if ($sanPham->so_luong_ton_kho == 0) {
+            $sanPham->trang_thai_ton_kho = 0; // Nếu số lượng tồn kho là 0, cập nhật trạng thái tồn kho là 0
+        } else {
+            $sanPham->trang_thai_ton_kho = 1; // Nếu số lượng tồn kho > 0, cập nhật trạng thái tồn kho là 1
+        }
+
+        // Nếu trạng thái tồn kho được cung cấp trong yêu cầu, sử dụng giá trị đó để cập nhật
+        if (isset($validated['trang_thai_ton_kho'])) {
+            $sanPham->trang_thai_ton_kho = $validated['trang_thai_ton_kho'];
+        }
+
+        // Lưu các thay đổi
+        $sanPham->save();
+
+        // Trả về phản hồi
+        return response()->json([
+            'success' => true,
+            'message' => 'Cập nhật trạng thái tồn kho thành công.',
+            'data' => [
+                'san_pham_id' => $sanPham->id,
+                'trang_thai_ton_kho' => $sanPham->trang_thai_ton_kho,
+                'so_luong_ton_kho' => $sanPham->so_luong_ton_kho, // Bao gồm thông tin số lượng tồn kho nếu cần
+            ],
+        ]);
+    }
+
+
+
     private function generateCombinations($arrays)
     {
         $result = [[]];
@@ -639,6 +687,39 @@ class SanPhamController extends Controller
             }
         }
 
+        // Lấy 10 sản phẩm bán chạy, sắp xếp theo số lượng đã bán
+        $bestSellingProducts = SanPham::withCount(['chiTietDonHangs as tong_luot_mua' => function ($query) {
+            $query->select(DB::raw('SUM(so_luong)')); // Tổng số lượng sản phẩm đã bán
+        }])
+            ->orderByDesc('tong_luot_mua') // Sắp xếp theo tổng số lượng đã bán
+            ->take(10) // Lấy 10 sản phẩm bán chạy
+            ->get();
+
+        // Lấy thông tin từng sản phẩm bán chạy
+        $bestSellingProducts->each(function ($product, $index) {
+            // Tính số lượng khách hàng duy nhất đánh giá sản phẩm (dựa trên khach_hang_id)
+            $totalStars = $product->danhGias->sum('danh_gia');
+            $totalReviews = $product->danhGias->count();
+
+            // Tính điểm trung bình sao và tổng số đánh giá
+            $product->trung_binh_sao = $totalReviews > 0 ? round($totalStars / $totalReviews, 2) : 0; // Điểm trung bình sao
+            $product->tong_so_danh_gia = $totalReviews; // Tổng số lượt đánh giá
+            $product->top_bestseller = $index + 1; // Thứ tự của sản phẩm bán chạy (từ 1)
+
+            // Gán thông tin giảm giá
+            if ($product->saleSanPhams) {
+                $product->sale_percentage = $product->saleSanPhams->sale_theo_phan_tram; // Lấy phần trăm giảm giá
+            } else {
+                $product->sale_percentage = 0; // Không có giảm giá
+            }
+
+            // Xóa các dữ liệu không cần thiết
+            unset($product->danhGias);
+            unset($product->saleSanPhams);
+        });
+
+
+
         // Return final response with product details, grouped attributes, and sale status
         return response()->json([
             'sanPham' => $sanPham,
@@ -649,7 +730,8 @@ class SanPhamController extends Controller
             'sale_theo_phan_tram' => $salePercentage,
             'sale' => $sale,
             'trang_thai' => $saleStatus,
-            'hinh_anh_bien_the_san_pham' => $hinhAnhBienTheSanPham
+            'hinh_anh_bien_the_san_pham' => $hinhAnhBienTheSanPham,
+            'bestSellingProducts' => $bestSellingProducts, // Top 10 bestseller
         ], 200);
     }
     public function deleteProduct($id)

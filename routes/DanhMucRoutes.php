@@ -3,10 +3,10 @@
 use App\Http\Controllers\Api\DanhMucController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('danh-muc')->group(function() {
+Route::prefix('danh-muc')->group(function () {
     // Hiển thị danh sách các danh mục
     Route::get('/getAll', [DanhMucController::class, 'getAllDanhMuc']);
-
+    Route::put('/trang-thai', [DanhMucController::class, 'updateStatus']);
     // Tạo mới danh mục
     // Route::post('/addNew', [DanhMucController::class, 'store']);
 

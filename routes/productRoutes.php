@@ -12,6 +12,7 @@ Route::prefix('san-pham')->group(function () {
     Route::post('/create', [SanPhamController::class, 'createProduct']);
     Route::get('/detail/{id}', [SanPhamController::class, 'getDetail']);
     Route::put('/update/{id}', [SanPhamController::class, 'updateProduct']);
+    Route::put('/trang-thai', [SanPhamController::class, 'updateProductStatus']);
     Route::delete('/delete/{id}', [SanPhamController::class, 'deleteProduct']);
     Route::get('/getNewProducts', [SanPhamController::class, 'getNewProducts']);
     Route::get('/getBestSellingProduct', [SanPhamController::class, 'getBestSellingProduct']);

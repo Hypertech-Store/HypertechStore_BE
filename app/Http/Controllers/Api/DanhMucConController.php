@@ -135,6 +135,40 @@ class DanhMucConController extends Controller
         }
     }
 
+    public function updateStatus(Request $request)
+    {
+        // Xác thực dữ liệu đầu vào
+        $validated = $request->validate([
+            'danh_muc_con_id' => 'required|integer|exists:danh_muc_cons,id', // Kiểm tra danh_muc_con_id tồn tại
+            'trang_thai'    => 'required|boolean', // Giá trị trạng thái phải là 0 hoặc 1
+        ]);
+
+        // Tìm khách hàng theo ID
+        $data = DanhMucCon::find($validated['danh_muc_con_id']);
+
+        if (!$data) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Phương thức vận chuyển không tìm thấy.',
+            ], 404);
+        }
+
+        // Cập nhật trạng thái
+        $data->trang_thai = $validated['trang_thai'];
+        $data->save();
+
+        // Trả về dữ liệu phương thức vận chuyển sau khi cập nhật
+        return response()->json([
+            'success' => true,
+            'message' => 'Cập nhật trạng thái thành công.',
+            'data' => [
+                'danh_muc_con_id' => $data->id,
+                'trang_thai' => $data->trang_thai,
+                // Thêm bất kỳ trường nào khác bạn cần đưa vào response
+            ],
+        ]);
+    }
+
     /**
      * Remove the specified resource from storage.
      */
@@ -168,6 +202,4 @@ class DanhMucConController extends Controller
 
         return response()->json($data);
     }
-
-
 }
