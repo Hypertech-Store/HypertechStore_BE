@@ -200,9 +200,9 @@ class QuanTriVienController extends Controller
     public function show($id): \Illuminate\Http\JsonResponse
     {
         $quanTriVien = QuanTriVien::findOrFail($id);
-
         return response()->json($quanTriVien, 200);
     }
+
 
     public function login(Request $request): \Illuminate\Http\JsonResponse
     {

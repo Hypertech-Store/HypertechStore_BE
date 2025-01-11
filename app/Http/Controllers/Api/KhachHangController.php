@@ -179,32 +179,7 @@ class KhachHangController extends Controller
         ], Response::HTTP_OK);
     }
 
-    public function updateStatus(Request $request)
-    {
-        // Xác thực dữ liệu đầu vào
-        $validated = $request->validate([
-            'khach_hang_id' => 'required|integer|exists:khach_hangs,id', // Kiểm tra khach_hang_id tồn tại
-            'trang_thai'    => 'required|boolean', // Giá trị trạng thái phải là 0 hoặc 1
-        ]);
-
-
-        // Tìm khách hàng theo ID
-        $khachHang = KhachHang::find($validated['khach_hang_id']);
-
-        // Cập nhật trạng thái
-        $khachHang->trang_thai = $validated['trang_thai'];
-        $khachHang->save();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Cập nhật trạng thái thành công.',
-            'data' => [
-                'khach_hang_id' => $khachHang->id,
-                'trang_thai' => $khachHang->trang_thai,
-            ],
-        ]);
-    }
-
+ http://127.0.0.1:8000/api/san-pham/trang-thai
     // Gửi email đặt lại mật khẩu
     public function quenMatKhau(Request $request): \Illuminate\Http\JsonResponse
     {

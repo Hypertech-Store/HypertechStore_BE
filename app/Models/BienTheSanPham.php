@@ -29,6 +29,9 @@ class BienTheSanPham extends Model
     {
         return $this->hasMany(LienKetBienTheVaGiaTriThuocTinh::class, 'bien_the_san_pham_id', 'id');
     }
+
+
+    
     public function hinhAnhSanPhams()
     {
         return $this->hasMany(HinhAnhSanPham::class, 'lien_ket_bien_the_va_gia_tri_thuoc_tinh_id', 'id');
