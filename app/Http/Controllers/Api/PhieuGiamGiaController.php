@@ -34,14 +34,22 @@ class PhieuGiamGiaController extends Controller
         // Tự động sinh mã giảm giá
         $validated['ma_giam_gia'] = strtoupper(Str::random(10)); // Sinh chuỗi ngẫu nhiên gồm 10 ký tự
 
+        // Kiểm tra số lượt sử dụng, nếu = 0 thì tự động tắt trạng thái
+        if ($validated['so_luot_su_dung'] == 0) {
+            $validated['trang_thai'] = 0;  // Nếu số lượt sử dụng bằng 0 thì tắt trạng thái
+        } else {
+            $validated['trang_thai'] = 1;  // Nếu không thì bật trạng thái
+        }
+
         // Tạo phiếu giảm giá
         $phieuGiamGia = PhieuGiamGia::create($validated);
 
         return response()->json([
             'message' => 'Phiếu giảm giá đã được tạo thành công.',
-            'data' => $phieuGiamGia,
+            'data' => $phieuGiamGia,  // Trả về thông tin của phiếu giảm giá vừa tạo
         ], 201);
     }
+
     /**
      * Display the specified resource.
      */
@@ -66,25 +74,37 @@ class PhieuGiamGiaController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, $id)
     {
-        // Tìm phiếu giảm giá cần cập nhật
+        // Xác thực dữ liệu đầu vào
+        $validated = $request->validate([
+            'trang_thai' => 'required|boolean', // Giá trị trạng thái phải là 0 hoặc 1
+        ]);
+
+        // Tìm phiếu giảm giá theo ID
         $phieuGiamGia = PhieuGiamGia::find($id);
 
         if (!$phieuGiamGia) {
             return response()->json([
+                'success' => false,
                 'message' => 'Phiếu giảm giá không tồn tại.',
             ], 404);
         }
 
-        // Cập nhật thông tin phiếu giảm giá
-        $phieuGiamGia->update($request->all());
+        // Cập nhật trạng thái phiếu giảm giá
+        $phieuGiamGia->trang_thai = $validated['trang_thai'];
+        $phieuGiamGia->save();
 
         return response()->json([
-            'message' => 'Phiếu giảm giá đã được cập nhật thành công.',
-            'data' => $phieuGiamGia,
+            'success' => true,
+            'message' => 'Cập nhật trạng thái phiếu giảm giá thành công.',
+            'data' => [
+                'phieu_giam_gia_id' => $phieuGiamGia->id,
+                'trang_thai' => $phieuGiamGia->trang_thai,
+            ],
         ], 200);
     }
+
 
     public function destroy(string $id)
     {

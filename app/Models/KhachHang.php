@@ -21,8 +21,14 @@ class KhachHang extends Model implements Authenticatable
         'gioi_tinh',
         'ngay_sinh',
         'hinh_anh',
+        'trang_thai',
         'mat_khau',
         'mat_khau_reset_token',
+    ];
+
+    // Mặc định status = 0 (không hoạt động)
+    protected $attributes = [
+        'trang_thai' => 0,
     ];
 
     public function donHangs()
