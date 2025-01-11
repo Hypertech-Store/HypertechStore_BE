@@ -187,6 +187,16 @@ class QuanTriVienController extends Controller
         return response()->json($quanTriViens, 200);
     }
 
+    public function getAllAdmin(): \Illuminate\Http\JsonResponse
+    {
+        // Lấy tất cả các bản ghi từ bảng QuanTriVien
+        $quanTriViens = QuanTriVien::all();
+
+        // Trả về kết quả dưới dạng JSON
+        return response()->json($quanTriViens, 200);
+    }
+
+
     public function show($id): \Illuminate\Http\JsonResponse
     {
         $quanTriVien = QuanTriVien::findOrFail($id);

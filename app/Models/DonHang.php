@@ -17,6 +17,9 @@ class DonHang extends Model
         'trang_thai_don_hang_id',
         'tong_tien',
         'dia_chi_giao_hang',
+        'ly_do_huy_don',
+        'nguoi_huy',
+        'ly_do_hoan_hang',
     ];
 
     public function khachHang()
@@ -27,7 +30,6 @@ class DonHang extends Model
     {
         return $this->hasMany(ChiTietDonHang::class);
     }
-
     public function giaoHangs()
     {
         return $this->hasMany(GiaoHang::class);
