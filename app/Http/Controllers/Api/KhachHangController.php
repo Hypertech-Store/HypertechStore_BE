@@ -51,19 +51,37 @@ class KhachHangController extends Controller
      */
     public function register(StoreKhachHangRequest $request)
     {
+        // Kiểm tra nếu email hoặc tên người dùng đã tồn tại
+        $existingUser = KhachHang::query()
+            ->where('ten_nguoi_dung', $request->ten_nguoi_dung)
+            ->orWhere('email', $request->email)
+            ->first();
+
+        if ($existingUser) {
+            $errorMessage = $existingUser->email === $request->email
+                ? 'Email đã tồn tại trên hệ thống.'
+                : 'Tên người dùng đã tồn tại trên hệ thống.';
+            return response()->json([
+                'message' => $errorMessage,
+            ], Response::HTTP_BAD_REQUEST);
+        }
+
+        // Tạo mới khách hàng với trạng thái mặc định là 1
         $khachHang = KhachHang::query()->create([
             'ten_nguoi_dung' => $request->ten_nguoi_dung,
             'email' => $request->email,
             'mat_khau' => Hash::make($request->mat_khau),
+            'trang_thai' => 1, // Trạng thái mặc định là 1 (kích hoạt)
         ]);
 
         // Trả về phản hồi JSON
         return response()->json([
-            'message' => 'Đăng ký thành công !',
-            'data' => $khachHang
-            // 'redirect_url' => '/khach-hang/dashboard'
+            'message' => 'Đăng ký thành công!',
+            'data' => $khachHang,
         ], Response::HTTP_CREATED);
     }
+
+
 
     /**
      * Xử lý đăng xuất khách hàng.
