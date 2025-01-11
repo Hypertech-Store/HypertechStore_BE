@@ -13,3 +13,6 @@ Route::prefix('quan-tri-viens')->group(function () {
     Route::get('/detail/{id}', [QuanTriVienController::class, 'show']); // Lấy chi tiết
     Route::post('/login', [QuanTriVienController::class, 'login']);
 });
+
+Route::get('/get-all-quan-tri-vien', [QuanTriVienController::class, 'getAllAdmin']);
+

@@ -19,6 +19,14 @@ class KhachHangController extends Controller
     /**
      * Display a listing of the resource.
      */
+    public function getAllKhachHang(): \Illuminate\Http\JsonResponse
+    {
+        // Lấy tất cả các bản ghi từ bảng QuanTriVien
+        $khachHangs = KhachHang::all();
+
+        // Trả về kết quả dưới dạng JSON
+        return response()->json($khachHangs, 200);
+    }
 
     public function login(Request $request): \Illuminate\Http\JsonResponse
     {
