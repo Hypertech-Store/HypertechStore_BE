@@ -98,6 +98,41 @@ class TrangThaiDonHangController extends Controller
         return response()->json($trangThaiDonHang);
     }
 
+
+    public function updateStatus(Request $request)
+    {
+        // Xác thực dữ liệu đầu vào
+        $validated = $request->validate([
+            'trang_thai_id' => 'required|integer|exists:trang_thai_don_hangs,id', // Kiểm tra trang_thai_id tồn tại
+            'trang_thai'    => 'required|boolean', // Giá trị trạng thái phải là 0 hoặc 1
+        ]);
+
+        // Tìm khách hàng theo ID
+        $trangThaiDonHang = TrangThaiDonHang::find($validated['trang_thai_id']);
+
+        if (!$trangThaiDonHang) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Trạng thái không tìm thấy.',
+            ], 404);
+        }
+
+        // Cập nhật trạng thái
+        $trangThaiDonHang->trang_thai = $validated['trang_thai'];
+        $trangThaiDonHang->save();
+
+        // Trả về dữ liệu phương thức vận chuyển sau khi cập nhật
+        return response()->json([
+            'success' => true,
+            'message' => 'Cập nhật trạng thái thành công.',
+            'data' => [
+                'trang_thai_id' => $trangThaiDonHang->id,
+                'trang_thai' => $trangThaiDonHang->trang_thai,
+                // Thêm bất kỳ trường nào khác bạn cần đưa vào response
+            ],
+        ]);
+    }
+
     /**
      * Xóa trạng thái đơn hàng.
      */

@@ -12,6 +12,7 @@ class PhuongThucThanhToan extends Model
     protected $fillable = [
         'ten_phuong_thuc',
         'anh_phuong_thuc',
+        'trang_thai'
     ];
 
     public function donHangs()

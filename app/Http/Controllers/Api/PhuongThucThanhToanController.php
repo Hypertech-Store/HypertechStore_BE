@@ -126,6 +126,41 @@ class PhuongThucThanhToanController extends Controller
     }
 
 
+    public function updateStatus(Request $request)
+    {
+        // Xác thực dữ liệu đầu vào
+        $validated = $request->validate([
+            'phuong_thuc_id' => 'required|integer|exists:phuong_thuc_thanh_toans,id', // Kiểm tra phuong_thuc_id tồn tại
+            'trang_thai'    => 'required|boolean', // Giá trị trạng thái phải là 0 hoặc 1
+        ]);
+
+        // Tìm khách hàng theo ID
+        $data = PhuongThucThanhToan::find($validated['phuong_thuc_id']);
+
+        if (!$data) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Phương thức phương thức không tìm thấy.',
+            ], 404);
+        }
+
+        // Cập nhật trạng thái
+        $data->trang_thai = $validated['trang_thai'];
+        $data->save();
+
+        // Trả về dữ liệu phương thức vận chuyển sau khi cập nhật
+        return response()->json([
+            'success' => true,
+            'message' => 'Cập nhật trạng thái thành công.',
+            'data' => [
+                'phuong_thuc_id' => $data->id,
+                'trang_thai' => $data->trang_thai,
+                // Thêm bất kỳ trường nào khác bạn cần đưa vào response
+            ],
+        ]);
+    }
+
+
     /**
      * Remove the specified resource from storage.
      */

@@ -11,10 +11,10 @@ class TrangThaiDonHang extends Model
     protected $fillable = [
         'ten_trang_thai',
         'mo_ta',
+        'trang_thai'
     ];
     public function donHangs()
     {
         return $this->hasMany(DonHang::class, 'trang_thai_don_hang_id');
     }
-
 }

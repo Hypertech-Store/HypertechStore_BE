@@ -12,11 +12,14 @@ class HinhThucVanChuyen extends Model
     protected $fillable = [
         'ten_van_chuyen',
         'mo_ta',
-        'gia_van_chuyen'
+        'gia_van_chuyen',
+        'trang_thai'
     ];
+
+
+
     public function donHangs()
     {
         return $this->hasMany(DonHang::class, 'hinh_thuc_van_chuyen_id');
     }
-
 }
