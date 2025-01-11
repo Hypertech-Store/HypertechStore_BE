@@ -111,12 +111,7 @@ class DanhMucController extends Controller
     {
 
         try {
-            $danhMuc = DanhMuc::findOrFail($id);
-
-            $danhMuc->danhMucCons()->delete();
-
-            $danhMuc->delete();
-
+            DanhMuc::destroy($id);
             return response()->json([
                 'message' => 'Xóa thành công',
             ], Response::HTTP_OK);

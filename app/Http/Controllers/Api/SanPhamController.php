@@ -654,12 +654,10 @@ class SanPhamController extends Controller
     }
     public function deleteProduct($id)
     {
-        $sanPham = SanPham::find($id);
+        $sanPham = SanPham::destroy($id);
         if (!$sanPham) {
             return response()->json(['message' => 'Sản phẩm không tồn tại'], 404);
         }
-
-        $sanPham->delete();
         return response()->json(['message' => 'Xóa sản phẩm thành công'], 200);
     }
     public function getNewProducts()
@@ -788,9 +786,6 @@ class SanPhamController extends Controller
             'total' => $sanPhams->total(),
         ], 200);
     }
-
-
-
     public function timKiemSanPham(Request $request)
     {
         $query = SanPham::query();
