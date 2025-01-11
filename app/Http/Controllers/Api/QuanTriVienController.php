@@ -69,12 +69,14 @@ class QuanTriVienController extends Controller
                 'email' => 'required|email|unique:quan_tri_viens,email,' . $id, // Chỉ kiểm tra unique trừ bản ghi hiện tại
                 'role' => 'required|int',
                 'trang_thai' => 'required|int',
-                'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+                'image' => 'nullable',
                 'dia_chi' => 'nullable|string|max:255',
                 'so_dien_thoai' => 'nullable|string|max:15',
             ]);
 
-            // Nếu có ảnh mới, lưu ảnh và cập nhật đường dẫn
+            // Lấy ảnh cũ từ database
+            $imgOld = $data->anh_nguoi_dung;
+
             if ($request->hasFile('image')) {
                 // Xóa ảnh cũ nếu có
                 if ($data->anh_nguoi_dung && Storage::exists('public/' . $data->anh_nguoi_dung)) {
@@ -88,10 +90,10 @@ class QuanTriVienController extends Controller
                 $validated['anh_nguoi_dung'] = $path;
             } else {
                 // Nếu không có ảnh mới, giữ nguyên ảnh cũ
-                $validated['anh_nguoi_dung'] = $data->anh_nguoi_dung;
+                $validated['anh_nguoi_dung'] = $imgOld;
             }
 
-            // Cập nhật dữ liệu vào cơ sở dữ liệu chỉ một lần
+            // Cập nhật dữ liệu vào cơ sở dữ liệu
             $result = $data->update([
                 'ten_dang_nhap' => $validated['ten_dang_nhap'],
                 'mat_khau' => $validated['mat_khau'],
@@ -101,7 +103,7 @@ class QuanTriVienController extends Controller
                 'trang_thai' => $validated['trang_thai'],
                 'dia_chi' => $validated['dia_chi'] ?? "",
                 'so_dien_thoai' => $validated['so_dien_thoai'] ?? "",
-                'anh_nguoi_dung' => $path,
+                'anh_nguoi_dung' => $validated['anh_nguoi_dung'], // Dùng ảnh mới nếu có hoặc ảnh cũ nếu không có ảnh mới
             ]);
 
             if ($result) {
@@ -131,6 +133,7 @@ class QuanTriVienController extends Controller
             return response()->json(['message' => 'Có lỗi xảy ra khi cập nhật quản trị viên'], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
+
 
 
 
