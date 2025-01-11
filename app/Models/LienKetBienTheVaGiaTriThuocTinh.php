@@ -10,6 +10,7 @@ class LienKetBienTheVaGiaTriThuocTinh extends Model
     use HasFactory;
     protected $fillable = [
         'bien_the_san_pham_id',
+        'gia',
         'gia_tri_thuoc_tinh_id',
     ];
 

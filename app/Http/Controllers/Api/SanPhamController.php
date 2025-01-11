@@ -117,13 +117,13 @@ class SanPhamController extends Controller
 
     public function getAllProductClient(Request $request): JsonResponse
     {
-        // Lấy query param với giá trị mặc định: page = 1 và number_row = 9
-        $page = $request->query('page', 1);
-        $numberRow = $request->query('number_row', default: 9);
+        // Lấy tất cả sản phẩm mà không phân trang
+        $sanPhams = SanPham::all();
 
-        // Lấy dữ liệu với phân trang
-        $sanPhams = SanPham::paginate($numberRow, ['*'], 'page', $page);
+        // Tính toán tổng số sản phẩm
+        $totalProducts = $sanPhams->count();
 
+        // Tính toán giá trị minPrice và maxPrice
         $minPrice = SanPham::min('gia');
         $maxPrice = SanPham::max('gia');
 
@@ -193,11 +193,13 @@ class SanPhamController extends Controller
         // Trả về dữ liệu dưới dạng JSON
         return response()->json([
             'status' => 'success',
-            'data' => $sanPhams,
+            'data' => $sanPhams, // Dữ liệu sản phẩm (không phân trang)
             'min_price' => $minPrice,
             'max_price' => $maxPrice,
+            'total_products' => $totalProducts, // Tổng số sản phẩm
         ]);
     }
+
 
     public function searchProduct(Request $request): JsonResponse
     {
@@ -397,43 +399,24 @@ class SanPhamController extends Controller
     {
         // Xác thực dữ liệu đầu vào
         $validated = $request->validate([
-            'san_pham_id' => 'required|integer|exists:san_phams,id', // Kiểm tra san_pham_id tồn tại
-            'trang_thai_ton_kho' => 'sometimes|boolean', // Giá trị trạng thái có thể là 0 hoặc 1 nếu được cung cấp
+            'san_pham_id' => 'required|integer|exists:san_phams,id', // Kiểm tra khach_hang_id tồn tại
+            'trang_thai_ton_kho'    => 'required|boolean', // Giá trị trạng thái phải là 0 hoặc 1
         ]);
 
-        // Tìm sản phẩm theo ID
+
+        // Tìm khách hàng theo ID
         $sanPham = SanPham::find($validated['san_pham_id']);
 
-        if (!$sanPham) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Sản phẩm không tồn tại.',
-            ], 404);
-        }
-
-        // Kiểm tra số lượng tồn kho và cập nhật trạng thái tồn kho
-        if ($sanPham->so_luong_ton_kho == 0) {
-            $sanPham->trang_thai_ton_kho = 0; // Nếu số lượng tồn kho là 0, cập nhật trạng thái tồn kho là 0
-        } else {
-            $sanPham->trang_thai_ton_kho = 1; // Nếu số lượng tồn kho > 0, cập nhật trạng thái tồn kho là 1
-        }
-
-        // Nếu trạng thái tồn kho được cung cấp trong yêu cầu, sử dụng giá trị đó để cập nhật
-        if (isset($validated['trang_thai_ton_kho'])) {
-            $sanPham->trang_thai_ton_kho = $validated['trang_thai_ton_kho'];
-        }
-
-        // Lưu các thay đổi
+        // Cập nhật trạng thái
+        $sanPham->trang_thai_ton_kho = $validated['trang_thai_ton_kho'];
         $sanPham->save();
 
-        // Trả về phản hồi
         return response()->json([
             'success' => true,
-            'message' => 'Cập nhật trạng thái tồn kho thành công.',
+            'message' => 'Cập nhật trạng thái thành công.',
             'data' => [
                 'san_pham_id' => $sanPham->id,
                 'trang_thai_ton_kho' => $sanPham->trang_thai_ton_kho,
-                'so_luong_ton_kho' => $sanPham->so_luong_ton_kho, // Bao gồm thông tin số lượng tồn kho nếu cần
             ],
         ]);
     }
@@ -576,6 +559,7 @@ class SanPhamController extends Controller
 
         ], 200);
     }
+
     public function getDetail($id)
     {
         // Get the product details along with its related images
@@ -734,6 +718,111 @@ class SanPhamController extends Controller
             'bestSellingProducts' => $bestSellingProducts, // Top 10 bestseller
         ], 200);
     }
+
+
+    public function getProductVariants($productId)
+    {
+        // Truy vấn dữ liệu từ các bảng liên quan
+        $variants = DB::table('bien_the_san_phams AS bts')
+            ->leftJoin('san_phams AS sp', 'bts.san_pham_id', '=', 'sp.id')
+            ->leftJoin('lien_ket_bien_the_va_gia_tri_thuoc_tinhs AS lbgt', 'bts.id', '=', 'lbgt.bien_the_san_pham_id')
+            ->leftJoin('hinh_anh_san_phams AS HASAN', 'lbgt.id', '=', 'HASAN.lien_ket_bien_the_va_gia_tri_thuoc_tinh_id')
+            ->leftJoin('gia_tri_thuoc_tinhs AS GTS', 'lbgt.gia_tri_thuoc_tinh_id', '=', 'GTS.id')
+            ->leftJoin('thuoc_tinh_san_phams AS TTS', 'GTS.thuoc_tinh_san_pham_id', '=', 'TTS.id')
+            ->leftJoin('danh_mucs AS dm', 'sp.danh_muc_id', '=', 'dm.id')
+            ->leftJoin('danh_muc_cons AS dmc', 'sp.danh_muc_con_id', '=', 'dmc.id')
+            ->select(
+                'bts.id AS bien_the_id',
+                'sp.id AS san_pham_id',
+                'sp.ten_san_pham',
+                'sp.mo_ta',
+                'sp.gia',
+                'sp.danh_muc_id',
+                'sp.danh_muc_con_id',
+                'dm.ten_danh_muc',
+                'dmc.ten_danh_muc_con AS ten_danh_muc_con',
+                'sp.so_luong_ton_kho',
+                'sp.luot_xem',
+                'sp.trang_thai_ton_kho',
+                'bts.so_luong_kho',
+                'bts.gia AS gia_bien_the',
+                DB::raw('GROUP_CONCAT(GTS.ten_gia_tri ORDER BY TTS.ten_thuoc_tinh) AS ten_gia_tri'),
+                DB::raw('GROUP_CONCAT(TTS.ten_thuoc_tinh ORDER BY TTS.ten_thuoc_tinh) AS ten_thuoc_tinh'),
+                DB::raw('GROUP_CONCAT(HASAN.duong_dan_hinh_anh ORDER BY HASAN.duong_dan_hinh_anh) AS duong_dan_hinh_anh')
+            )
+            ->where('bts.san_pham_id', $productId)
+            ->groupBy(
+                'bts.id',
+                'sp.id',
+                'sp.ten_san_pham',
+                'sp.mo_ta',
+                'sp.gia',
+                'sp.danh_muc_id',
+                'sp.danh_muc_con_id',
+                'dm.ten_danh_muc',
+                'dmc.ten_danh_muc_con',
+                'sp.so_luong_ton_kho',
+                'sp.luot_xem',
+                'sp.trang_thai_ton_kho',
+                'bts.so_luong_kho',
+                'bts.gia'
+            )
+            ->orderBy('bts.id')
+            ->get();
+
+        // Xây dựng kết quả trả về
+        $result = [
+            'san_pham_id' => $productId,
+            'ten_san_pham' => '',
+            'mo_ta' => '',
+            'gia_goc' => '',
+            'ten_danh_muc' => '',
+            'ten_danh_muc_con' => '',
+            'so_luong_ton_kho' => 0,
+            'luot_xem' => 0,
+            'trang_thai_ton_kho' => ''
+        ];
+
+        foreach ($variants as $variant) {
+            // Lưu thông tin chung của sản phẩm
+            $result['ten_san_pham'] = $variant->ten_san_pham ?? 'Product name not found';
+            $result['mo_ta'] = $variant->mo_ta ?? '';
+            $result['gia_goc'] = $variant->gia ?? '';
+            $result['ten_danh_muc'] = $variant->ten_danh_muc ?? '';
+            $result['ten_danh_muc_con'] = $variant->ten_danh_muc_con ?? '';
+            $result['so_luong_ton_kho'] = $variant->so_luong_ton_kho ?? 0;
+            $result['luot_xem'] = $variant->luot_xem ?? 0;
+            $result['trang_thai_ton_kho'] = $variant->trang_thai_ton_kho ?? '';
+
+            // Xử lý các biến thể
+            $tenGiaTriArray = explode(',', $variant->ten_gia_tri);
+            $tenThuocTinhArray = explode(',', $variant->ten_thuoc_tinh);
+            $hinhAnhArray = explode(',', $variant->duong_dan_hinh_anh);
+
+            $result['bien_the_san_pham'][] = [
+                'bien_the_id' => $variant->bien_the_id,
+                'so_luong_kho' => $variant->so_luong_kho,
+                'gia_bien_the' => $variant->gia_bien_the,
+                'bien_the' => array_map(function ($name, $property) {
+                    return [
+                        'ten_gia_tri' => $name,
+                        'ten_thuoc_tinh' => $property,
+                    ];
+                }, $tenGiaTriArray, $tenThuocTinhArray),
+                'anh_bien_the' => array_map(function ($imagePath) {
+                    return [
+                        'duong_dan_hinh_anh' => $imagePath,
+                    ];
+                }, $hinhAnhArray),
+            ];
+        }
+
+        return response()->json($result);
+    }
+
+
+
+
     public function deleteProduct($id)
     {
         $sanPham = SanPham::destroy($id);
