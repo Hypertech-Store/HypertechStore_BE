@@ -133,6 +133,33 @@ class QuanTriVienController extends Controller
     }
 
 
+    public function updateStatus(Request $request)
+    {
+
+        // Xác thực dữ liệu đầu vào
+        $validated = $request->validate([
+            'quan_tri_vien_id' => 'required|integer|exists:quan_tri_viens,id', // Kiểm tra quan_tri_vien_id tồn tại
+            'trang_thai'    => 'required|boolean', // Giá trị trạng thái phải là 0 hoặc 1
+        ]);
+
+
+        // Tìm khách hàng theo ID
+        $quanTriVien = QuanTriVien::find($validated['quan_tri_vien_id']);
+
+        // Cập nhật trạng thái
+        $quanTriVien->trang_thai = $validated['trang_thai'];
+        $quanTriVien->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cập nhật trạng thái thành công.',
+            'data' => [
+                'quan_tri_vien_id' => $quanTriVien->id,
+                'trang_thai' => $quanTriVien->trang_thai,
+            ],
+        ]);
+    }
+
 
 
     // Xóa quản trị viên
@@ -144,19 +171,7 @@ class QuanTriVienController extends Controller
         return response()->json(['message' => 'Quản trị viên đã được xóa'], 200);
     }
 
-    public function toggleActive($id): \Illuminate\Http\JsonResponse
-    {
-        $quanTriVien = QuanTriVien::findOrFail($id);
 
-        // Đảo trạng thái trang_thai
-        $quanTriVien->trang_thai = !$quanTriVien->trang_thai;
-        $quanTriVien->save();
-
-        return response()->json([
-            'message' => 'Cập nhật trạng thái thành công',
-            'data' => $quanTriVien,
-        ], 200);
-    }
 
     public function index(Request $request): \Illuminate\Http\JsonResponse
     {
