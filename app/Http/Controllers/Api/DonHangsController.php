@@ -80,6 +80,11 @@ class DonHangsController extends Controller
             if ($variant) {
                 $variant->decrement('so_luong_kho', $product['so_luong']);
             }
+
+            $productDetails = SanPham::find($product['san_pham_id']);
+            if ($productDetails) {
+                $productDetails->decrement('so_luong_ton_kho', $product['so_luong']);
+            }
         }
 
         $discountAmount = 0;
@@ -160,8 +165,37 @@ class DonHangsController extends Controller
     public function orderDetails($orderId): \Illuminate\Http\JsonResponse
     {
         // Tìm đơn hàng theo orderId và bao gồm thông tin liên quan
-        $donHang = DonHang::with(['chiTietDonHangs.sanPham.danhMuc', 'phuongThucThanhToan', 'trangThaiDonHang'])
+        $donHang = DonHang::with([
+            'chiTietDonHangs.sanPham',
+            'phuongThucThanhToan',
+            'trangThaiDonHang',
+            'khachHang',
+            'hinhThucVanChuyen'
+        ])
             ->find($orderId);
+
+        $donHang['ho_ten'] = $donHang['khachHang']['ho_ten'] ?? 'Chưa cập nhật';
+        unset($donHang['khachHang']);
+
+        $donHang['trang_thai_don_hang'] = $donHang['trangThaiDonHang']['ten_trang_thai'] ?? 'Không xác định';
+        $donHang['trang_thai_don_hang_id'] = $donHang['trangThaiDonHang']['id'] ?? null;
+        unset($donHang['trangThaiDonHang']);
+
+        $donHang['ten_phuong_thuc'] = $donHang['phuongThucThanhToan']['ten_phuong_thuc'] ?? NULL;
+        unset($donHang['hinhThucVanChuyen']);
+
+        $donHang['ten_van_chuyen'] = $donHang['hinhThucVanChuyen']['ten_van_chuyen'] ?? NULL;
+        unset($donHang['hinhThucVanChuyen']);
+
+        // Lấy mã giảm giá cho từng đơn hàng (nếu có)
+        $phieuGiamGia = PhieuGiamGiaVaKhachHang::where('don_hang_id', $donHang['id'])->first(); // Query to get the voucher
+        if ($phieuGiamGia) {
+            $donHang['ma_giam_gia'] = $phieuGiamGia->phieuGiamGia->ma_giam_gia ?? null; // Access the 'phieuGiamGia' relation
+            $donHang['discount'] = $phieuGiamGia->phieuGiamGia->gia_tri_giam_gia ?? null; // Assuming 'discount' is a field in 'phieuGiamGia'
+        } else {
+            $donHang['ma_giam_gia'] = null;
+            $donHang['discount'] = null;
+        }
 
         // Kiểm tra nếu không tìm thấy đơn hàng
         if (!$donHang) {

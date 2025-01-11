@@ -19,3 +19,8 @@ Route::prefix('khach-hang')->group(function () {
 
     Route::get('/tai-khoan', [KhachHangController::class, 'getAllUsers']);
 });
+
+Route::get('/get-all-khach-hang', [KhachHangController::class, 'getAllKhachHang']);
+
+
+

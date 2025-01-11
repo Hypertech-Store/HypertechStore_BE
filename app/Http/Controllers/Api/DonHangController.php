@@ -8,6 +8,7 @@ use App\Models\BienTheSanPham;
 use App\Models\ChiTietDonHang;
 use App\Models\DonHang;
 use App\Models\GioHang;
+use App\Models\PhieuGiamGiaVaKhachHang;
 use App\Models\PhuongThucThanhToan;
 use App\Models\ThanhToan;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -31,8 +32,8 @@ class DonHangController extends Controller
                 'chiTietDonHangs.sanPham',
                 'phuongThucThanhToan',
                 'trangThaiDonHang',
-                'khachHang', // Eager load the related 'khach_hang' model
-                'hinhThucVanChuyen' // Eager load the related 'hinh_thuc_van_chuyen' model
+                'khachHang',
+                'hinhThucVanChuyen'
             ])
                 ->paginate($perPage);
 
@@ -58,6 +59,16 @@ class DonHangController extends Controller
                 // Lấy tên hình thức vận chuyển từ quan hệ 'hinhThucVanChuyen' và gán vào 'ten_van_chuyen', nếu không có thì gán NULL
                 $donHang['ten_van_chuyen'] = $donHang['hinhThucVanChuyen']['ten_van_chuyen'] ?? NULL; // Hoặc bạn có thể gán rỗng: ''
                 unset($donHang['hinhThucVanChuyen']); // Xóa quan hệ 'hinhThucVanChuyen' sau khi đã lấy tên
+
+                // Lấy mã giảm giá cho từng đơn hàng (nếu có)
+                $phieuGiamGia = PhieuGiamGiaVaKhachHang::where('don_hang_id', $donHang['id'])->first(); // Query to get the voucher
+                if ($phieuGiamGia) {
+                    $donHang['ma_giam_gia'] = $phieuGiamGia->phieuGiamGia->ma_giam_gia ?? null; // Access the 'phieuGiamGia' relation
+                    $donHang['discount'] = $phieuGiamGia->phieuGiamGia->gia_tri_giam_gia ?? null; // Assuming 'discount' is a field in 'phieuGiamGia'
+                } else {
+                    $donHang['ma_giam_gia'] = null;
+                    $donHang['discount'] = null;
+                }
             }
 
             // Định nghĩa lại phân trang thủ công
@@ -79,6 +90,8 @@ class DonHangController extends Controller
             ], 500);
         }
     }
+
+
 
 
     /**
@@ -149,7 +162,29 @@ class DonHangController extends Controller
                 'trang_thai_don_hang_id' => 'required|exists:trang_thai_don_hangs,id',
             ]);
 
-            // Chỉ cập nhật trạng thái đơn hàng
+            if ($request->trang_thai_don_hang_id == 2) {
+                // Xác thực lý do hủy và người hủy
+                $request->validate([
+                    'ly_do_huy_don' => 'required|string|max:255',
+                    'nguoi_huy' => 'required|string|max:255',
+                ]);
+
+                // Cập nhật lý do hủy và người hủy vào đơn hàng
+                $data->ly_do_huy_don = $request->ly_do_huy_don;
+                $data->nguoi_huy = $request->nguoi_huy;
+            }
+
+            if ($request->trang_thai_don_hang_id == 8) {
+                // Xác thực lý do hủy và người hủy
+                $request->validate([
+                    'ly_do_hoan_hang' => 'required|string|max:255',
+                ]);
+
+                // Cập nhật lý do hủy và người hủy vào đơn hàng
+                $data->ly_do_hoan_hang = $request->ly_do_hoan_hang;
+            }
+
+            // Cập nhật trạng thái đơn hàng
             $data->trang_thai_don_hang_id = $request->trang_thai_don_hang_id;
             $data->save();
 
@@ -172,7 +207,6 @@ class DonHangController extends Controller
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-
 
     /**
      * Remove the specified resource from storage.
