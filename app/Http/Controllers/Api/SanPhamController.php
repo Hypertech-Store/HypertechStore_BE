@@ -880,6 +880,39 @@ class SanPhamController extends Controller
             'san_phams' => $danhMuc->sanPhams
         ], 200);
     }
+
+    public function getSanPhamTheoDanhMucTuSanPhamId($sanPhamId)
+    {
+        // Tìm sản phẩm theo ID
+        $sanPham = SanPham::with('danhMuc')->find($sanPhamId);
+
+        if (!$sanPham) {
+            return response()->json([
+                'message' => 'Sản phẩm không tồn tại.'
+            ], 404);
+        }
+
+        // Lấy danh mục ID từ sản phẩm
+        $danhMucId = $sanPham->danh_muc_id;
+
+        // Tìm danh mục cùng danh sách sản phẩm thuộc danh mục
+        $danhMuc = DanhMuc::with('sanPhams')->find($danhMucId);
+
+        if (!$danhMuc) {
+            return response()->json([
+                'message' => 'Danh mục không tồn tại.'
+            ], 404);
+        }
+
+        return response()->json([
+            'san_pham_id' => $sanPham->id,
+            'ten_san_pham' => $sanPham->ten_san_pham,
+            'danh_muc_id' => $danhMuc->id,
+            'ten_danh_muc' => $danhMuc->ten_danh_muc,
+            'san_phams' => $danhMuc->sanPhams
+        ], 200);
+    }
+
     public function getSanPhamTheoDanhMucCon($danhMucConId, Request $request)
     {
         // Tìm danh mục con theo id
