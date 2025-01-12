@@ -48,7 +48,7 @@ class DonHangController extends Controller
             $formattedItems = $data->items(); // Lấy danh sách hiện tại của các item
             foreach ($formattedItems as &$donHang) {
                 // Lấy tên khách hàng từ quan hệ 'khachHang' và gán vào 'ho_ten', nếu không có thì gán NULL
-                $donHang['ho_ten'] = $donHang['khachHang']['ho_ten'] ?? 'Chưa cập nhật'; // Hoặc bạn có thể gán rỗng: ''
+                $donHang['ho_ten_khach_hang'] = $donHang['khachHang']['ho_ten'] ?? 'Chưa cập nhật'; // Hoặc bạn có thể gán rỗng: ''
                 unset($donHang['khachHang']); // Xóa quan hệ 'khachHang' sau khi đã lấy tên
 
                 // Lấy thông tin trạng thái đơn hàng
