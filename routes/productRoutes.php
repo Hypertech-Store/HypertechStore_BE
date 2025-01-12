@@ -18,6 +18,7 @@ Route::prefix('san-pham')->group(function () {
     Route::get('/getNewProducts', [SanPhamController::class, 'getNewProducts']);
     Route::get('/getBestSellingProduct', [SanPhamController::class, 'getBestSellingProduct']);
     Route::get('/danh-muc/{id}', [SanPhamController::class, 'getSanPhamTheoDanhMuc']);
+    Route::get('/san-pham-lien-quan/{sanPhamId}', [SanPhamController::class, 'getSanPhamTheoDanhMucTuSanPhamId']);
     Route::get('/danh-muc-con/{id}', [SanPhamController::class, 'getSanPhamTheoDanhMucCon']);
     Route::get('/tim-kiem', [SanPhamController::class, 'timKiemSanPham']);
     Route::get('/loc-gia', [SanPhamController::class, 'locSanPhamTheoGia']);
