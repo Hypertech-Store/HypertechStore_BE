@@ -32,6 +32,7 @@ class HinhThucVanChuyenController extends Controller
             'gia_van_chuyen' => 'nullable|numeric',
             'mo_ta' => 'nullable|string',
         ]);
+        $request['trang_thai'] = 1;
         $data = HinhThucVanChuyen::query()->create($request->all());
 
         return response()->json([

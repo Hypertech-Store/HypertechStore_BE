@@ -28,8 +28,9 @@ class PhuongThucThanhToanController extends Controller
      */
     public function store(StorePhuongThucThanhToanRequest $request)
     {
-        $data = $request->all();
+        $request['trang_thai'] = 1;
 
+        $data = $request->all();
         if ($request->hasFile('image')) {
             // Upload hình ảnh và lưu đường dẫn
             $path = $request->file('image')->store('phuong_thuc_thanh_toans', 'public');

@@ -117,8 +117,11 @@ class SanPhamController extends Controller
 
     public function getAllProductClient(Request $request): JsonResponse
     {
-        // Lấy tất cả sản phẩm mà không phân trang
-        $sanPhams = SanPham::all();
+        $page = $request->query('page', 1);
+        $numberRow = $request->query('number_row', 9);
+
+        // Lấy dữ liệu với phân trang
+        $sanPhams = SanPham::where('trang_thai_ton_kho', 1)->paginate($numberRow, ['*'], 'page', $page);
 
         // Tính toán tổng số sản phẩm
         $totalProducts = $sanPhams->count();
@@ -341,6 +344,7 @@ class SanPhamController extends Controller
             'mo_ta' => $validated['mo_ta'] ?? null,
             'gia' => $validated['gia'],
             'so_luong_ton_kho' => $validated['so_luong_ton_kho'],
+            'trang_thai_ton_kho' => 1,
             'duong_dan_anh' => $path,
             'luot_xem' => $validated['luot_xem'] ?? 0,
         ]);

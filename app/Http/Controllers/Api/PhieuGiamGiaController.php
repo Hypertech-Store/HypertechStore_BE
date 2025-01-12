@@ -28,7 +28,7 @@ class PhieuGiamGiaController extends Controller
      */
     public function store(StorePhieuGiamGiaRequest $request)
     {
-        // Lấy dữ liệu đã được validate từ Request
+        $request['trang_thai'] = 1;
         $validated = $request->validated();
 
         // Tự động sinh mã giảm giá

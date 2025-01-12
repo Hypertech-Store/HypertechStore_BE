@@ -38,6 +38,7 @@ class DanhMucController extends Controller
     public function store(StoreDanhMucRequest $request)
     {
 
+        $request['trang_thai'] = 1;
         $data = DanhMuc::query()->create($request->all());
 
         return response()->json([

@@ -20,7 +20,7 @@ class TrangThaiDonHangController extends Controller
     {
         try {
             // Số lượng bản ghi mỗi trang
-            $perPage = 5; // Example: you can change it as needed or make it dynamic with $request
+            $perPage = 10; // Example: you can change it as needed or make it dynamic with $request
 
             // Lấy tất cả trạng thái đơn hàng với phân trang
             $trangThaiDonHangs = TrangThaiDonHang::paginate($perPage);
