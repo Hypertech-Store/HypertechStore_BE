@@ -55,6 +55,7 @@ class DanhMucConController extends Controller
      */
     public function store(StoreDanhMucConRequest $request)
     {
+        $request['trang_thai'] = 1;
         $data = $request->all();
 
         if ($request->hasFile('image')) {
