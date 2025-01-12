@@ -179,7 +179,6 @@ class KhachHangController extends Controller
         ], Response::HTTP_OK);
     }
 
- http://127.0.0.1:8000/api/san-pham/trang-thai
     // Gửi email đặt lại mật khẩu
     public function quenMatKhau(Request $request): \Illuminate\Http\JsonResponse
     {
