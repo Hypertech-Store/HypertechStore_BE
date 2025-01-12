@@ -180,7 +180,7 @@ class DonHangsController extends Controller
         ])
             ->find($orderId);
 
-        $donHang['ho_ten'] = $donHang['khachHang']['ho_ten'] ?? 'Chưa cập nhật';
+        $donHang['ho_ten_khach_hang'] = $donHang['khachHang']['ho_ten'] ?? 'Chưa cập nhật';
         unset($donHang['khachHang']);
 
         $donHang['trang_thai_don_hang'] = $donHang['trangThaiDonHang']['ten_trang_thai'] ?? 'Không xác định';
