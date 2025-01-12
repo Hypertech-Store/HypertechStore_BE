@@ -23,7 +23,7 @@ class GioHangController extends Controller
             ->with([
                 'chiTietGioHangs.sanPham',
                 'chiTietGioHangs.bienTheSanPham',
-                'chiTietGioHangs.bienTheSanPham.lienKetBienTheVaGiaTri.giaTriThuocTinh',
+                'chiTietGioHangs.bienTheSanPham.lienKetBienTheVaGiaTri.giaTriThuocTinh', // Lấy giaTriThuocTinh từ lienKetBienTheVaGiaTri
                 'chiTietGioHangs.bienTheSanPham.lienKetBienTheVaGiaTri.hinhAnhSanPhams',
             ])
             ->first();
@@ -43,19 +43,25 @@ class GioHangController extends Controller
                 return;
             }
 
+            // Giải mã thuộc tính nếu có
             if ($chiTiet->thuoc_tinh) {
                 $chiTiet->thuoc_tinh = json_decode($chiTiet->thuoc_tinh, true);
             }
 
+            // Lấy các liên kết hình ảnh từ lienKetBienTheVaGiaTri
             $imageLinks = $bienThe->lienKetBienTheVaGiaTri->flatMap(function ($link) {
                 return $link->hinhAnhSanPhams->pluck('duong_dan_hinh_anh');
             });
 
-            // Lấy ten_gia_tri từ lienKetBienTheVaGiaTri và gán cho bien_the
+            // Lấy giá trị thuộc tính từ lienKetBienTheVaGiaTri, bao gồm giaTriThuocTinh_id
             $bienTheValues = $bienThe->lienKetBienTheVaGiaTri->map(function ($link) {
-                return $link->giaTriThuocTinh->ten_gia_tri ?? null;
+                return [
+                    'ten_gia_tri' => $link->giaTriThuocTinh->ten_gia_tri ?? null,
+                    'gia_tri_thuoc_tinh_id' => $link->giaTriThuocTinh->id ?? null, // Lấy gia_tri_thuoc_tinh_id
+                ];
             })->filter()->toArray();
 
+            // Tính toán giảm giá và giá sau khi áp dụng sale
             $sale = SaleSanPham::where('san_pham_id', $sanPhamData->id)
                 ->where('ngay_bat_dau_sale', '<=', $currentDate)
                 ->where('ngay_ket_thuc_sale', '>=', $currentDate)
@@ -65,14 +71,15 @@ class GioHangController extends Controller
             $giaSauSale = $sanPhamData->gia * (1 - $salePercentage / 100);
             $giaSauSaleThemGiaBienThe = $giaSauSale + $bienThe->gia;
 
+            // Tính tổng tiền cho sản phẩm
             $tongTien = $giaSauSaleThemGiaBienThe * $chiTiet->so_luong;
 
-            // Thêm ID của chiTiet vào productDetails
+            // Thêm chi tiết sản phẩm vào mảng sanPham
             $productDetails = [
                 'chi_tiet_id' => $chiTiet->id,  // Thêm ID của chi tiết giỏ hàng
                 'san_pham_id' => $sanPhamData->id,
                 'bien_the_san_pham_id' => $bienThe->id, // Thêm bien_the_san_pham_id vào đây
-                'bien_the' => $bienTheValues, // Đưa ten_gia_tri vào bien_the
+                'bien_the' => $bienTheValues, // Đưa ten_gia_tri vào bien_the và gia_tri_thuoc_tinh_id
                 'ten_san_pham' => $sanPhamData->ten_san_pham,
                 'gia_goc' => $sanPhamData->gia,
                 'gia_sau_sale' => $giaSauSale,
@@ -82,6 +89,7 @@ class GioHangController extends Controller
                 'images' => $imageLinks->toArray(),
             ];
 
+            // Thêm chi tiết sản phẩm vào mảng chung
             $sanPham[] = $productDetails;
         });
 
@@ -94,8 +102,6 @@ class GioHangController extends Controller
             200
         );
     }
-
-
 
 
 
