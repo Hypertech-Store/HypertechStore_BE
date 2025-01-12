@@ -722,103 +722,72 @@ class SanPhamController extends Controller
 
     public function getProductVariants($productId)
     {
-        // Truy vấn dữ liệu từ các bảng liên quan
+        // Truy vấn dữ liệu chỉ lấy các thông tin cần thiết
         $variants = DB::table('bien_the_san_phams AS bts')
-            ->leftJoin('san_phams AS sp', 'bts.san_pham_id', '=', 'sp.id')
             ->leftJoin('lien_ket_bien_the_va_gia_tri_thuoc_tinhs AS lbgt', 'bts.id', '=', 'lbgt.bien_the_san_pham_id')
-            ->leftJoin('hinh_anh_san_phams AS HASAN', 'lbgt.id', '=', 'HASAN.lien_ket_bien_the_va_gia_tri_thuoc_tinh_id')
             ->leftJoin('gia_tri_thuoc_tinhs AS GTS', 'lbgt.gia_tri_thuoc_tinh_id', '=', 'GTS.id')
             ->leftJoin('thuoc_tinh_san_phams AS TTS', 'GTS.thuoc_tinh_san_pham_id', '=', 'TTS.id')
-            ->leftJoin('danh_mucs AS dm', 'sp.danh_muc_id', '=', 'dm.id')
-            ->leftJoin('danh_muc_cons AS dmc', 'sp.danh_muc_con_id', '=', 'dmc.id')
             ->select(
                 'bts.id AS bien_the_id',
-                'sp.id AS san_pham_id',
-                'sp.ten_san_pham',
-                'sp.mo_ta',
-                'sp.gia',
-                'sp.danh_muc_id',
-                'sp.danh_muc_con_id',
-                'dm.ten_danh_muc',
-                'dmc.ten_danh_muc_con AS ten_danh_muc_con',
-                'sp.so_luong_ton_kho',
-                'sp.luot_xem',
-                'sp.trang_thai_ton_kho',
+                'bts.san_pham_id',
                 'bts.so_luong_kho',
                 'bts.gia AS gia_bien_the',
+                'bts.hinh_anh',
                 DB::raw('GROUP_CONCAT(GTS.ten_gia_tri ORDER BY TTS.ten_thuoc_tinh) AS ten_gia_tri'),
-                DB::raw('GROUP_CONCAT(TTS.ten_thuoc_tinh ORDER BY TTS.ten_thuoc_tinh) AS ten_thuoc_tinh'),
-                DB::raw('GROUP_CONCAT(HASAN.duong_dan_hinh_anh ORDER BY HASAN.duong_dan_hinh_anh) AS duong_dan_hinh_anh')
+                DB::raw('GROUP_CONCAT(TTS.ten_thuoc_tinh ORDER BY TTS.ten_thuoc_tinh) AS ten_thuoc_tinh')
             )
             ->where('bts.san_pham_id', $productId)
-            ->groupBy(
-                'bts.id',
-                'sp.id',
-                'sp.ten_san_pham',
-                'sp.mo_ta',
-                'sp.gia',
-                'sp.danh_muc_id',
-                'sp.danh_muc_con_id',
-                'dm.ten_danh_muc',
-                'dmc.ten_danh_muc_con',
-                'sp.so_luong_ton_kho',
-                'sp.luot_xem',
-                'sp.trang_thai_ton_kho',
-                'bts.so_luong_kho',
-                'bts.gia'
-            )
+            ->groupBy('bts.id', 'bts.san_pham_id', 'bts.so_luong_kho', 'bts.gia', 'bts.hinh_anh')
             ->orderBy('bts.id')
             ->get();
 
         // Xây dựng kết quả trả về
         $result = [
             'san_pham_id' => $productId,
-            'ten_san_pham' => '',
-            'mo_ta' => '',
-            'gia_goc' => '',
-            'ten_danh_muc' => '',
-            'ten_danh_muc_con' => '',
-            'so_luong_ton_kho' => 0,
-            'luot_xem' => 0,
-            'trang_thai_ton_kho' => ''
+            'bien_the_san_pham' => [],
         ];
 
-        foreach ($variants as $variant) {
-            // Lưu thông tin chung của sản phẩm
-            $result['ten_san_pham'] = $variant->ten_san_pham ?? 'Product name not found';
-            $result['mo_ta'] = $variant->mo_ta ?? '';
-            $result['gia_goc'] = $variant->gia ?? '';
-            $result['ten_danh_muc'] = $variant->ten_danh_muc ?? '';
-            $result['ten_danh_muc_con'] = $variant->ten_danh_muc_con ?? '';
-            $result['so_luong_ton_kho'] = $variant->so_luong_ton_kho ?? 0;
-            $result['luot_xem'] = $variant->luot_xem ?? 0;
-            $result['trang_thai_ton_kho'] = $variant->trang_thai_ton_kho ?? '';
+        // Sử dụng mảng để lưu trạng thái các giá trị "Màu sắc" đã xử lý
+        $processedColors = [];
 
-            // Xử lý các biến thể
+        foreach ($variants as $variant) {
+            // Tách giá trị thuộc tính và tên thuộc tính
             $tenGiaTriArray = explode(',', $variant->ten_gia_tri);
             $tenThuocTinhArray = explode(',', $variant->ten_thuoc_tinh);
-            $hinhAnhArray = explode(',', $variant->duong_dan_hinh_anh);
 
+            // Tìm giá trị của "Màu sắc"
+            $colorIndex = array_search('Màu sắc', $tenThuocTinhArray);
+            $colorValue = $colorIndex !== false ? $tenGiaTriArray[$colorIndex] : null;
+
+            // Nếu "Màu sắc" đã được xử lý, bỏ qua biến thể này
+            if ($colorValue && in_array($colorValue, $processedColors)) {
+                continue;
+            }
+
+            // Thêm giá trị "Màu sắc" vào danh sách đã xử lý
+            if ($colorValue) {
+                $processedColors[] = $colorValue;
+            }
+
+            // Thêm thông tin chi tiết của biến thể
             $result['bien_the_san_pham'][] = [
                 'bien_the_id' => $variant->bien_the_id,
                 'so_luong_kho' => $variant->so_luong_kho,
                 'gia_bien_the' => $variant->gia_bien_the,
-                'bien_the' => array_map(function ($name, $property) {
+                'hinh_anh' => $variant->hinh_anh,
+                'thuoc_tinh' => array_map(function ($giaTri, $thuocTinh) {
                     return [
-                        'ten_gia_tri' => $name,
-                        'ten_thuoc_tinh' => $property,
+                        'ten_gia_tri' => $giaTri,
+                        'ten_thuoc_tinh' => $thuocTinh,
                     ];
                 }, $tenGiaTriArray, $tenThuocTinhArray),
-                'anh_bien_the' => array_map(function ($imagePath) {
-                    return [
-                        'duong_dan_hinh_anh' => $imagePath,
-                    ];
-                }, $hinhAnhArray),
             ];
         }
 
         return response()->json($result);
     }
+
+
 
 
 

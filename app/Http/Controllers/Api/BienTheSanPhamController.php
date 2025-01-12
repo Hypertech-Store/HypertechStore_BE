@@ -366,11 +366,12 @@ class BienTheSanPhamController extends Controller
             ], 404);
         }
 
-        // Trả về danh sách biến thể sản phẩm cùng với giá
+        // Trả về danh sách biến thể sản phẩm cùng với giá và hàng tồn kho
         $result = $bienTheSanPhams->map(function ($bienThe) {
             return [
                 'id' => $bienThe->id,
                 'gia' => $bienThe->gia, // Giả sử trường `gia` là trường chứa giá của biến thể
+                'so_luong_kho' => $bienThe->so_luong_kho, // Thêm trường `so_luong_kho  ` vào kết quả
             ];
         });
 
