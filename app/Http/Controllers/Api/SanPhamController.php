@@ -481,6 +481,7 @@ class SanPhamController extends Controller
             $validated['duong_dan_anh'] = $sanPham->duong_dan_anh;
         }
 
+        $validated['trang_thai'] = $sanPham->trang_thai;
         $sanPham->update($validated);
 
         // Cập nhật thuộc tính và biến thể
@@ -981,7 +982,7 @@ class SanPhamController extends Controller
 
         // Kiểm tra nếu khách hàng đã mua sản phẩm với trạng thái đơn hàng thành công và không quá 3 ngày kể từ lần cập nhật
         $daMuaSanPham = DonHang::where('khach_hang_id', $khachHangId)
-            ->where('trang_thai_don_hang_id', 5) // Trạng thái thành công
+            ->where('trang_thai_don_hang_id', 7) // Trạng thái thành công
             ->whereHas('chiTietDonHangs', function ($query) use ($sanPhamId) {
                 $query->where('san_pham_id', $sanPhamId);
             })
