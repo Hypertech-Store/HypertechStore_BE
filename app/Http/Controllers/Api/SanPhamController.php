@@ -121,10 +121,13 @@ class SanPhamController extends Controller
         $numberRow = $request->query('number_row', 9);
 
         // Lấy dữ liệu với phân trang
-        $sanPhams = SanPham::where('trang_thai_ton_kho', 1)->paginate($numberRow, ['*'], 'page', $page);
+        $sanPhams = SanPham::with(['danhGias' => function ($query) {
+            $query->where('trang_thai', 1);
+        }])->where('trang_thai_ton_kho', 1)
+            ->paginate($numberRow, ['*'], 'page', $page);
 
         // Tính toán tổng số sản phẩm
-        $totalProducts = $sanPhams->count();
+        $totalProducts = $sanPhams->total();
 
         // Tính toán giá trị minPrice và maxPrice
         $minPrice = SanPham::min('gia');
@@ -192,6 +195,32 @@ class SanPhamController extends Controller
             // Thêm hình ảnh biến thể vào sản phẩm
             $sanPham->hinh_anh_san_pham = $hinhAnhBienTheSanPham;
         }
+
+        // Xử lý từng sản phẩm
+        $sanPhams->each(function ($product) {
+            $totalStars = $product->danhGias->sum('danh_gia'); // Tổng số sao
+            $totalReviews = $product->danhGias->count(); // Tổng số lượt đánh giá
+
+            // Tính số lượng khách hàng duy nhất đánh giá sản phẩm (dựa trên khach_hang_id)
+            $totalUniqueCustomers = $product->danhGias->pluck('khach_hang_id')->unique()->count();
+
+            // Tính điểm trung bình sao và tổng số đánh giá
+            $product->trung_binh_sao = $totalReviews > 0 ? round($totalStars / $totalReviews, 2) : 0; // Điểm trung bình sao
+            $product->tong_so_danh_gia = $totalReviews; // Tổng số lượt đánh giá
+            $product->tong_khach_hang_danh_gia = $totalUniqueCustomers; // Tổng số khách hàng duy nhất
+
+            // Kiểm tra sản phẩm có sale không và lấy phần trăm giảm giá
+            if ($product->saleSanPhams) {
+                $product->sale_percentage = $product->saleSanPhams->sale_theo_phan_tram; // Lấy phần trăm giảm giá
+            } else {
+                $product->sale_percentage = 0; // Không có sale
+            }
+
+            // Xóa danhGias và saleSanPham khỏi kết quả trả về
+            unset($product->danhGias);
+            unset($product->saleSanPhams);
+        });
+
 
         // Trả về dữ liệu dưới dạng JSON
         return response()->json([
@@ -286,8 +315,6 @@ class SanPhamController extends Controller
             'max_price' => $maxPrice,
         ]);
     }
-
-
 
     public function getAllSanPham(): JsonResponse
     {
@@ -424,8 +451,6 @@ class SanPhamController extends Controller
             ],
         ]);
     }
-
-
 
     private function generateCombinations($arrays)
     {
@@ -791,10 +816,6 @@ class SanPhamController extends Controller
 
         return response()->json($result);
     }
-
-
-
-
 
 
     public function deleteProduct($id)
