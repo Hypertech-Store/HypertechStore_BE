@@ -22,6 +22,12 @@ class PhuongThucThanhToanController extends Controller
 
         return response()->json($data);
     }
+    public function phuongThucThanhToanClient()
+    {
+        $data = PhuongThucThanhToan::where('trang_thai', 1)->get();
+
+        return response()->json($data);
+    }
 
     /**
      * Store a newly created resource in storage.

@@ -35,6 +35,7 @@ class DanhMucConController extends Controller
             // Lấy danh sách danh mục con theo danh_muc_id
             $data = DanhMucCon::query()
                 ->where('danh_muc_id', $danh_muc_id)
+                ->where('trang_thai', 1)
                 ->get();
 
             return response()->json([
@@ -199,7 +200,7 @@ class DanhMucConController extends Controller
      */
     public function getAll(): \Illuminate\Http\JsonResponse
     {
-        $data = DanhMucCon::query()->get();
+        $data = DanhMucCon::where('trang_thai', 1)->get();
 
         return response()->json($data);
     }

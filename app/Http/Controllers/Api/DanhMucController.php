@@ -27,7 +27,7 @@ class DanhMucController extends Controller
     }
     public function getAllDanhMuc()
     {
-        $data = DanhMuc::with('danhMucCons')->get();
+        $data = DanhMuc::with('danhMucCons')->where('trang_thai', 1)->get();
 
         return response()->json($data);
     }

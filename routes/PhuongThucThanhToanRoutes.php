@@ -7,3 +7,4 @@ Route::apiResource('phuong-thuc-thanh-toan', PhuongThucThanhToanController::clas
 
 
 Route::put('phuong-thuc/trang-thai', [PhuongThucThanhToanController::class, 'updateStatus']);
+Route::get('/get-phuong-thuc-thanh-toan', [PhuongThucThanhToanController::class, 'phuongThucThanhToanClient']);
