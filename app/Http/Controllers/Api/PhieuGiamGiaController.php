@@ -138,6 +138,7 @@ class PhieuGiamGiaController extends Controller
         $data = PhieuGiamGia::where('gia_tri_don_hang_toi_thieu', '<=', $orderValue)
             ->where('ngay_bat_dau', '<=', now())
             ->where('ngay_ket_thuc', '>=', now())
+            ->where('trang_thai', 1)
             ->get();
 
         return response()->json([
@@ -153,6 +154,7 @@ class PhieuGiamGiaController extends Controller
         $magiamgia = PhieuGiamGia::where('ma_giam_gia', $maGiamGia)
             ->whereDate('ngay_bat_dau', '<=', now())
             ->whereDate('ngay_ket_thuc', '>=', now())
+            ->where('trang_thai', 1)
             ->first();
 
         if (!$magiamgia) {

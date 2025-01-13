@@ -168,7 +168,7 @@ class HinhThucVanChuyenController extends Controller
     public function allHinhThucVanChuyen()
     {
 
-        $data = HinhThucVanChuyen::query()->get();
+        $data = HinhThucVanChuyen::where('trang_thai', 1)->get();
 
         return response()->json($data);
     }

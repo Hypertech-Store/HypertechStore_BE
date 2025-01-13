@@ -145,6 +145,32 @@ class DonHangsController extends Controller
             return response()->json(['message' => 'Không có đơn hàng nào của khách hàng này'], 404);
         }
 
+        $formattedItems = $donHangs->items(); // Lấy danh sách hiện tại của các item
+        foreach ($formattedItems as &$donHang) {
+            // Lấy tên khách hàng từ quan hệ 'khachHang' và gán vào 'ho_ten', nếu không có thì gán NULL
+            $donHang['ho_ten_khach_hang'] = $donHang['khachHang']['ho_ten'] ?? 'Chưa cập nhật'; // Hoặc bạn có thể gán rỗng: ''
+            unset($donHang['khachHang']); // Xóa quan hệ 'khachHang' sau khi đã lấy tên
+
+            // Lấy thông tin trạng thái đơn hàng
+            $donHang['trang_thai_don_hang'] = $donHang['trangThaiDonHang']['ten_trang_thai'] ?? 'Không xác định';
+            $donHang['trang_thai_don_hang_id'] = $donHang['trangThaiDonHang']['id'] ?? null; // Lấy id trạng thái đơn hàng
+            unset($donHang['trangThaiDonHang']); // Xóa quan hệ 'trangThaiDonHang'
+
+            // Lấy tên hình thức vận chuyển từ quan hệ 'hinhThucVanChuyen' và gán vào 'ten_van_chuyen', nếu không có thì gán NULL
+            $donHang['ten_van_chuyen'] = $donHang['hinhThucVanChuyen']['ten_van_chuyen'] ?? NULL; // Hoặc bạn có thể gán rỗng: ''
+            unset($donHang['hinhThucVanChuyen']); // Xóa quan hệ 'hinhThucVanChuyen' sau khi đã lấy tên
+
+            // Lấy mã giảm giá cho từng đơn hàng (nếu có)
+            $phieuGiamGia = PhieuGiamGiaVaKhachHang::where('don_hang_id', $donHang['id'])->first(); // Query to get the voucher
+            if ($phieuGiamGia) {
+                $donHang['ma_giam_gia'] = $phieuGiamGia->phieuGiamGia->ma_giam_gia ?? null; // Access the 'phieuGiamGia' relation
+                $donHang['discount'] = $phieuGiamGia->phieuGiamGia->gia_tri_giam_gia ?? null; // Assuming 'discount' is a field in 'phieuGiamGia'
+            } else {
+                $donHang['ma_giam_gia'] = null;
+                $donHang['discount'] = null;
+            }
+        }
+
         // Chuyển đổi thuoc_tinh thành JSON
         $donHangs->getCollection()->transform(function ($donHang) {
             $donHang->chiTietDonHangs->each(function ($chiTietDonHang) {
