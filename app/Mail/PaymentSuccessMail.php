@@ -10,16 +10,19 @@ class PaymentSuccessMail extends Mailable
 {
     use Queueable, SerializesModels;
 
+    public $mailData; // Khai báo biến công khai
     public $orderData;
 
     /**
      * Create a new message instance.
      *
-     * @return void
+     * @param array $mailData
      */
-    public function __construct($orderData)
+    public function __construct(array $mailData)
     {
-        $this->orderData = $orderData;
+        // Gán dữ liệu
+        $this->mailData = $mailData;
+        $this->orderData = $mailData; // Bạn có thể gán mailData vào orderData nếu cần
     }
 
     /**
@@ -31,6 +34,6 @@ class PaymentSuccessMail extends Mailable
     {
         return $this->subject('Thanh toán thành công')
             ->view('emails.payment_success')
-            ->with('orderData', $this->orderData);
+            ->with('mailData', $this->mailData); // Chuyển mailData vào view
     }
 }
