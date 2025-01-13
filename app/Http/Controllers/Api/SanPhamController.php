@@ -902,10 +902,9 @@ class SanPhamController extends Controller
             'san_phams' => $danhMuc->sanPhams
         ], 200);
     }
-
     public function getSanPhamTheoDanhMucTuSanPhamId($sanPhamId)
     {
-        // Tìm sản phẩm theo ID
+        // Tìm sản phẩm theo ID, bao gồm thông tin danh mục
         $sanPham = SanPham::with('danhMuc')->find($sanPhamId);
 
         if (!$sanPham) {
@@ -914,26 +913,89 @@ class SanPhamController extends Controller
             ], 404);
         }
 
-        // Lấy danh mục ID từ sản phẩm
-        $danhMucId = $sanPham->danh_muc_id;
+        // Lấy danh mục của sản phẩm này (trả về danh mục cùng thông tin sản phẩm)
+        $danhMuc = $sanPham->danhMuc;
 
-        // Tìm danh mục cùng danh sách sản phẩm thuộc danh mục
-        $danhMuc = DanhMuc::with('sanPhams')->find($danhMucId);
+        // Lấy tất cả sản phẩm khác cùng danh mục nhưng không phải sản phẩm này
+        $danhMuc->load('sanPhams'); // Tải thông tin các sản phẩm trong danh mục liên quan
 
-        if (!$danhMuc) {
-            return response()->json([
-                'message' => 'Danh mục không tồn tại.'
-            ], 404);
+        // Lọc ra những sản phẩm có trạng thái tồn kho là 1
+        $currentDate = Carbon::now()->timezone('Asia/Ho_Chi_Minh');
+        $filteredProducts = [];
+
+        foreach ($danhMuc->sanPhams as $relatedProduct) {
+            if ($relatedProduct->trang_thai_ton_kho == 1) { // Trạng thái tồn kho = 1
+                // Thêm thông tin sale và trạng thái mới
+                $relatedSaleStatus = null;
+                $relatedSalePercent = null;
+                $relatedIsNew = false;
+
+                // Kiểm tra trạng thái sale
+                $relatedSale = SaleSanPham::where('san_pham_id', $relatedProduct->id)
+                    ->where('ngay_bat_dau_sale', '<=', $currentDate)
+                    ->where('ngay_ket_thuc_sale', '>=', $currentDate)
+                    ->first();
+
+                if ($relatedSale) {
+                    $relatedSaleStatus = "Sale";
+                    $relatedSalePercent = $relatedSale->sale_theo_phan_tram;
+                }
+
+                // Kiểm tra trạng thái mới
+                if ($relatedProduct->created_at >= now()->subWeek()) {
+                    $relatedIsNew = true;
+                }
+
+                // Xác định trạng thái của sản phẩm liên quan
+                if ($relatedSaleStatus && $relatedIsNew) {
+                    $relatedProduct->trang_thai = 'Sale';
+                    $relatedProduct->sale_percent = "{$relatedSalePercent}%";
+                } elseif ($relatedSaleStatus) {
+                    $relatedProduct->trang_thai = "Sale";
+                    $relatedProduct->sale_percent = "{$relatedSalePercent}%";
+                } elseif ($relatedIsNew) {
+                    $relatedProduct->trang_thai = 'Sản phẩm mới';
+                    $relatedProduct->sale_percent = null; // Không có sale
+                } else {
+                    $relatedProduct->trang_thai = null;
+                    $relatedProduct->sale_percent = null;
+                }
+
+                $totalStars = $relatedProduct->danhGias->sum('danh_gia'); // Tổng số sao
+                $totalReviews = $relatedProduct->danhGias->count(); // Tổng số lượt đánh giá
+
+                // Tính số lượng khách hàng duy nhất đánh giá sản phẩm (dựa trên khach_hang_id)
+                $totalUniqueCustomers = $relatedProduct->danhGias->pluck('khach_hang_id')->unique()->count();
+
+                // Tính điểm trung bình sao và tổng số đánh giá
+                $relatedProduct->trung_binh_sao = $totalReviews > 0 ? round($totalStars / $totalReviews, 2) : 0; // Điểm trung bình sao
+                $relatedProduct->tong_so_danh_gia = $totalReviews; // Tổng số lượt đánh giá
+                $relatedProduct->tong_khach_hang_danh_gia = $totalUniqueCustomers; // Tổng số khách hàng duy nhất
+
+
+                // Loại bỏ hoàn toàn trường "danh_gias" khỏi kết quả
+                unset($relatedProduct->danhGias);
+
+                // Thêm sản phẩm vào danh sách sau khi tính toán thông tin đánh giá và loại bỏ trường "danh_gias"
+                $filteredProducts[] = $relatedProduct;
+            }
         }
 
+        // Trả về thông tin sản phẩm và danh mục cùng các sản phẩm liên quan
         return response()->json([
             'san_pham_id' => $sanPham->id,
             'ten_san_pham' => $sanPham->ten_san_pham,
             'danh_muc_id' => $danhMuc->id,
             'ten_danh_muc' => $danhMuc->ten_danh_muc,
-            'san_phams' => $danhMuc->sanPhams
+            'san_phams_lien_quan' => $filteredProducts, // Các sản phẩm có trạng thái tồn kho = 1
         ], 200);
     }
+
+
+
+
+
+
 
     public function getSanPhamTheoDanhMucCon($danhMucConId, Request $request)
     {
