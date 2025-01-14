@@ -21,6 +21,6 @@ Route::prefix('khach-hang')->group(function () {
 });
 
 Route::get('/get-all-khach-hang', [KhachHangController::class, 'getAllKhachHang']);
-
+Route::post('/khach-hang/doi-mat-khau', [KhachHangController::class, 'changePassword']);
 
 
