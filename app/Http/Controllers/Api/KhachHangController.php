@@ -260,4 +260,26 @@ class KhachHangController extends Controller
             200
         );
     }
+
+    public function changePassword(Request $request)
+    {
+        $request->validate([
+            'khach_hang_id' => 'required|int|exists:khach_hangs,id',
+            'current_password' => 'required',
+            'new_password' => 'required|min:8|confirmed',
+        ]);
+
+        $khachHang = KhachHang::find($request->khach_hang_id);
+
+        // Kiểm tra mật khẩu hiện tại
+        if (!Hash::check($request->current_password, $khachHang->mat_khau)) {
+            return response()->json(['message' => 'Mật khẩu hiện tại không đúng'], 400);
+        }
+
+        // Cập nhật mật khẩu mới
+        $khachHang->mat_khau = Hash::make($request->new_password);
+        $khachHang->save();
+
+        return response()->json(['message' => 'Đổi mật khẩu thành công'], 200);
+    }
 }
