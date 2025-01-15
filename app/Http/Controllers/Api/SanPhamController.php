@@ -1125,9 +1125,9 @@ class SanPhamController extends Controller
         // Lấy các tham số lọc từ request
         $categoryIds = $request->input('danh_muc_id', []);
         $subCategoryIds = $request->input('danh_muc_con_id', []);
-        $minPrice = $request->input('min_price', 0);
-        $maxPrice = $request->input('max_price', PHP_INT_MAX);
-        $minRating = $request->input('min_rating', 0);
+        $minPrice = $request->input('min_price');
+        $maxPrice = $request->input('max_price');
+        $minRating = $request->input('min_rating');
         $numberRow = $request->query('number_row', 9);
         $page = $request->query('page', 1);
 
@@ -1135,24 +1135,40 @@ class SanPhamController extends Controller
         $query = SanPham::with(['danhGias' => function ($query) {
             $query->where('trang_thai', 1);
         }])
-            ->where('trang_thai_ton_kho', 1)
-            ->whereBetween('gia', [$minPrice, $maxPrice]);
+            ->where('trang_thai_ton_kho', 1);
 
+        // Chỉ áp dụng lọc giá khi có minPrice hoặc maxPrice
+        if ($minPrice !== null || $maxPrice !== null) {
+            $query->whereBetween('gia', [
+                $minPrice ?? 0,  // Nếu minPrice là null thì dùng giá trị mặc định 0
+                $maxPrice ?? PHP_INT_MAX // Nếu maxPrice là null thì dùng giá trị mặc định PHP_INT_MAX
+            ]);
+        }
+
+        // Lọc theo categoryIds hoặc subCategoryIds
         if (!empty($categoryIds)) {
+            // Nếu có categoryIds, lọc theo categoryIds và bỏ qua subCategoryIds
             $query->whereIn('danh_muc_id', $categoryIds);
         }
 
         if (!empty($subCategoryIds)) {
+            // Nếu có subCategoryIds, lọc theo subCategoryIds
             $query->whereIn('danh_muc_con_id', $subCategoryIds);
         }
 
-        $sanPhams = $query->get()->filter(function ($product) use ($minRating) {
-            $totalStars = $product->danhGias->sum('danh_gia');
-            $totalReviews = $product->danhGias->count();
-            $averageRating = $totalReviews > 0 ? $totalStars / $totalReviews : 0;
-            $product->trung_binh_sao = round($averageRating, 2);
-            return $product->trung_binh_sao >= $minRating;
-        });
+        // Lọc theo đánh giá nếu có minRating
+        if ($minRating !== null) {
+            $sanPhams = $query->get()->filter(function ($product) use ($minRating) {
+                $totalStars = $product->danhGias->sum('danh_gia');
+                $totalReviews = $product->danhGias->count();
+                $averageRating = $totalReviews > 0 ? $totalStars / $totalReviews : 0;
+                $product->trung_binh_sao = round($averageRating, 2);
+                return $product->trung_binh_sao >= $minRating;
+            });
+        } else {
+            // Nếu không có minRating, không lọc theo đánh giá
+            $sanPhams = $query->get();
+        }
 
         // Áp dụng phân trang
         $paginatedProducts = $sanPhams->forPage($page, $numberRow);
@@ -1163,4 +1179,5 @@ class SanPhamController extends Controller
             'total_products' => $sanPhams->count(),
         ]);
     }
+
 }
