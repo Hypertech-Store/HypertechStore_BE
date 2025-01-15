@@ -28,5 +28,5 @@ Route::prefix('san-pham')->group(function () {
     Route::get('/san-pham-chua-sale', [SanPhamController::class, 'getSanPhamChuaSale']);
 
     Route::post('/kiem-tra-mua-san-pham/{sanPhamId}', [SanPhamController::class, 'kiemTraSanPhamDaMua']);
-    Route::get('/filter-products', [SanPhamController::class, 'filterProducts'])->name('filter.products');
+    Route::post('/filter-products', [SanPhamController::class, 'filterProducts']);
 });

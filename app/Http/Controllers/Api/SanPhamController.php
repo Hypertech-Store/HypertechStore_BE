@@ -1123,43 +1123,38 @@ class SanPhamController extends Controller
     public function filterProducts(Request $request): JsonResponse
     {
         // Lấy các tham số lọc từ request
-        $categoryIds = $request->query('danh_muc_id', []);         // Mảng danh mục
-        $subCategoryIds = $request->query('danh_muc_con_id', []);  // Mảng danh mục con
-        $minPrice = $request->query('min_price', 0);                // Giá tối thiểu
-        $maxPrice = $request->query('max_price', PHP_INT_MAX);      // Giá tối đa
-        $minRating = $request->query('min_rating', 0);              // Đánh giá sao tối thiểu
-        $numberRow = $request->query('number_row', 9);              // Số lượng sản phẩm mỗi trang
+        $categoryIds = $request->input('danh_muc_id', []);
+        $subCategoryIds = $request->input('danh_muc_con_id', []);
+        $minPrice = $request->input('min_price', 0);
+        $maxPrice = $request->input('max_price', PHP_INT_MAX);
+        $minRating = $request->input('min_rating', 0);
+        $numberRow = $request->query('number_row', 9);
+        $page = $request->query('page', 1);
 
         // Truy vấn sản phẩm với các điều kiện lọc
         $query = SanPham::with(['danhGias' => function ($query) {
             $query->where('trang_thai', 1);
         }])
-            ->where('trang_thai_ton_kho', 1) // Chỉ lấy sản phẩm còn hàng
-            ->whereBetween('gia', [$minPrice, $maxPrice]); // Lọc theo giá
+            ->where('trang_thai_ton_kho', 1)
+            ->whereBetween('gia', [$minPrice, $maxPrice]);
 
-        // Lọc theo mảng danh mục nếu có
         if (!empty($categoryIds)) {
             $query->whereIn('danh_muc_id', $categoryIds);
         }
 
-        // Lọc theo mảng danh mục con nếu có
         if (!empty($subCategoryIds)) {
             $query->whereIn('danh_muc_con_id', $subCategoryIds);
         }
 
-        // Lọc theo đánh giá sao
         $sanPhams = $query->get()->filter(function ($product) use ($minRating) {
             $totalStars = $product->danhGias->sum('danh_gia');
             $totalReviews = $product->danhGias->count();
             $averageRating = $totalReviews > 0 ? $totalStars / $totalReviews : 0;
-
             $product->trung_binh_sao = round($averageRating, 2);
-
             return $product->trung_binh_sao >= $minRating;
         });
 
-        // Phân trang dữ liệu
-        $page = $request->query('page', 1);
+        // Áp dụng phân trang
         $paginatedProducts = $sanPhams->forPage($page, $numberRow);
 
         return response()->json([
