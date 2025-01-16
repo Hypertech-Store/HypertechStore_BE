@@ -1,0 +1,8 @@
+<?php
+
+use App\Http\Controllers\Api\TrangThaiDonHangController;
+use Illuminate\Support\Facades\Route;
+
+Route::apiResource('trang-thai-don-hang', TrangThaiDonHangController::class);
+Route::get('/getAllTrangThaiDonHang', [TrangThaiDonHangController::class, 'getAll']);
+Route::put('/don-hang/trang-thai', [TrangThaiDonHangController::class, 'updateStatus']);
