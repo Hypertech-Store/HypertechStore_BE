@@ -17,12 +17,15 @@ class DanhSachYeuThichController extends Controller
      */
     public function danhSachYeuThich($khachHangId)
     {
-        $data = DanhSachYeuThich::with('sanPham')
+        $data = DanhSachYeuThich::with(['sanPham' => function ($query) {
+            $query->where('trang_thai_ton_kho', 1);
+        }])
             ->where('khach_hang_id', $khachHangId)
             ->get();
 
         return response()->json($data);
     }
+
 
     /**
      * Xóa sản phẩm khỏi danh sách yêu thích

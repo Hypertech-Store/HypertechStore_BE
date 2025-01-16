@@ -60,7 +60,7 @@ class SaleSanPhamController extends Controller
 
     public function getSaleSanPhams(Request $request)
     {
-        // Lấy ngày hiện tại với múi giờ Việt Nam
+        // Lấy ngày hiện tại với thời gian đầy đủ (Ngày giờ hiện tại ở Việt Nam)
         $currentDate = Carbon::now()->timezone('Asia/Ho_Chi_Minh');
 
         // Lấy các sản phẩm sale còn hiệu lực
@@ -69,39 +69,36 @@ class SaleSanPhamController extends Controller
             ->with(['sanPham.danhGias' => function ($query) {
                 $query->where('trang_thai', 1); // Chỉ lấy đánh giá có trạng thái = 1
             }])
+            ->with(['sanPham' => function ($query) {
+                // Chỉ lấy sản phẩm có trang_thai_ton_kho khác 0 hoặc không có sản phẩm (sanPham = null)
+                $query->where(function ($query) {
+                    $query->where('trang_thai_ton_kho', '!=', 0)
+                        ->orWhereNull('san_phams.id');  // Trả về khi không có sản phẩm
+                });
+            }])
             ->get();
 
-        // Xử lý từng sản phẩm để tính điểm trung bình sao và tổng số lượt đánh giá
-        $saleSanPhams->each(function ($sale) {
-            $sanPham = $sale->sanPham; // Sản phẩm liên kết
-
-            if ($sanPham) {
-                $totalStars = $sanPham->danhGias->sum('danh_gia'); // Tổng số sao
-                $totalReviews = $sanPham->danhGias->count(); // Tổng số lượt đánh giá
-
-                // Gắn thuộc tính vào sản phẩm
-                $sanPham->trung_binh_sao = $totalReviews > 0 ? round($totalStars / $totalReviews, 2) : 0;
-                $sanPham->tong_so_danh_gia = $totalReviews;
-
-                // Xóa danh sách đánh giá để không trả về
-                unset($sanPham->danhGias);
-            }
+        // Lọc lại để loại bỏ các sản phẩm có san_pham là null
+        $filteredSaleSanPhams = $saleSanPhams->filter(function ($saleSanPham) {
+            return $saleSanPham->san_pham !== null; // Chỉ giữ lại những sale có san_pham không phải null
         });
 
-        // Kiểm tra nếu không có sản phẩm nào đang trong chương trình sale
-        if ($saleSanPhams->isEmpty()) {
+        // Nếu không còn sản phẩm nào trong sale, trả về thông báo
+        if ($filteredSaleSanPhams->isEmpty()) {
             return response()->json([
-                'message' => 'Không có sản phẩm nào đang trong chương trình sale.',
-                'data' => [],
+                'message' => 'Không có sản phẩm nào trong chương trình sale.',
+                'data' => [],  // Trả về mảng rỗng nếu không có sản phẩm
             ], Response::HTTP_OK);
         }
 
-        // Trả về danh sách sản phẩm sale
+        // Trả về dữ liệu sản phẩm sale
         return response()->json([
             'message' => 'Danh sách sản phẩm sale',
-            'data' => $saleSanPhams,
+            'data' => $filteredSaleSanPhams, // Trả về dữ liệu sản phẩm sale đã lọc
         ], Response::HTTP_OK);
     }
+
+
 
     public function getSaleSanPhamPaginate(Request $request)
     {

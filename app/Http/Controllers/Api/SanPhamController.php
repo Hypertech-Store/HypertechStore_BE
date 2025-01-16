@@ -232,7 +232,6 @@ class SanPhamController extends Controller
         ]);
     }
 
-
     public function searchProduct(Request $request): JsonResponse
     {
         // Lấy từ khóa tìm kiếm từ query param, giá trị mặc định là rỗng
@@ -853,6 +852,7 @@ class SanPhamController extends Controller
             ->with(['saleSanPhams' => function ($query) {
                 $query->select('san_pham_id', 'sale_theo_phan_tram'); // Chỉ lấy thông tin giảm giá
             }])
+            ->where('trang_thai_ton_kho', 1)
             ->orderByDesc('tong_luot_mua') // Sắp xếp theo tổng số lượng đã bán
             ->take(10)
             ->get();
