@@ -282,4 +282,29 @@ class KhachHangController extends Controller
 
         return response()->json(['message' => 'Đổi mật khẩu thành công'], 200);
     }
+
+    public function updateStatus(Request $request)
+    {
+        // Xác thực dữ liệu đầu vào
+        $validated = $request->validate([
+            'khach_hang_id' => 'required|integer|exists:khach_hangs,id',
+            'trang_thai'    => 'required|boolean',
+        ]);
+
+        // Tìm khách hàng theo ID
+        $khachHang = KhachHang::find($validated['khach_hang_id']);
+
+        // Cập nhật trạng thái
+        $khachHang->trang_thai = $validated['trang_thai'];
+        $khachHang->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cập nhật trạng thái thành công.',
+            'data' => [
+                'khach_hang_id' => $khachHang->id,
+                'trang_thai' => $khachHang->trang_thai,
+            ],
+        ]);
+    }
 }

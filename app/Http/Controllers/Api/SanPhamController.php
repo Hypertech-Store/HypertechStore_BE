@@ -1102,23 +1102,42 @@ class SanPhamController extends Controller
             })
             ->exists();
 
-        // Nếu có bất kỳ điều kiện nào không thỏa mãn, trả về false
+        // Kiểm tra nếu khách hàng đã đánh giá sản phẩm này trong vòng 3 ngày
+        $daDanhGia = DanhGia::where('khach_hang_id', $khachHangId)
+            ->where('san_pham_id', $sanPhamId)
+            ->whereRaw('DATEDIFF(NOW(), created_at) <= 3') // Kiểm tra trong vòng 3 ngày
+            ->exists();
+
+        // Trả về kết quả kiểm tra
         if (!$daMuaSanPham) {
             return response()->json([
                 'status' => 'success',
                 'da_mua' => false,
+                'danh_gia' => $daDanhGia,
                 'message' => 'Không thể đánh giá sản phẩm vì đơn hàng không thành công hoặc đã quá 3 ngày.',
                 'data' => $daMuaSanPham
+            ]);
+        }
+
+        if ($daDanhGia) {
+            return response()->json([
+                'status' => 'success',
+                'da_mua' => true,
+                'danh_gia' => true,
+                'message' => 'Khách hàng đã đánh giá sản phẩm này trong vòng 3 ngày.',
+                'data' => compact('daMuaSanPham', 'daDanhGia')
             ]);
         }
 
         return response()->json([
             'status' => 'success',
             'da_mua' => true,
+            'danh_gia' => false,
             'message' => 'Khách hàng có thể đánh giá sản phẩm.',
-            'data' => $daMuaSanPham
+            'data' => compact('daMuaSanPham', 'daDanhGia')
         ]);
     }
+
 
     public function filterProducts(Request $request): JsonResponse
     {
@@ -1179,5 +1198,4 @@ class SanPhamController extends Controller
             'total_products' => $sanPhams->count(),
         ]);
     }
-
 }

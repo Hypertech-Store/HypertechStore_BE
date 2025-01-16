@@ -110,7 +110,7 @@ class ThongSoController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(StoreThongSoRequest $request, string $id)
+    public function update(Request $request, string $id)
     {
         try {
             $data = ThongSo::query()->findOrFail($id);
