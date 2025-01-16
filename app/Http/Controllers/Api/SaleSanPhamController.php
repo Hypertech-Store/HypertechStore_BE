@@ -70,17 +70,14 @@ class SaleSanPhamController extends Controller
                 $query->where('trang_thai', 1); // Chỉ lấy đánh giá có trạng thái = 1
             }])
             ->with(['sanPham' => function ($query) {
-                // Chỉ lấy sản phẩm có trang_thai_ton_kho khác 0 hoặc không có sản phẩm (sanPham = null)
-                $query->where(function ($query) {
-                    $query->where('trang_thai_ton_kho', '!=', 0)
-                        ->orWhereNull('san_phams.id');  // Trả về khi không có sản phẩm
-                });
+                // Chỉ lấy sản phẩm có trang_thai_ton_kho khác 0
+                $query->where('trang_thai_ton_kho', 1);
             }])
             ->get();
 
-        // Lọc lại để loại bỏ các sản phẩm có san_pham là null
+        // Lọc bỏ các phần tử có san_pham là null
         $filteredSaleSanPhams = $saleSanPhams->filter(function ($saleSanPham) {
-            return $saleSanPham->san_pham !== null; // Chỉ giữ lại những sale có san_pham không phải null
+            return $saleSanPham->sanPham !== null;
         });
 
         // Nếu không còn sản phẩm nào trong sale, trả về thông báo
@@ -91,7 +88,7 @@ class SaleSanPhamController extends Controller
             ], Response::HTTP_OK);
         }
 
-        // Trả về dữ liệu sản phẩm sale
+        // Trả về dữ liệu sản phẩm sale đã lọc
         return response()->json([
             'message' => 'Danh sách sản phẩm sale',
             'data' => $filteredSaleSanPhams, // Trả về dữ liệu sản phẩm sale đã lọc
