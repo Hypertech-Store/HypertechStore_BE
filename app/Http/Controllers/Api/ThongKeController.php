@@ -108,13 +108,9 @@ class ThongKeController extends Controller
     }
 
 
-
-
-
-
     public function thongKeDonHang7Ngay(Request $request)
     {
-        $today = Carbon::now('Asia/Ho_Chi_Minh')->startOfDay(); // Loại bỏ giờ, giữ lại ngày
+        $today = Carbon::now('Asia/Ho_Chi_Minh')->endOfDay(); // Loại bỏ giờ, giữ lại ngày
         $sevenDaysAgo = $today->copy()->subDays(6); // Ngày bắt đầu 7 ngày trước
 
         $previousSevenDaysStart = $sevenDaysAgo->copy()->subDays(7); // Ngày bắt đầu của chu kỳ trước
@@ -150,7 +146,7 @@ class ThongKeController extends Controller
         $percentageChange = $totalPrevious > 0 ? (($difference / $totalPrevious) * 100) : ($totalCurrent > 0 ? 100 : 0);
 
 
-        $completedOrders = DonHang::where('trang_thai_don_hang_id', 5)->count();
+        $completedOrders = DonHang::where('trang_thai_don_hang_id', 7)->count();
         $totalOrders = DonHang::count(); // Tổng số đơn hàng
 
         // Kiểm tra nếu có đơn hàng nào
@@ -179,7 +175,7 @@ class ThongKeController extends Controller
 
     public function thongKeKhachHangMoi7Ngay(Request $request)
     {
-        $today = Carbon::now('Asia/Ho_Chi_Minh')->startOfDay();
+        $today = Carbon::now('Asia/Ho_Chi_Minh')->endOfDay();
         $sevenDaysAgo = $today->copy()->subDays(6);
 
         $previousSevenDaysStart = $sevenDaysAgo->copy()->subDays(7);
