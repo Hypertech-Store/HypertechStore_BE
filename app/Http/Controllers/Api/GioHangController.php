@@ -183,7 +183,7 @@ class GioHangController extends Controller
         }
         // // Cập nhật chi tiết giỏ hàng
         $chiTietGioHang->so_luong = $request->so_luong;
-        $chiTietGioHang->gia = $request->gia * $chiTietGioHang->so_luong;
+        $chiTietGioHang->gia = $request->gia;
         $chiTietGioHang->save();
 
         return response()->json([

@@ -19,7 +19,7 @@ class ThongKeController extends Controller
             ->count();
 
         // Tổng đơn hàng đang giữ
-        $tong_don_hang_dang_giu = DonHang::whereNotIn('trang_thai_don_hang_id', [2, 4])
+        $tong_don_hang_dang_giu = DonHang::whereNotIn('trang_thai_don_hang_id', [2, 7, 8])
             ->count();
 
         // Tổng sản phẩm có số lượng tồn kho = 0
